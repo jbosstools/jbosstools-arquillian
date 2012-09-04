@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+
+   <extension
+		point="org.eclipse.ui.commands">
+		
+		<command
+			id="org.jboss.tools.arquillian.ui.action.addArquillianSupport"
+			name="%addArquillianSupport"
+			categoryId="org.jboss.tools.arquillian.category"
+			defaultHandler="org.jboss.tools.arquillian.ui.internal.commands.AddArquillianCommandHandler"/>
+		<command
+			id="org.jboss.tools.arquillian.ui.action.removeArquillianSupport"
+			name="%removeArquillianSupport"
+			categoryId="org.jboss.tools.arquillian.category"
+			defaultHandler="org.jboss.tools.arquillian.ui.internal.commands.RemoveArquillianCommandHandler"/>
+		
+		<category
+			id="org.jboss.tools.arquillian.category"
+			name="%arquillianCommandCategory">
+		</category>
+   </extension>
+   
+   <extension
+         point="org.eclipse.ui.commandImages">
+      <image
+            commandId="org.jboss.tools.arquillian.ui.action.addArquillianSupport"
+            icon="icons/arquillian_icon16.png">
+      </image>
+       <image
+            commandId="org.jboss.tools.arquillian.ui.action.removeArquillianSupport"
+            icon="icons/arquillian_icon16.png">
+      </image>
+   </extension>
+   
+   <extension
+         point="org.eclipse.ui.menus">
+         <menuContribution locationURI="popup:org.eclipse.ui.projectConfigure?after=additions">
+         <command
+               commandId="org.jboss.tools.arquillian.ui.action.addArquillianSupport"
+               style="push">
+            <visibleWhen checkEnabled="false">
+					<and>
+						<count value="1"/>
+						<iterate ifEmpty="false">
+							<adapt type="org.eclipse.core.resources.IProject">
+								<and>
+									<test
+										property="org.eclipse.core.resources.projectNature"
+										value="org.eclipse.jdt.core.javanature"/>
+										
+									<test
+										property="org.eclipse.core.resources.projectNature"
+										value="org.eclipse.m2e.core.maven2Nature"/>
+										
+									<not>
+										<test 
+											property="org.eclipse.core.resources.projectNature" 
+											value="org.jboss.tools.arquillian.core.arquillianNature"/>
+									</not>
+								</and>
+							</adapt>
+						</iterate>
+					</and>
+				</visibleWhen>
+         </command>
+         <command
+               commandId="org.jboss.tools.arquillian.ui.action.removeArquillianSupport"
+               style="push">
+            <visibleWhen checkEnabled="false">
+					<and>
+						<count value="1"/>
+						<iterate ifEmpty="false" operator="and">
+							<adapt type="org.eclipse.core.resources.IProject">
+								<and>
+									<test
+										property="org.eclipse.core.resources.projectNature"
+										value="org.jboss.tools.arquillian.core.arquillianNature"/>
+								</and>
+							</adapt>
+						</iterate>
+					</and>
+				</visibleWhen>
+         </command>
+      </menuContribution>
+   </extension>
+   
+   <extension point="org.eclipse.ui.newWizards">
+      <category
+            name="Arquillian"
+            id="org.jboss.tools.arquillian.category">
+      </category>
+   	  <wizard 
+         category="org.jboss.tools.arquillian.category" 
+         class="org.jboss.tools.arquillian.ui.internal.wizards.NewArquillianJUnitTestWizard" 
+         icon="icons/arquillian_icon16.png"
+         id="org.jboss.tools.arquillian.ui.wizards.newArquillianJUnitTestWizard" 
+         name="Arquillian JUnit Test Case" 
+         project="false">
+         <description>
+            Create an Arquillian JUnit Test Case
+         </description>
+       
+      </wizard>
+    </extension>
+    
+</plugin>

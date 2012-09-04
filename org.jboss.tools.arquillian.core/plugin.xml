@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+	<extension
+       id="arquillianNature"
+       name="%nature_name"
+       point="org.eclipse.core.resources.natures">
+    <runtime>
+       <run
+          class="org.jboss.tools.arquillian.core.internals.natures.ArquillianNature">
+       </run>
+    </runtime>
+    <requires-nature
+          id="org.eclipse.jdt.core.javanature">
+    </requires-nature>
+    <requires-nature
+          id="org.eclipse.m2e.core.maven2Nature">
+    </requires-nature>
+    <!--
+    <builder
+          id="org.jboss.tools.arquillian.core.arquillianBuilder">
+    </builder>
+    -->
+ </extension>
+</plugin>
