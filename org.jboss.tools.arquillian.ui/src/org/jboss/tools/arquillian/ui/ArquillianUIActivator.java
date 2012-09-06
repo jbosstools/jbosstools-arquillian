@@ -26,6 +26,10 @@ public class ArquillianUIActivator extends AbstractUIPlugin {
 	// The plug-in ID
 	public static final String PLUGIN_ID = "org.jboss.tools.arquillian.ui"; //$NON-NLS-1$
 
+	public static final String JAR = "jar";
+	public static final String WAR = "war";
+	public static final String EAR = "ear";
+
 	// The shared instance
 	private static ArquillianUIActivator plugin;
 	

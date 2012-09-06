@@ -48,11 +48,9 @@ import org.eclipse.jdt.core.search.SearchEngine;
 import org.eclipse.jdt.internal.corext.codemanipulation.StubUtility;
 import org.eclipse.jdt.internal.corext.util.JavaConventionsUtil;
 import org.eclipse.jdt.internal.junit.BasicElementLabels;
-import org.eclipse.jdt.internal.junit.JUnitCorePlugin;
 import org.eclipse.jdt.internal.junit.Messages;
 import org.eclipse.jdt.internal.junit.buildpath.BuildPathSupport;
 import org.eclipse.jdt.internal.junit.ui.IJUnitHelpContextIds;
-import org.eclipse.jdt.internal.junit.ui.JUnitPlugin;
 import org.eclipse.jdt.internal.junit.util.CoreTestSearchEngine;
 import org.eclipse.jdt.internal.junit.util.JUnitStatus;
 import org.eclipse.jdt.internal.junit.util.JUnitStubUtility;
@@ -91,6 +89,7 @@ import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.dialogs.PreferencesUtil;
 import org.eclipse.ui.dialogs.SelectionDialog;
+import org.jboss.tools.arquillian.core.internals.natures.ArquillianNature;
 import org.jboss.tools.arquillian.ui.ArquillianUIActivator;
 
 import com.ibm.icu.text.UTF16;
@@ -105,13 +104,10 @@ import com.ibm.icu.text.UTF16;
  */
 public class NewArquillianJUnitTestCasePageOne extends NewTypeWizardPage {
 
-	private static final String JAR = "jar";
-	private static final String WAR = "war";
-	private static final String EAR = "ear";
-
 	private static final String ORG_JUNIT_RUNNER_RUNWITH = "org.junit.runner.RunWith";
 
-
+	private final static String JUNIT4_ANNOTATION_NAME= "org.junit.Test"; //$NON-NLS-1$
+	
 	private final static String PAGE_NAME= "NewArquillianJUnitTestCasePageOne"; //$NON-NLS-1$
 
 
@@ -170,10 +166,7 @@ public class NewArquillianJUnitTestCasePageOne extends NewTypeWizardPage {
 		fPage2= page2;
 
 		setTitle("Arquillian JUnit Test Case");
-		setDescription("Select the name of the new JUnit test case. " +
-				"You have the options to specify\n" +
-				"the class under test and on the next page, " +
-				"to select methods to be tested.");
+		setDescription("Select the name of the new Arquillian JUnit test case.");
 
 		String[] buttonNames= new String[] {
 			/* IDX_SETUP_CLASS */ WizardMessages.NewTestCaseWizardPageOne_methodStub_setUpBeforeClass,
@@ -232,7 +225,7 @@ public class NewArquillianJUnitTestCasePageOne extends NewTypeWizardPage {
 							if (cf.isStructureKnown())
 								classToTest= cf.getType();
 						} catch(JavaModelException e) {
-							JUnitPlugin.log(e);
+							ArquillianUIActivator.log(e);
 						}
 					}
 				}
@@ -243,7 +236,7 @@ public class NewArquillianJUnitTestCasePageOne extends NewTypeWizardPage {
 						setClassUnderTest(classToTest.getFullyQualifiedName('.'));
 					}
 				} catch (JavaModelException e) {
-					JUnitPlugin.log(e);
+					ArquillianUIActivator.log(e);
 				}
 			}
 		}
@@ -535,7 +528,7 @@ public class NewArquillianJUnitTestCasePageOne extends NewTypeWizardPage {
 					return (IType) resultArray[0];
 			}
 		} catch (JavaModelException e) {
-			JUnitPlugin.log(e);
+			ArquillianUIActivator.log(e);
 		}
 		return null;
 	}
@@ -720,35 +713,71 @@ public class NewArquillianJUnitTestCasePageOne extends NewTypeWizardPage {
 				buffer.append(comment);
 			}
 		}
-		buffer.append(annotation).append(delimiter);
-
+		
 		NewArquillianJUnitTestCaseDeploymentPage deploymentPage = (NewArquillianJUnitTestCaseDeploymentPage) getWizard().getPage(NewArquillianJUnitTestCaseDeploymentPage.ORG_JBOSS_TOOLS_ARQUILLIAN_UI_DEPLOYMENT_PAGE);
-		String archiveType = JAR;
+		String archiveType = ArquillianUIActivator.JAR;
 		String archiveName = "test";
+		String deploymentName = null;
+		String deploymentOrder = null;
 		boolean addBeansXml = true;
+		IType[] types = null;
+		
+		List<String> resources = new ArrayList<String>();
+		List<String> webInfResources = new ArrayList<String>();
 		if (deploymentPage != null) {
 			methodName = deploymentPage.getMethodName();
 			archiveType = deploymentPage.getArchiveType();
 			archiveName = deploymentPage.getArchiveName();
 			addBeansXml = deploymentPage.addBeansXml();
+			deploymentName = deploymentPage.getDeploymentName();
+			deploymentOrder = deploymentPage.getDeploymentOrder();
+			types = deploymentPage.getTypes();
+			ProjectResource[] allResources = deploymentPage.getResources();
+			for (ProjectResource resource:allResources) {
+				if (ArquillianUIActivator.WAR.equals(archiveType) && resource.isDeployAsWebInfResource()) {
+					webInfResources.add(resource.getPath().toString());
+				} else {
+					resources.add(resource.getPath().toString());
+				}
+			}
 		}
-		buffer.append("public "); //$NON-NLS-1$
+		
+		buffer.append(annotation);
+		if ( (deploymentName != null && !deploymentName.isEmpty())
+				|| (deploymentOrder != null && !deploymentOrder.isEmpty())
+				) {
+			buffer.append("(");
+			if ((deploymentName != null && !deploymentName.isEmpty())) {
+				buffer.append("name = \"");
+				buffer.append(deploymentName);
+				buffer.append("\"");
+				if (deploymentOrder != null && !deploymentOrder.isEmpty()) {
+					buffer.append(" , ");
+				}
+			}
+			if (deploymentOrder != null && !deploymentOrder.isEmpty()) {
+				buffer.append("order = ");
+				buffer.append(deploymentOrder);
+			}
+			
+			buffer.append(")");
+		}
+		buffer.append(delimiter);
 
-		buffer.append("static "); //$NON-NLS-1$
+		buffer.append("public static Archive<?> "); //$NON-NLS-1$
 
-		buffer.append("Archive<?> "); //$NON-NLS-1$
 		buffer.append(methodName);
 		buffer.append("()");
 		buffer.append(" {").append(delimiter);
-		if (JAR.equals(archiveType)) {
+		if (ArquillianUIActivator.JAR.equals(archiveType)) {
 			imports.addImport("org.jboss.shrinkwrap.api.spec.JavaArchive");
 			buffer.append("JavaArchive archive = ShrinkWrap.create(JavaArchive.class");
 		}
-		if (WAR.equals(archiveType)) {
+		if (ArquillianUIActivator.WAR.equals(archiveType)) {
 			imports.addImport("org.jboss.shrinkwrap.api.spec.WebArchive");
 			buffer.append("WebArchive archive = ShrinkWrap.create(WebArchive.class");
 		}
-		if (EAR.equals(archiveType)) {
+		if (ArquillianUIActivator.EAR.equals(archiveType)) {
 			imports.addImport("org.jboss.shrinkwrap.api.spec.EnterpriseArchive");
 			buffer.append("EnterpriseArchive archive = ShrinkWrap.create(EnterpriseArchive.class");
 		}
@@ -762,6 +791,63 @@ public class NewArquillianJUnitTestCasePageOne extends NewTypeWizardPage {
 			buffer.append("\"");
 		}
 		buffer.append(")");
+		
+		if (types != null && types.length > 0) {
+			buffer.append(delimiter);
+			buffer.append(".addClasses( ");
+			boolean first = true;
+			for (IType t:types) {
+				if (!first) {
+					buffer.append(" , ");
+				} else {
+					first = false;
+				}
+				String typeName = t.getFullyQualifiedName();
+				int lastPeriod = typeName.lastIndexOf(".");
+				String className = typeName;
+				if (lastPeriod >= 0 && lastPeriod < typeName.length()) {
+					className = typeName.substring(lastPeriod + 1, typeName.length());
+					imports.addImport(typeName);
+				}
+				buffer.append(className);
+				buffer.append(".class");
+			}
+			buffer.append(" )");
+		}
+		
+		if (resources.size() > 0) {
+			buffer.append(delimiter);
+			buffer.append(".addAsResource( ");
+			boolean first = true;
+			for (String resource:resources) {
+				if (!first) {
+					buffer.append(" , ");
+				} else {
+					first = false;
+				}
+				buffer.append("\"");
+				buffer.append(resource);
+				buffer.append("\"");
+			}
+			buffer.append(" )");
+		}
+		
+		if (webInfResources.size() > 0) {
+			buffer.append(delimiter);
+			buffer.append(".addAsWebInfResource( ");
+			boolean first = true;
+			for (String resource:webInfResources) {
+				if (!first) {
+					buffer.append(" , ");
+				} else {
+					first = false;
+				}
+				buffer.append("\"");
+				buffer.append(resource);
+				buffer.append("\"");
+			}
+			buffer.append(" )");
+		}
 		
 		if (addBeansXml) {
 			imports.addImport("org.jboss.shrinkwrap.api.asset.EmptyAsset");
@@ -931,7 +1017,7 @@ public class NewArquillianJUnitTestCasePageOne extends NewTypeWizardPage {
 		
 		ISourceRange typeSourceRange= type.getSourceRange();
 		int pos= typeSourceRange.getOffset() + typeSourceRange.getLength() - 1;
-		buffer.append('@').append(imports.addImport(JUnitCorePlugin.JUNIT4_ANNOTATION_NAME, pos)).append(getLineDelimiter());
+		buffer.append('@').append(imports.addImport(JUNIT4_ANNOTATION_NAME, pos)).append(getLineDelimiter());
 		
 
 		buffer.append("public ");//$NON-NLS-1$
@@ -1089,7 +1175,15 @@ public class NewArquillianJUnitTestCasePageOne extends NewTypeWizardPage {
 						status.setError(WizardMessages.NewTestCaseWizardPageOne_error_java5required);
 						return status;
 					}
-					if (project.findType(JUnitCorePlugin.JUNIT4_ANNOTATION_NAME) == null) {
+					try {
+						if (!project.getProject().hasNature(ArquillianNature.ARQUILLIAN_NATURE_ID)) {
+							status.setWarning("The project doesn't have the Arquillian nature");
+							return status;
+						}
+					} catch (CoreException e) {
+						ArquillianUIActivator.log(e);
+					}
+					if (project.findType(JUNIT4_ANNOTATION_NAME) == null) {
 						status.setWarning(WizardMessages.NewTestCaseWizardPageOne__error_junit4NotOnbuildpath);
 						return status;
 					}
@@ -1129,7 +1223,7 @@ public class NewArquillianJUnitTestCasePageOne extends NewTypeWizardPage {
 				}
 				
 			} catch (JavaModelException e) {
-				JUnitPlugin.log(e);
+				ArquillianUIActivator.log(e);
 			}
 		}
 		return status;

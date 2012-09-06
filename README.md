@@ -19,10 +19,7 @@ The wizard is currently based on the JUnit Test Case wizard, but adds the follow
 - @RunWith(Arquillian.class) annotation
 - the deployment method
 
-The user can define the name of the deployment method, the type and name of the archive and create an empty beans.xml. 
-
-TODO:
-- enable the user to add available classes and resources to the deployment archive.
+The user can define the name of the deployment method, the name and order of the deployment, the type and name of the archive, add an empty beans.xml, available classes and resources to the deployment archive. 
 
 The following features aren't implemented yet:
 
