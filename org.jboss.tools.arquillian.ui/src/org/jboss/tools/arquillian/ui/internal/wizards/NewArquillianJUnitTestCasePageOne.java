@@ -815,40 +815,23 @@ public class NewArquillianJUnitTestCasePageOne extends NewTypeWizardPage {
 			buffer.append(" )");
 		}
 		
-		if (resources.size() > 0) {
+		for (String resource : resources) {
 			buffer.append(delimiter);
 			buffer.append(".addAsResource( ");
-			boolean first = true;
-			for (String resource:resources) {
-				if (!first) {
-					buffer.append(" , ");
-				} else {
-					first = false;
-				}
-				buffer.append("\"");
-				buffer.append(resource);
-				buffer.append("\"");
-			}
+			buffer.append("\"");
+			buffer.append(resource);
+			buffer.append("\"");
 			buffer.append(" )");
 		}
-		
-		if (webInfResources.size() > 0) {
+		for (String resource : webInfResources) {
 			buffer.append(delimiter);
 			buffer.append(".addAsWebInfResource( ");
-			boolean first = true;
-			for (String resource:webInfResources) {
-				if (!first) {
-					buffer.append(" , ");
-				} else {
-					first = false;
-				}
-				buffer.append("\"");
-				buffer.append(resource);
-				buffer.append("\"");
-			}
+			buffer.append("\"");
+			buffer.append(resource);
+			buffer.append("\"");
 			buffer.append(" )");
 		}
-		
+
 		if (addBeansXml) {
 			imports.addImport("org.jboss.shrinkwrap.api.asset.EmptyAsset");
 			buffer.append(delimiter);
