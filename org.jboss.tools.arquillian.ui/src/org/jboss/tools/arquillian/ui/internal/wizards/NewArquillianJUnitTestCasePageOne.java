@@ -45,7 +45,6 @@ import org.eclipse.jdt.core.compiler.ITerminalSymbols;
 import org.eclipse.jdt.core.compiler.InvalidInputException;
 import org.eclipse.jdt.core.search.IJavaSearchScope;
 import org.eclipse.jdt.core.search.SearchEngine;
-import org.eclipse.jdt.internal.corext.codemanipulation.StubUtility;
 import org.eclipse.jdt.internal.corext.util.JavaConventionsUtil;
 import org.eclipse.jdt.internal.junit.BasicElementLabels;
 import org.eclipse.jdt.internal.junit.Messages;
@@ -637,8 +636,13 @@ public class NewArquillianJUnitTestCasePageOne extends NewTypeWizardPage {
 	 */
 	@Override
 	protected void createTypeMembers(IType type, ImportsManager imports, IProgressMonitor monitor) throws CoreException {
-		if (fMethodStubsButtons.isSelected(IDX_DEPLOYMENT))
-			createDeployment(type, imports);
+		if (fMethodStubsButtons.isSelected(IDX_DEPLOYMENT)) {
+			String delimiter = getLineDelimiter();
+			NewArquillianJUnitTestCaseDeploymentPage deploymentPage = (NewArquillianJUnitTestCaseDeploymentPage) getWizard().getPage(NewArquillianJUnitTestCaseDeploymentPage.ORG_JBOSS_TOOLS_ARQUILLIAN_UI_DEPLOYMENT_PAGE);
+			ArquillianUIActivator.createDeploymentMethod(null, type, imports, 
+					isAddComments(), delimiter, deploymentPage, 
+					null, false);
+		}
 
 		if (fMethodStubsButtons.isSelected(IDX_SETUP_CLASS)) {
 			createSetUpClass(type, imports);
@@ -691,164 +695,7 @@ public class NewArquillianJUnitTestCasePageOne extends NewTypeWizardPage {
 		buf.replace(offset, 0, sb.toString());
 	}
 
-	private void createDeployment(IType type, ImportsManager imports) throws CoreException {
-		String content= null;
-		String annotation= '@' + imports.addImport("org.jboss.arquillian.container.test.api.Deployment");
-		String methodName = "createDeployment";
-		imports.addImport("org.jboss.shrinkwrap.api.ShrinkWrap");
-		imports.addImport("org.jboss.shrinkwrap.api.Archive");
-		GenStubSettings settings= JUnitStubUtility.getCodeGenerationSettings(type.getJavaProject());
-		settings.createComments= isAddComments();
-
-		final String delimiter = getLineDelimiter();
-		StringBuffer buffer = new StringBuffer();
-		if (settings.createComments) {
-			String retTypeSig = Signature.createTypeSignature(
-					"org.jboss.shrinkwrap.api.Archive", true); //$NON-NLS-1$
-			String comment = CodeGeneration.getMethodComment(
-					type.getCompilationUnit(), type.getElementName(),
-					methodName, new String[0], new String[0],
-					retTypeSig, null, delimiter);
-			if (comment != null) {
-				buffer.append(comment);
-			}
-		}
 		
-		NewArquillianJUnitTestCaseDeploymentPage deploymentPage = (NewArquillianJUnitTestCaseDeploymentPage) getWizard().getPage(NewArquillianJUnitTestCaseDeploymentPage.ORG_JBOSS_TOOLS_ARQUILLIAN_UI_DEPLOYMENT_PAGE);
-		String archiveType = ArquillianUIActivator.JAR;
-		String archiveName = "test";
-		String deploymentName = null;
-		String deploymentOrder = null;
-		boolean addBeansXml = true;
-		IType[] types = null;
-		
-		List<String> resources = new ArrayList<String>();
-		List<String> webInfResources = new ArrayList<String>();
-		if (deploymentPage != null) {
-			methodName = deploymentPage.getMethodName();
-			archiveType = deploymentPage.getArchiveType();
-			archiveName = deploymentPage.getArchiveName();
-			addBeansXml = deploymentPage.addBeansXml();
-			deploymentName = deploymentPage.getDeploymentName();
-			deploymentOrder = deploymentPage.getDeploymentOrder();
-			types = deploymentPage.getTypes();
-			ProjectResource[] allResources = deploymentPage.getResources();
-			for (ProjectResource resource:allResources) {
-				if (ArquillianUIActivator.WAR.equals(archiveType) && resource.isDeployAsWebInfResource()) {
-					webInfResources.add(resource.getPath().toString());
-				} else {
-					resources.add(resource.getPath().toString());
-				}
-			}
-		}
-		
-		buffer.append(annotation);
-		if ( (deploymentName != null && !deploymentName.isEmpty())
-				|| (deploymentOrder != null && !deploymentOrder.isEmpty())
-				) {
-			buffer.append("(");
-			if ((deploymentName != null && !deploymentName.isEmpty())) {
-				buffer.append("name = \"");
-				buffer.append(deploymentName);
-				buffer.append("\"");
-				if (deploymentOrder != null && !deploymentOrder.isEmpty()) {
-					buffer.append(" , ");
-				}
-			}
-			if (deploymentOrder != null && !deploymentOrder.isEmpty()) {
-				buffer.append("order = ");
-				buffer.append(deploymentOrder);
-			}
-			
-			buffer.append(")");
-		}
-		buffer.append(delimiter);
-
-		buffer.append("public static Archive<?> "); //$NON-NLS-1$
-
-		buffer.append(methodName);
-		buffer.append("()");
-		buffer.append(" {").append(delimiter);
-		if (ArquillianUIActivator.JAR.equals(archiveType)) {
-			imports.addImport("org.jboss.shrinkwrap.api.spec.JavaArchive");
-			buffer.append("JavaArchive archive = ShrinkWrap.create(JavaArchive.class");
-		}
-		if (ArquillianUIActivator.WAR.equals(archiveType)) {
-			imports.addImport("org.jboss.shrinkwrap.api.spec.WebArchive");
-			buffer.append("WebArchive archive = ShrinkWrap.create(WebArchive.class");
-		}
-		if (ArquillianUIActivator.EAR.equals(archiveType)) {
-			imports.addImport("org.jboss.shrinkwrap.api.spec.EnterpriseArchive");
-			buffer.append("EnterpriseArchive archive = ShrinkWrap.create(EnterpriseArchive.class");
-		}
-		if (archiveName != null && !archiveName.isEmpty()) {
-			if (archiveName.indexOf(".") == -1) {
-				archiveName = archiveName + "." + archiveType;
-			}
-			buffer.append(", ");
-			buffer.append("\"");
-			buffer.append(archiveName);
-			buffer.append("\"");
-		}
-		buffer.append(")");
-		
-		if (types != null && types.length > 0) {
-			buffer.append(delimiter);
-			buffer.append(".addClasses( ");
-			boolean first = true;
-			for (IType t:types) {
-				if (!first) {
-					buffer.append(" , ");
-				} else {
-					first = false;
-				}
-				String typeName = t.getFullyQualifiedName();
-				int lastPeriod = typeName.lastIndexOf(".");
-				String className = typeName;
-				if (lastPeriod >= 0 && lastPeriod < typeName.length()) {
-					className = typeName.substring(lastPeriod + 1, typeName.length());
-					imports.addImport(typeName);
-				}
-				buffer.append(className);
-				buffer.append(".class");
-			}
-			buffer.append(" )");
-		}
-		
-		for (String resource : resources) {
-			buffer.append(delimiter);
-			buffer.append(".addAsResource( ");
-			buffer.append("\"");
-			buffer.append(resource);
-			buffer.append("\"");
-			buffer.append(" )");
-		}
-		for (String resource : webInfResources) {
-			buffer.append(delimiter);
-			buffer.append(".addAsWebInfResource( ");
-			buffer.append("\"");
-			buffer.append(resource);
-			buffer.append("\"");
-			buffer.append(" )");
-		}
-
-		if (addBeansXml) {
-			imports.addImport("org.jboss.shrinkwrap.api.asset.EmptyAsset");
-			buffer.append(delimiter);
-			buffer.append(".addAsManifestResource(EmptyAsset.INSTANCE, \"beans.xml\")");
-		}
-		
-		buffer.append(";").append(delimiter);
-        buffer.append("// System.out.println(archive.toString();").append(delimiter);
-        buffer.append("return archive;").append(delimiter);
-		buffer.append("}"); //$NON-NLS-1$
-		buffer.append(delimiter);
-		content = buffer.toString();
-
-		type.createMethod(content, null, false, null);
-		
-	}
-	
 	private IMethod findInHierarchy(IType type, String methodName) throws JavaModelException {
 		ITypeHierarchy typeHierarchy= null;
 		IType[] superTypes= null;

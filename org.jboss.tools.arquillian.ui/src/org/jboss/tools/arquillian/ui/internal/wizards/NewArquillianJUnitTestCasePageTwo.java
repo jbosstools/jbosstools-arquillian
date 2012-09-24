@@ -2,7 +2,6 @@ package org.jboss.tools.arquillian.ui.internal.wizards;
 
 import org.eclipse.jdt.junit.wizards.NewTestCaseWizardPageTwo;
 import org.eclipse.jface.wizard.IWizard;
-import org.eclipse.jface.wizard.IWizardPage;
 
 public class NewArquillianJUnitTestCasePageTwo extends
 		NewTestCaseWizardPageTwo {

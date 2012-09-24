@@ -15,13 +15,26 @@ import java.util.List;
 
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.Status;
+import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.IMember;
 import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaConventions;
 import org.eclipse.jdt.core.JavaCore;
+import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.core.dom.AbstractTypeDeclaration;
+import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.IMethodBinding;
+import org.eclipse.jdt.core.dom.ITypeBinding;
+import org.eclipse.jdt.core.dom.NodeFinder;
+import org.eclipse.jdt.internal.corext.dom.ASTNodes;
+import org.eclipse.jdt.internal.corext.refactoring.util.RefactoringASTParser;
 import org.eclipse.jdt.internal.junit.util.LayoutUtil;
+import org.eclipse.jdt.internal.ui.javaeditor.ASTProvider;
+import org.eclipse.jdt.ui.JavaElementLabels;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.viewers.ColumnLabelProvider;
 import org.eclipse.jface.viewers.ColumnViewerEditor;
@@ -89,6 +102,12 @@ public class NewArquillianJUnitTestCaseDeploymentPage extends WizardPage {
 	private TableViewerColumn webinfColumn;
 	private List<IType> types;
 	private List<ProjectResource> resources;
+	private Combo insertionPointCombo;
+	private IJavaElement[] elements;
+	private List<IJavaElement> insertPositions;
+	private IType type;
+	private ITypeBinding typeBinding;
+	private CompilationUnit compilationUnit;
 	
 	public NewArquillianJUnitTestCaseDeploymentPage() {
 		this(null);
@@ -204,6 +223,7 @@ public class NewArquillianJUnitTestCaseDeploymentPage extends WizardPage {
 			}
 		});
 		
+		
 		archiveTypeCombo.addSelectionListener(new SelectionAdapter() {
 
 			@Override
@@ -215,8 +235,86 @@ public class NewArquillianJUnitTestCaseDeploymentPage extends WizardPage {
 
 		createTypesControls(composite);
 		createResourcesControls(composite);
+		if (javaElement instanceof ICompilationUnit && getType((ICompilationUnit)javaElement) != null) {
+			// archive type
+			Label  insertionPointLabel = new Label(composite, SWT.NONE);
+			insertionPointLabel.setText("Insertion point:");
+			
+			insertionPointCombo = new Combo(composite, SWT.READ_ONLY);
+			insertionPointCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+			type = getType((ICompilationUnit) javaElement);
+			try {
+				elements = type.getChildren();
+			} catch (JavaModelException e1) {
+				elements = new IJavaElement[0];
+			}
+			List<String> items = new ArrayList<String>();
+			items.add("First member");
+			items.add("Last member");
+			insertPositions= new ArrayList<IJavaElement>();
+			
+			insertPositions.add(elements.length > 0 ? elements[0]: null); // first
+			insertPositions.add(null); // last
+			
+			for (int i = 0; i < elements.length; i++) {
+				IJavaElement curr = elements[i];
+				String methodLabel= JavaElementLabels.getElementLabel(curr, JavaElementLabels.M_PARAMETER_TYPES);
+				items.add("After '" + methodLabel + "'");
+				try {
+					insertPositions.add(findSibling(curr, elements));
+				} catch (JavaModelException e1) {
+					ArquillianUIActivator.log(e1);
+					insertPositions.add(null);
+				}
+			}
+			insertPositions.add(null);
+			
+			insertionPointCombo.setItems(items.toArray(new String[0]));
+			insertionPointCombo.select(0);
+			if (javaElement != null) {
+				String text = methodNameText.getText();
+				IJavaProject javaProject = getJavaProject();
+				IJavaElement context = null;
+				if (javaProject != null) {
+					context = javaProject;
+				}
+				IStatus status = validateMethodName(text, context);
+				if (!status.isOK()) {
+					setErrorMessage(status.getMessage());
+				}
+			}
+		}
 	}
 	
+	public IJavaElement getElementPosition() {
+		return insertPositions.get(insertionPointCombo.getSelectionIndex());
+	}
+	
+	private IJavaElement findSibling(IJavaElement curr, IJavaElement[] elements) throws JavaModelException {
+		IJavaElement res= null;
+		int methodStart= ((IMember) curr).getSourceRange().getOffset();
+		for (int i= elements.length-1; i >= 0; i--) {
+			IMember member= (IMember) elements[i];
+			if (methodStart >= member.getSourceRange().getOffset()) {
+				return res;
+			}
+			res= member;
+		}
+		return null;
+	}
+	private IType getType(ICompilationUnit icu) {
+		IType[] types = null;
+		try {
+			types = icu.getTypes();
+		} catch (JavaModelException e) {
+			ArquillianUIActivator.log(e);
+		}
+		if (types != null && types.length > 0) {
+			return types[0];
+		}
+		return null;
+	}
+
 	private void createResourcesControls(Composite composite) {
 		
 		Group group = new Group(composite, SWT.NONE);
@@ -450,11 +548,39 @@ public class NewArquillianJUnitTestCaseDeploymentPage extends WizardPage {
 		return null;
 	}
 
-	private static IStatus validateMethodName(String name, IJavaElement context) {
+	private IStatus validateMethodName(String name, IJavaElement context) {
 		String[] sourceComplianceLevels= getSourceComplianceLevels(context);
-		return JavaConventions.validateMethodName(name, sourceComplianceLevels[0], sourceComplianceLevels[1]);
+		IStatus status = JavaConventions.validateMethodName(name, sourceComplianceLevels[0], sourceComplianceLevels[1]);
+		if (status.isOK() && javaElement != null) {
+			try {
+				getTypeBinding();
+				if (typeBinding != null) {
+					IMethodBinding[] declaredMethods = typeBinding.getDeclaredMethods();
+					for (int i = 0; i < declaredMethods.length; i++) {
+						if (declaredMethods[i].getName().equals(name) && declaredMethods[i].getParameterTypes().length == 0) {
+							status = new Status(IStatus.ERROR, ArquillianUIActivator.PLUGIN_ID, "The '" + name + "' method already exists.");
+						}
+					}
+				}
+			} catch (JavaModelException e) {
+				ArquillianUIActivator.log(e);
+			}
+		}
+		return status;
 	}
 	
+	private ITypeBinding getTypeBinding() throws JavaModelException {
+		if (typeBinding == null && type != null) {
+			RefactoringASTParser parser= new RefactoringASTParser(ASTProvider.SHARED_AST_LEVEL);
+			compilationUnit = parser.parse(type.getCompilationUnit(), true);
+			final AbstractTypeDeclaration declaration= (AbstractTypeDeclaration) ASTNodes.getParent(NodeFinder.perform(compilationUnit, type.getNameRange()),
+					AbstractTypeDeclaration.class);
+			if (declaration != null) {
+				typeBinding= declaration.resolveBinding();
+			}
+		}
+		return typeBinding;
+	}
 	private static String[] getSourceComplianceLevels(IJavaElement context) {
 		if (context != null) {
 			IJavaProject javaProject= context.getJavaProject();
@@ -587,6 +713,31 @@ public class NewArquillianJUnitTestCaseDeploymentPage extends WizardPage {
 			return null;
 		}
 
+	}
+
+	public IType getType() {
+		return type;
+	}
+
+	public String getDelimiter() {
+		if (type != null) {
+			try {
+				return type.getPackageFragment().findRecommendedLineSeparator();
+			} catch (JavaModelException e) {
+				ArquillianUIActivator.log(e);
+			}
+		}
+		return null;
+	}
+
+	public boolean isAddComments() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	public boolean isForce() {
+		// TODO Auto-generated method stub
+		return false;
 	}
 
 }

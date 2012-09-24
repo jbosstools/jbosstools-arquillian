@@ -2,6 +2,16 @@
 <?eclipse version="3.4"?>
 <plugin>
 
+   <extension point="org.eclipse.core.expressions.propertyTesters">
+      <propertyTester
+            class="org.jboss.tools.arquillian.ui.internal.commands.ArquillianPropertyTester"
+            id="org.jboss.tools.arquillian.ui.internal.commands.arquillianPropertyTester"
+            namespace="org.jboss.tools.arquillian.ui"
+            properties="isArquillianJUnitTest"
+            type="java.lang.Object">
+      </propertyTester>
+   </extension>
+
    <extension
 		point="org.eclipse.ui.commands">
 		
@@ -15,7 +25,12 @@
 			name="%removeArquillianSupport"
 			categoryId="org.jboss.tools.arquillian.category"
 			defaultHandler="org.jboss.tools.arquillian.ui.internal.commands.RemoveArquillianCommandHandler"/>
-		
+		<command
+			id="org.jboss.tools.arquillian.ui.action.generateArquillianDeployment"
+			name="%generateArquillianDeployment"
+			categoryId="org.jboss.tools.arquillian.category"
+			defaultHandler="org.jboss.tools.arquillian.ui.internal.commands.GenerateArquillianDeploymentHandler"/>
+			
 		<category
 			id="org.jboss.tools.arquillian.category"
 			name="%arquillianCommandCategory">
@@ -36,7 +51,53 @@
    
    <extension
          point="org.eclipse.ui.menus">
-         <menuContribution locationURI="popup:org.eclipse.ui.projectConfigure?after=additions">
+      <menuContribution locationURI="popup:org.eclipse.jdt.ui.source.menu?after=generateGroup">
+         <command
+               commandId="org.jboss.tools.arquillian.ui.action.generateArquillianDeployment"
+               style="push">
+           <visibleWhen>
+					<with
+						variable="selection">
+						<iterate ifEmpty="false">
+						  <or>
+							<adapt type="org.eclipse.jdt.core.IJavaElement">
+								<test property="org.jboss.tools.arquillian.ui.isArquillianJUnitTest" value="true" forcePluginActivation="true"/>
+							</adapt>
+							<adapt type="org.eclipse.jface.text.ITextSelection">
+								<test property="org.jboss.tools.arquillian.ui.isArquillianJUnitTest" value="true" forcePluginActivation="true"/>
+							</adapt>
+						  </or>
+						</iterate>
+					</with>
+			</visibleWhen>
+         </command>
+      </menuContribution>
+      
+      <menuContribution locationURI="menu:org.eclipse.jdt.ui.source.menu?after=generateGroup">
+         <command
+               commandId="org.jboss.tools.arquillian.ui.action.generateArquillianDeployment"
+               style="push">
+           <visibleWhen>
+					<with
+						variable="selection">
+						<iterate ifEmpty="false">
+						  <or>
+							<adapt type="org.eclipse.jdt.core.IJavaElement">
+								<test property="org.jboss.tools.arquillian.ui.isArquillianJUnitTest" value="true" forcePluginActivation="true"/>
+							</adapt>
+							<adapt type="org.eclipse.jface.text.ITextSelection">
+								<test property="org.jboss.tools.arquillian.ui.isArquillianJUnitTest" value="true" forcePluginActivation="true"/>
+							</adapt>
+							<adapt type="org.eclipse.jdt.core.IType">
+								<test property="org.jboss.tools.arquillian.ui.isArquillianJUnitTest" value="true" forcePluginActivation="true"/>
+							</adapt>
+						  </or>
+						</iterate>
+					</with>
+			</visibleWhen>
+         </command>
+      </menuContribution>
+      <menuContribution locationURI="popup:org.eclipse.ui.projectConfigure?after=additions">
          <command
                commandId="org.jboss.tools.arquillian.ui.action.addArquillianSupport"
                style="push">
@@ -59,24 +120,6 @@
 											property="org.eclipse.core.resources.projectNature" 
 											value="org.jboss.tools.arquillian.core.arquillianNature"/>
 									</not>
-								</and>
-							</adapt>
-						</iterate>
-					</and>
-				</visibleWhen>
-         </command>
-         <command
-               commandId="org.jboss.tools.arquillian.ui.action.removeArquillianSupport"
-               style="push">
-            <visibleWhen checkEnabled="false">
-					<and>
-						<count value="1"/>
-						<iterate ifEmpty="false" operator="and">
-							<adapt type="org.eclipse.core.resources.IProject">
-								<and>
-									<test
-										property="org.eclipse.core.resources.projectNature"
-										value="org.jboss.tools.arquillian.core.arquillianNature"/>
 								</and>
 							</adapt>
 						</iterate>
