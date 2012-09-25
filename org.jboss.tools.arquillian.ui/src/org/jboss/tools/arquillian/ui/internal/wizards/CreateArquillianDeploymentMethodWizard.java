@@ -18,6 +18,7 @@ import org.eclipse.jface.wizard.Wizard;
 import org.eclipse.ui.INewWizard;
 import org.eclipse.ui.IWorkbench;
 import org.jboss.tools.arquillian.ui.ArquillianUIActivator;
+import org.jboss.tools.arquillian.ui.internal.utils.ArquillianUIUtil;
 
 /**
  * 
@@ -48,7 +49,7 @@ public class CreateArquillianDeploymentMethodWizard extends Wizard implements
 		if (deploymentPage.getType() != null) {
 			ICompilationUnit icu = (ICompilationUnit) javaElement;
 			try {
-				ArquillianUIActivator.createDeploymentMethod(icu, deploymentPage.getType(), null, 
+				ArquillianUIUtil.createDeploymentMethod(icu, deploymentPage.getType(), null, 
 					deploymentPage.isAddComments(), deploymentPage.getDelimiter(),
 					deploymentPage, 
 					deploymentPage.getElementPosition(), deploymentPage.isForce());

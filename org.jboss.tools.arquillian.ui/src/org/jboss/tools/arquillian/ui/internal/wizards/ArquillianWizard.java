@@ -41,6 +41,7 @@ import org.eclipse.ui.ide.IDE;
 import org.eclipse.ui.wizards.newresource.BasicNewResourceWizard;
 
 import org.jboss.tools.arquillian.ui.ArquillianUIActivator;
+import org.jboss.tools.arquillian.ui.internal.utils.ArquillianUIUtil;
 
 /**
  * The wizard base class for Arquillian wizards.
@@ -123,7 +124,7 @@ public abstract class ArquillianWizard extends Wizard implements INewWizard {
 
 	protected void openResource(final IResource resource) {
 		if (resource.getType() == IResource.FILE) {
-			final IWorkbenchPage activePage= ArquillianUIActivator.getActivePage();
+			final IWorkbenchPage activePage= ArquillianUIUtil.getActivePage();
 			if (activePage != null) {
 				final Display display= Display.getDefault();
 				if (display != null) {

@@ -16,6 +16,7 @@ import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jface.text.ITextSelection;
 import org.jboss.tools.arquillian.ui.ArquillianUIActivator;
+import org.jboss.tools.arquillian.ui.internal.utils.ArquillianUIUtil;
 
 /**
  * 
@@ -28,14 +29,14 @@ public class ArquillianPropertyTester extends PropertyTester {
 	public boolean test(Object receiver, String property, Object[] args,
 			Object expectedValue) {
 		if (receiver instanceof IType) {
-			return ArquillianUIActivator.isArquillianJUnitTestCase((IType) receiver);
+			return ArquillianUIUtil.isArquillianJUnitTestCase((IType) receiver);
 		}
 		if (receiver instanceof ICompilationUnit) {
 			ICompilationUnit icu = (ICompilationUnit) receiver;
 			try {
 				IType[] types = icu.getAllTypes();
 				if (types.length > 0) {
-					return ArquillianUIActivator.isArquillianJUnitTestCase(types[0]);
+					return ArquillianUIUtil.isArquillianJUnitTestCase(types[0]);
 				}
 			} catch (JavaModelException e) {
 				ArquillianUIActivator.log(e);
@@ -43,7 +44,7 @@ public class ArquillianPropertyTester extends PropertyTester {
 		}
 		if (receiver instanceof ITextSelection) {
 			//ITextSelection textSelection = (ITextSelection) receiver;
-			return ArquillianUIActivator.isArquillianJUnitTestCase(ArquillianUIActivator.getActiveType());
+			return ArquillianUIUtil.isArquillianJUnitTestCase(ArquillianUIUtil.getActiveType());
 		}
 		return false;
 	}

@@ -23,7 +23,7 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.handlers.HandlerUtil;
-import org.jboss.tools.arquillian.ui.ArquillianUIActivator;
+import org.jboss.tools.arquillian.ui.internal.utils.ArquillianUIUtil;
 import org.jboss.tools.arquillian.ui.internal.wizards.CreateArquillianDeploymentMethodWizard;
 
 /**
@@ -46,7 +46,7 @@ public class GenerateArquillianDeploymentHandler extends AbstractHandler {
 			}
 		}
 		if (selection instanceof ITextSelection) {
-			ICompilationUnit cu = ArquillianUIActivator.getActiveCompilationUnit();
+			ICompilationUnit cu = ArquillianUIUtil.getActiveCompilationUnit();
 			if (cu != null) {
 				createWizard(cu);
 			}
