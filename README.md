@@ -7,10 +7,10 @@ The following are implemented features:
 The project has to be a maven project.
 The Add Arquillian Support action adds the Arquillian nature to the project as well as the arquillian artifacts (bom, dependencies, required plugins, profiles ...) to the project's pom.xml.  
 The Remove Arquillian Support removes the Arquillian nature, but doesn't change the project's pom.xml.
+Related jira: https://issues.jboss.org/browse/JBIDE-6319
 
 TODO:
 - contribute an Arquillian preferences page to enable the user to choose which Arquillian version and artifacts to add
-- enable Arquillian TestNG tests (currently, Arquillian is configured for running JUnit tests)
 
 2) New Arquillian JUnit Test Case wizard
 
@@ -20,6 +20,13 @@ The wizard is currently based on the JUnit Test Case wizard, but adds the follow
 - the deployment method
 
 The user can define the name of the deployment method, the name and order of the deployment, the type and name of the archive, add an empty beans.xml, available classes and resources to the deployment archive. 
+Related jira: https://issues.jboss.org/browse/JBIDE-6318
+
+3) Adding the Generate Arquillian Deployment Method action to the context menu of the Java editor and Eclipse views 
+Related jira: https://issues.jboss.org/browse/JBIDE-8553
+
+4) Ability to click through to resources specified as part of Shrinkwrap definition 
+Related jira: https://issues.jboss.org/browse/JBIDE-6338
 
 The following features aren't implemented yet:
 
@@ -28,7 +35,6 @@ This will allow the user to choose an Arquillian profile and properties when lau
 - validation
 It will be possible to validate if the classes/resources that are used within the test are included in the deployment as well as if the classes/resources included in the deployment exist.
 - the new Arquillian TestNG Test Case wizard
-- add the Deployment method using the Java Editor context menu
 - the Arquillian Deployment View
 a separate view that would show Arquillian deployment archive.
 - the Arquillian WTP facet
