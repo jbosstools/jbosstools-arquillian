@@ -28,10 +28,15 @@ Related jira: https://issues.jboss.org/browse/JBIDE-8553
 4) Ability to click through to resources specified as part of Shrinkwrap definition 
 Related jira: https://issues.jboss.org/browse/JBIDE-6338
 
+5) The Run As Arquillian launch configuration includes the following features:
+
+- is actived only if there is the org.jboss.arquillian.junit.Arquillian class
+- runs only Arquillian JUnit tests
+- checks if there is exactly one implementation of the org.jboss.arquillian.container.spi.client.container.DeployableContainer interface
+- includes the Arquillian tab that enables the user to check/change the Arquillian configuration properties, select maven profiles, review/start/stop WTP servers. The Arquillian configuration properties are added using declarations from the arquillian.xml, arquillian.properties and the default values when instantiating the corresponding container configuration.
+
 The following features aren't implemented yet:
 
-- Arquillian launch configuration (as a new tab within the JUnit/TestNG launch configuration, probably)
-This will allow the user to choose an Arquillian profile and properties when launching some arquillian test.
 - validation
 It will be possible to validate if the classes/resources that are used within the test are included in the deployment as well as if the classes/resources included in the deployment exist.
 - the new Arquillian TestNG Test Case wizard

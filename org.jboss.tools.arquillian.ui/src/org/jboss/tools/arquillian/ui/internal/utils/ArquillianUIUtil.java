@@ -10,18 +10,49 @@
  ************************************************************************************/
 package org.jboss.tools.arquillian.ui.internal.utils;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.List;
+import java.util.Properties;
+import java.util.Set;
+import java.util.TreeSet;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+
+import org.apache.maven.model.Build;
+import org.apache.maven.model.Resource;
+import org.apache.maven.project.MavenProject;
+import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.IFolder;
+import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
-import org.eclipse.jdt.core.IAnnotation;
+import org.eclipse.core.runtime.IPath;
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.NullProgressMonitor;
+import org.eclipse.core.runtime.Path;
+import org.eclipse.core.runtime.Status;
+import org.eclipse.core.variables.VariablesPlugin;
+import org.eclipse.debug.core.ILaunchConfiguration;
 import org.eclipse.jdt.core.IBuffer;
+import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
-import org.eclipse.jdt.core.IMemberValuePair;
+import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IMethod;
+import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.ISourceRange;
 import org.eclipse.jdt.core.IType;
+import org.eclipse.jdt.core.ITypeHierarchy;
+import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.Signature;
 import org.eclipse.jdt.core.dom.rewrite.ImportRewrite;
@@ -34,16 +65,29 @@ import org.eclipse.jdt.internal.junit.util.JUnitStubUtility;
 import org.eclipse.jdt.internal.junit.util.JUnitStubUtility.GenStubSettings;
 import org.eclipse.jdt.internal.ui.actions.SelectionConverter;
 import org.eclipse.jdt.internal.ui.javaeditor.CompilationUnitEditor;
+import org.eclipse.jdt.launching.IJavaLaunchConfigurationConstants;
 import org.eclipse.jdt.ui.CodeGeneration;
 import org.eclipse.jdt.ui.wizards.NewTypeWizardPage.ImportsManager;
+import org.eclipse.m2e.core.MavenPlugin;
+import org.eclipse.m2e.core.internal.IMavenConstants;
 import org.eclipse.text.edits.TextEdit;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.IWorkbenchWindow;
+import org.jboss.tools.arquillian.core.ArquillianCoreActivator;
+import org.jboss.tools.arquillian.core.internal.util.ArquillianSearchEngine;
+import org.jboss.tools.arquillian.core.internal.util.ArquillianUtils;
 import org.jboss.tools.arquillian.ui.ArquillianUIActivator;
+import org.jboss.tools.arquillian.ui.internal.launcher.ArquillianProperty;
 import org.jboss.tools.arquillian.ui.internal.wizards.NewArquillianJUnitTestCaseDeploymentPage;
 import org.jboss.tools.arquillian.ui.internal.wizards.ProjectResource;
+import org.w3c.dom.DOMException;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
 /**
  * 
@@ -52,10 +96,19 @@ import org.jboss.tools.arquillian.ui.internal.wizards.ProjectResource;
  */
 public class ArquillianUIUtil {
 
+	private static final String CONFIGURATION = "configuration";
+	private static final String ARQ_PREFIX = "arq";
+	private static final String CONTAINER = "container";
+	private static final String PERIOD = ".";
+	private static final String NAME = "name";
+	private static final String PROPERTY = "property";
+	private static final String QUALIFIER = "qualifier";
+	private static final String ARQUILLIAN_XML = "arquillian.xml";
+	private static final String ARQUILLIAN_PROPERTIES = "arquillian.properties";
+	private static final String ARQUILLIAN_LAUNCH = "arquillian.launch";
 	private static final String CREATE_DEPLOYMENT = "createDeployment";
 	private static final String ORG_JBOSS_SHRINKWRAP_API_ARCHIVE = "org.jboss.shrinkwrap.api.Archive";
 	private static final String ORG_JBOSS_SHRINKWRAP_API_SHRINK_WRAP = "org.jboss.shrinkwrap.api.ShrinkWrap";
-	public static final String ORG_JBOSS_ARQUILLIAN_CONTAINER_TEST_API_DEPLOYMENT = "org.jboss.arquillian.container.test.api.Deployment";
 	public static final String ADD_AS_MANIFEST_RESOURCE_METHOD = "addAsManifestResource";
 	public static final String ADD_AS_WEB_INF_RESOURCE_METHOD = "addAsWebInfResource";
 	public static final String ADD_AS_RESOURCE_METHOD = "addAsResource";
@@ -92,29 +145,29 @@ public class ArquillianUIUtil {
 		return null;
 	}
 
-	public static boolean isArquillianJUnitTestCase(IType type) {
-		if (type == null) {
-			return false;
-		}
-		IAnnotation annotation = type.getAnnotation("RunWith");
-		if (annotation != null && annotation.exists()) {
-			IMemberValuePair[] pairs = null;
-			try {
-				pairs = annotation.getMemberValuePairs();
-			} catch (JavaModelException e) {
-				ArquillianUIActivator.log(e);
-			}
-			if (pairs != null) {
-				for (IMemberValuePair pair : pairs) {
-					if ("value".equals(pair.getMemberName())
-							&& "Arquillian".equals(pair.getValue())) {
-						return true;
-					}
-				}
-			}
-		}
-		return false;
-	}
+//	public static boolean isArquillianJUnitTestCase(IType type) {
+//		if (type == null) {
+//			return false;
+//		}
+//		IAnnotation annotation = type.getAnnotation("RunWith");
+//		if (annotation != null && annotation.exists()) {
+//			IMemberValuePair[] pairs = null;
+//			try {
+//				pairs = annotation.getMemberValuePairs();
+//			} catch (JavaModelException e) {
+//				ArquillianUIActivator.log(e);
+//			}
+//			if (pairs != null) {
+//				for (IMemberValuePair pair : pairs) {
+//					if ("value".equals(pair.getMemberName())
+//							&& "Arquillian".equals(pair.getValue())) {
+//						return true;
+//					}
+//				}
+//			}
+//		}
+//		return false;
+//	}
 
 	public static void createDeploymentMethod(ICompilationUnit icu, IType type,
 			ImportsManager imports, boolean isAddComments, String delimiter,
@@ -126,7 +179,7 @@ public class ArquillianUIUtil {
 			importsRewrite = StubUtility.createImportRewrite(icu, true);
 		}
 		String annotation = '@' + addImport(imports, importsRewrite,
-				ORG_JBOSS_ARQUILLIAN_CONTAINER_TEST_API_DEPLOYMENT);
+				ArquillianUtils.ORG_JBOSS_ARQUILLIAN_CONTAINER_TEST_API_DEPLOYMENT);
 		String methodName = CREATE_DEPLOYMENT;
 		addImport(imports, importsRewrite,
 				ORG_JBOSS_SHRINKWRAP_API_SHRINK_WRAP);
@@ -218,8 +271,8 @@ public class ArquillianUIUtil {
 			buffer.append("EnterpriseArchive archive = ShrinkWrap.create(EnterpriseArchive.class");
 		}
 		if (archiveName != null && !archiveName.isEmpty()) {
-			if (archiveName.indexOf(".") == -1) {
-				archiveName = archiveName + "." + archiveType;
+			if (archiveName.indexOf(PERIOD) == -1) {
+				archiveName = archiveName + PERIOD + archiveType;
 			}
 			buffer.append(", ");
 			buffer.append("\"");
@@ -239,7 +292,7 @@ public class ArquillianUIUtil {
 					first = false;
 				}
 				String typeName = t.getFullyQualifiedName();
-				int lastPeriod = typeName.lastIndexOf(".");
+				int lastPeriod = typeName.lastIndexOf(PERIOD);
 				String className = typeName;
 				if (lastPeriod >= 0 && lastPeriod < typeName.length()) {
 					className = typeName.substring(lastPeriod + 1,
@@ -334,5 +387,456 @@ public class ArquillianUIUtil {
 		}
 		return null;
 	}
+	
+	public static Set<ArquillianProperty> getArquillianProperties(ILaunchConfiguration configuration) {
+		Set<ArquillianProperty> properties = new TreeSet<ArquillianProperty>();
+		try {
+			IJavaProject javaProject = getJavaProject(configuration);
+			if (javaProject == null) {
+				return properties;
+			}
+			String arguments = configuration.getAttribute(IJavaLaunchConfigurationConstants.ATTR_VM_ARGUMENTS, ""); //$NON-NLS-1$
+			String args = VariablesPlugin.getDefault().getStringVariableManager().performStringSubstitution(arguments);
+			Properties vmProperties = getVMProperties(args);
+			String configurationName = vmProperties.getProperty(ARQUILLIAN_LAUNCH);
+			
+			Properties arquillianXmlProperties = null;
+			try {
+				arquillianXmlProperties = getArquillianXmlProperties(javaProject, configurationName);
+			} catch (Exception e) {
+				ArquillianUIActivator.log(e);
+			}
+			String qualifier = arquillianXmlProperties.getProperty(QUALIFIER, "Unknown");
+			arquillianXmlProperties.remove(QUALIFIER);
+			addContainerProperties(javaProject, properties, qualifier);
+			
+			Enumeration<Object> keys = arquillianXmlProperties.keys();
+			while (keys.hasMoreElements()) {
+				String key = (String) keys.nextElement();
+				String value = arquillianXmlProperties.getProperty(key);
+				ArquillianProperty property = new ArquillianProperty(key, value, "arquillian.xml", false);
+				properties.remove(property);;
+				properties.add(property);
+			}
+			String fileName = vmProperties.getProperty(ARQUILLIAN_PROPERTIES, ARQUILLIAN_PROPERTIES);
+			Properties arquillianProperties = getArquillianProperties(javaProject, fileName);
+			keys = arquillianProperties.keys();
+			while (keys.hasMoreElements()) {
+				String key = (String) keys.nextElement();
+				String value = arquillianProperties.getProperty(key);
+				ArquillianProperty property = new ArquillianProperty(key, value, "arquillian.properties", false);
+				properties.remove(property);;
+				properties.add(property);
+			}
+		} catch (CoreException e) {
+			ArquillianUIActivator.log(e);
+		}
+		return properties;
+	}
 
+	private static void addContainerProperties(IJavaProject javaProject,
+			Set<ArquillianProperty> properties, String qualifier) {
+		IStatus status = ArquillianSearchEngine.validateDeployableContainer(javaProject);
+		if (!status.isOK()) {
+			ArquillianUIActivator.getDefault().getLog().log(status);
+			return;
+		}
+		try {
+			IType type = javaProject.findType(ArquillianSearchEngine.CONTAINER_DEPLOYABLE_CONTAINER);
+			if (type == null) {
+				status = new Status(IStatus.ERROR, ArquillianUIActivator.PLUGIN_ID, "Cannot find 'org.jboss.arquillian.container.spi.client.container.DeployableContainer' on project build path. Arquillian tests can only be run if DeployableContainer is on the build path.");
+				ArquillianUIActivator.getDefault().getLog().log(status);
+			}
+			ITypeHierarchy hierarchy = type.newTypeHierarchy(new NullProgressMonitor());
+            IType[] subTypes = hierarchy.getAllSubtypes(type);
+            for (IType subType:subTypes) {
+            	if (ArquillianSearchEngine.isNonAbstractClass(subType)) {
+            		Object containerObject = null;
+            		try {
+						containerObject = ArquillianUtils.newInstance(javaProject, subType.getFullyQualifiedName());
+					} catch (Exception e) {
+						ArquillianUIActivator.log(e);
+						return;
+					}
+            		
+            		ClassLoader currentLoader = Thread.currentThread().getContextClassLoader();
+            		
+            		ClassLoader loader = ArquillianCoreActivator.getDefault().getClassLoader(javaProject);
+            		
+            		Thread.currentThread().setContextClassLoader(loader);
+            		try {
+						Class<?> clazz = containerObject.getClass();
+						Method configurationMethod = clazz.getDeclaredMethod("getConfigurationClass", //$NON-NLS-1$
+						        new Class[0]);
+						Class<?> configuration =  (Class<?>) configurationMethod.invoke(containerObject, new Object[0]);
+						
+						Object configurationObject = ArquillianUtils.newInstance(javaProject, configuration.getName());
+						Method[] methods = configuration.getMethods();
+						for (Method method : methods) {
+							String methodName = method.getName();
+							if (methodName.matches("^set[A-Z].*")
+									&& method.getReturnType().equals(Void.TYPE)
+									&& method.getParameterTypes().length == 1) {
+								method.setAccessible(true);
+								String name = methodName.substring(3, 4)
+										.toLowerCase() + methodName.substring(4);
+								String getterName = "get" + methodName.substring(3);
+								String value = null;
+								try {
+									Method getter =  configuration.getMethod(getterName, new Class[0]);
+									Object valueObject = getter.invoke(configurationObject, new Object[0]);
+									if (valueObject != null) {
+										value = valueObject.toString();
+									}
+								} catch (Exception e) {
+									//ArquillianUIActivator.log(e);
+									// FIXME
+								}
+								if (value == null) {
+									value = ""; 
+								}
+								String propertyName = getContainerConfigurationPropertyName(
+										qualifier, name);
+								ArquillianProperty property = new ArquillianProperty(
+										propertyName, value, CONTAINER, true);
+								
+								properties.add(property);
+							}
+						}
+					} catch (Exception e) {
+						ArquillianUIActivator.log(e);
+					} finally {
+						Thread.currentThread().setContextClassLoader(currentLoader);
+					}
+            		break;
+            	}
+            }
+            
+		} catch (JavaModelException e) {
+			ArquillianUIActivator.log(e);
+		}
+		
+	}
+
+	private static Properties getArquillianProperties(IJavaProject javaProject, String fileName) throws JavaModelException {
+		IFile file = getFile(javaProject, fileName);
+		Properties properties = new Properties();
+		if  (file != null && file.exists()) {
+			InputStream input = null;
+			
+			try {
+				input = file.getContents();
+				properties.load(input);
+			} catch (CoreException e) {
+				ArquillianUIActivator.log(e);
+			} catch (IOException e) {
+				ArquillianUIActivator.log(e);
+			} finally {
+				close(input);
+			}
+		}
+		return properties;
+	}
+
+	private static Properties getArquillianXmlProperties(
+			IJavaProject javaProject, String configurationName) throws CoreException, ParserConfigurationException, SAXException, IOException {
+		Properties properties = new Properties();
+		IFile file = getFile(javaProject, ARQUILLIAN_XML);
+		if (file != null && file.exists()) {
+			InputStream input = null;
+			try {
+				input = file.getContents(true);
+				DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+				DocumentBuilder db = dbf.newDocumentBuilder();
+				Document doc = db.parse(input);
+				Element root = doc.getDocumentElement();
+				Element container = getDefaultContainer(configurationName, root);
+				if (container != null) {
+					String qualifier = container.getAttribute(QUALIFIER);
+					properties.put(QUALIFIER, qualifier);
+					Element configuration = getConfiguration(container);
+					if (configuration != null) {
+						NodeList configurationList = configuration.getChildNodes();
+						for (int i = 0; i < configurationList.getLength(); i++) {
+							Node node = configurationList.item(i);
+							if ( (node instanceof Element) && PROPERTY.equals(node.getNodeName())) {
+								Element property = (Element) node;
+								String name = property.getAttribute(NAME);
+								String propertyName = getContainerConfigurationPropertyName(
+										qualifier, name);
+								String value = property.getTextContent();
+								if (value != null) {
+									value = value.trim();
+									properties.put(propertyName, value);
+								}
+							}
+						}
+					}
+				}
+			} catch (DOMException e) {
+				ArquillianUIActivator.log(e);
+			} finally {
+				close(input);
+			}
+			
+		}
+		return properties;
+	}
+
+	private static String getContainerConfigurationPropertyName(
+			String qualifier, String name) {
+		StringBuffer buf = new StringBuffer();
+		buf.append(ARQ_PREFIX);
+		buf.append(PERIOD);
+		buf.append(CONTAINER);
+		buf.append(PERIOD);
+		buf.append(qualifier);
+		buf.append(PERIOD);
+		buf.append( CONFIGURATION);
+		buf.append(PERIOD);
+		buf.append(name);
+		return buf.toString();
+	}
+
+	private static IFile getFile(IJavaProject javaProject, String fileName) throws JavaModelException {
+		IClasspathEntry[] rawClasspath = javaProject.getRawClasspath();
+		for (IClasspathEntry entry : rawClasspath) {
+			if (entry.getEntryKind() == IClasspathEntry.CPE_SOURCE) {
+				IPackageFragmentRoot[] roots = javaProject
+						.findPackageFragmentRoots(entry);
+				if (roots == null) {
+					continue;
+				}
+				for (IPackageFragmentRoot root : roots) {
+					Object[] resources = root.getNonJavaResources();
+					int segments = root.getPath().segmentCount();
+					for (Object resource:resources) {
+						if (resource instanceof IFile) {
+							IFile file = (IFile) resource;
+							IPath filePath = file.getProjectRelativePath();
+							IPath relativePath = filePath.removeFirstSegments(segments-1);
+							if (fileName.equals(relativePath.toString())) {
+								return file;
+							}
+						}
+					}
+					
+				}
+			}
+		}
+		return null;
+	}
+
+	private static void close(InputStream input) {
+		if (input != null) {
+			try {
+				input.close();
+			} catch (Exception e) {
+				// ignore
+			}
+		}
+	}
+	
+	private static void close(OutputStream output) {
+		if (output != null) {
+			try {
+				output.close();
+			} catch (Exception e) {
+				// ignore
+			}
+		}
+	}
+
+	private static Element getConfiguration(Element container) {
+		Element configuration = null;
+		NodeList containerList = container.getChildNodes();
+		for (int i = 0; i < containerList.getLength(); i++) {
+			Node node = containerList.item(i);
+			if (node.getNodeType() == Node.ELEMENT_NODE) {
+				Element element = (Element) node;
+				if (CONFIGURATION.equals(element.getNodeName()) ) {
+					configuration = element;
+					break;
+				}
+			}
+		}
+		return configuration;
+	}
+
+	private static Element getDefaultContainer(String configurationName,
+			Element root) {
+		NodeList containers = root.getElementsByTagName(CONTAINER);
+		for (int i = 0; i < containers.getLength(); i++) {
+			Node containerNode = containers.item(i);
+			if (containerNode instanceof Element) {
+				Element container = (Element) containerNode;
+				if (configurationName != null && !configurationName.isEmpty()) {
+					String qualifier = container.getAttribute(QUALIFIER);
+					if (configurationName.equals(qualifier)) {
+						return container;
+					}
+				} else {
+					String defaultString = container.getAttribute("default");
+					if ("true".equals(defaultString)) {
+						return container;
+					}
+				}
+			}
+		}
+		return null;
+	}
+
+	private static Properties getVMProperties(String vmArgs) {
+		Properties properties = new Properties();
+		if (vmArgs != null) {
+			String[] arguments = vmArgs.split(" ");
+			if (arguments != null) {
+				for (String arg:arguments) {
+					arg = arg.trim();
+					if (arg.startsWith("-Darq")) {
+						String[] props = arg.split("=");
+						if (props != null && props.length == 2) {
+							String name = props[0].substring(2);
+							String value = props[1];
+							properties.put(name, value);
+						}
+					}
+				}
+			}
+		}
+		return properties;
+	}
+
+	public static IJavaProject getJavaProject(ILaunchConfiguration configuration) throws CoreException {
+		if (configuration == null) {
+			return null;
+		}
+		String projectName = configuration.getAttribute(IJavaLaunchConfigurationConstants.ATTR_PROJECT_NAME, "");
+		if (projectName == null || projectName.isEmpty()) {
+			return null;
+		}
+		IProject project = ResourcesPlugin.getWorkspace().getRoot().getProject(projectName);
+		if (project == null || !project.isAccessible() || !project.hasNature(JavaCore.NATURE_ID)) {
+			return null;
+		}
+		return JavaCore.create(project);
+	}
+
+	public static void save(Set<ArquillianProperty> arquillianProperties, ILaunchConfiguration configuration) throws CoreException {
+		if (arquillianProperties == null || configuration == null) {
+			return;
+		}
+		IJavaProject javaProject = getJavaProject(configuration);
+		if (javaProject == null) {
+			return;
+		}
+		IFile file = getFile(javaProject, ARQUILLIAN_PROPERTIES);
+		if (file == null) {
+			file = getNewFile(javaProject, ARQUILLIAN_PROPERTIES);
+		}
+		if (!file.exists()) {
+			createEmptyFile(file);
+		}
+		InputStream input = null;
+		Properties properties = new Properties();
+		input = file.getContents();
+		try {
+			properties.load(input);
+		} catch (IOException e) {
+			throw new CoreException(new Status(Status.ERROR, ArquillianUIActivator.PLUGIN_ID, e.getMessage(), e));
+		} finally {
+			if (input != null) {
+				close(input);
+			}
+		}
+		boolean changed = false;
+		for (ArquillianProperty arquillianProperty:arquillianProperties) {
+			// FIXME
+			if (arquillianProperty.isChanged() && ARQUILLIAN_PROPERTIES.equals(arquillianProperty.getSource())) {
+				properties.put(arquillianProperty.getName(), arquillianProperty.getValue());
+				changed = true;
+			}
+		}
+		if (changed) {
+			ByteArrayOutputStream out = null;
+			ByteArrayInputStream in = null;
+			
+			try {
+				out = new ByteArrayOutputStream();
+				properties.store(out, "Created by JBoss Tools");
+				String outputString = out.toString();
+				in = new ByteArrayInputStream(out.toByteArray());
+				file.setContents(in, true, true, null);
+			} catch (IOException e) {
+				throw new CoreException(new Status(Status.ERROR, ArquillianUIActivator.PLUGIN_ID, e.getMessage(), e));
+			} finally {
+				close(in);
+				close(out);
+			}
+		}
+	}
+
+	private static IFile getNewFile(IJavaProject javaProject,
+			String arquillianProperties) throws CoreException {
+		IPath path = null;
+		IProject project = javaProject.getProject();
+		if (project.hasNature(IMavenConstants.NATURE_ID)) {
+			IFile pomFile = project.getFile(IMavenConstants.POM_FILE_NAME);
+			MavenProject mavenProject = MavenPlugin.getMaven().readProject(
+					pomFile.getLocation().toFile(), new NullProgressMonitor());
+			Build build = mavenProject.getBuild();
+			String testDirectory = null;
+			List<Resource> testResources = build.getTestResources();
+			if (testResources != null && testResources.size() > 0) {
+				testDirectory = testResources.get(0).getDirectory();
+			} else {
+				testDirectory = build.getTestSourceDirectory();
+			}
+			path = Path.fromOSString(testDirectory);
+			IPath workspacePath = ResourcesPlugin.getWorkspace().getRoot()
+					.getRawLocation();
+			path = path.makeRelativeTo(workspacePath).makeAbsolute();
+			IPath projectPath = javaProject.getPath();
+			path = path.makeRelativeTo(projectPath);
+			IFolder folder = javaProject.getProject().getFolder(path);
+			if (!folder.exists()) {
+				path = null;
+			}
+		}
+		if (path == null) {
+			IClasspathEntry[] rawClasspath = javaProject.getRawClasspath();
+			for (IClasspathEntry entry : rawClasspath) {
+				if (entry.getEntryKind() == IClasspathEntry.CPE_SOURCE) {
+					IPackageFragmentRoot[] roots = javaProject
+							.findPackageFragmentRoots(entry);
+					if (roots == null) {
+						continue;
+					}
+					for (IPackageFragmentRoot root : roots) {
+						path = root.getPath();
+						break;
+					}
+				}
+			}
+		}
+		if (path == null) {
+			throw new CoreException(new Status(IStatus.ERROR, ArquillianUIActivator.PLUGIN_ID, "Invalid project"));
+		}
+		IFolder folder = javaProject.getProject().getFolder(path);
+		return folder.getFile(arquillianProperties);
+	}
+
+	private static void createEmptyFile(IFile file) throws CoreException {
+		InputStream input = null;
+		try {
+			input = new ByteArrayInputStream("".getBytes());
+			file.create(input, true, null);
+		} catch (Exception e) {
+			throw new CoreException(new Status(Status.ERROR, ArquillianUIActivator.PLUGIN_ID, e.getMessage(), e));
+		} finally {
+			if (input != null) {
+				close(input);
+			}
+		}
+	}
 }

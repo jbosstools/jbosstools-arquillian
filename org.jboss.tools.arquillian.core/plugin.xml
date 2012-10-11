@@ -7,7 +7,7 @@
        point="org.eclipse.core.resources.natures">
     <runtime>
        <run
-          class="org.jboss.tools.arquillian.core.internals.natures.ArquillianNature">
+          class="org.jboss.tools.arquillian.core.internal.natures.ArquillianNature">
        </run>
     </runtime>
     <requires-nature
@@ -21,5 +21,41 @@
           id="org.jboss.tools.arquillian.core.arquillianBuilder">
     </builder>
     -->
- </extension>
+    </extension>
+    
+    <extension
+         point="org.eclipse.debug.core.launchConfigurationTypes">
+      <launchConfigurationType
+            name="%Launch.label"
+            delegateDescription="%ArquillianLaunchDelegate.description"
+            delegateName="%ArquillianLaunchDelegate.name"
+            delegate="org.jboss.tools.arquillian.core.internal.launcher.ArquillianLaunchConfigurationDelegate"
+            modes="run, debug"
+            id="org.jboss.tools.arquillian.core.launchconfig"
+            sourceLocatorId="org.eclipse.jdt.launching.sourceLocator.JavaSourceLookupDirector"
+            sourcePathComputerId="org.jboss.tools.arquillian.core.launchconfig.sourcePathComputer">
+      </launchConfigurationType>
+   </extension>
+
+   <extension
+         point="org.eclipse.jdt.junit.junitLaunchConfigs">
+      <launchConfigType
+            configTypeID="org.jboss.tools.arquillian.core.launchconfig">
+      </launchConfigType>
+   </extension>
+   
+   
+   <extension point="org.eclipse.jdt.launching.classpathProviders">
+      <classpathProvider 
+          id="org.jboss.tools.arquillian.core.launchconfig.classpathProvider"
+          class="org.jboss.tools.arquillian.core.internal.classpath.ArquillianRuntimeClasspathProvider"/>
+   </extension>
+
+   <extension point="org.eclipse.debug.core.sourcePathComputers">
+   		<sourcePathComputer
+   			id="org.jboss.tools.arquillian.core.launchconfig.sourcePathComputer"
+   			class="org.jboss.tools.arquillian.core.internal.classpath.ArquillianSourcePathComputer">
+   		</sourcePathComputer>
+    </extension>
+   
 </plugin>

@@ -7,7 +7,7 @@
             class="org.jboss.tools.arquillian.ui.internal.commands.ArquillianPropertyTester"
             id="org.jboss.tools.arquillian.ui.internal.commands.arquillianPropertyTester"
             namespace="org.jboss.tools.arquillian.ui"
-            properties="isArquillianJUnitTest"
+            properties="isArquillianJUnitTest, canLaunchAsArquillianTest"
             type="java.lang.Object">
       </propertyTester>
    </extension>
@@ -35,6 +35,62 @@
 			id="org.jboss.tools.arquillian.category"
 			name="%arquillianCommandCategory">
 		</category>
+		
+		<command
+            name="%Shortcut.description.run"
+            description="%Shortcut.description.run"
+            categoryId="org.eclipse.debug.ui.category.run"
+            id="org.jboss.tools.arquillian.arquillianShortcut.run">
+      </command>
+      <command
+            name="%Shortcut.description.debug"
+            description="%Shortcut.description.debug"
+            categoryId="org.eclipse.debug.ui.category.run"
+            id="org.jboss.tools.arquillian.arquillianShortcut.debug">
+      </command>
+      <command
+            name="%Shortcut.description.rerunLast"
+            description="%Shortcut.description.rerunLast"
+            categoryId="org.eclipse.debug.ui.category.run"
+            id="org.jboss.tools.arquillian.arquillianShortcut.rerunLast">
+      </command>
+      <command
+            name="%Shortcut.description.rerunFailedFirst"
+            description="%Shortcut.description.rerunFailedFirst"
+            categoryId="org.eclipse.debug.ui.category.run"
+            id="org.jboss.tools.arquillian.arquillianShortcut.rerunFailedFirst">
+      </command>
+   </extension>
+   
+   <extension
+         point="org.eclipse.ui.bindings">
+      <key
+            sequence="M2+M3+D L"
+            commandId="org.jboss.tools.arquillian.arquillianShortcut.debug"
+            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"/>
+      <!-- On carbon: Shift+Option+D is a character, Command+Option+D is Show/Hide Dock, Command+Control+D is dictionary lookup -->
+      <key
+            platform="carbon"
+            sequence="M2+M3+D L"
+            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"/>
+      <key
+            platform="carbon"
+            sequence="M1+M3+M4+D L"
+            commandId="org.jboss.tools.arquillian.arquillianShortcut.debug"
+            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"/>
+      <key
+            sequence="M2+M3+X L"
+            commandId="org.jboss.tools.arquillian.arquillianShortcut.run"
+            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"/>
+      <key
+            platform="carbon"
+            sequence="M2+M3+X L"
+            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"/>
+      <key
+            platform="carbon"
+            sequence="M1+M3+X L"
+            commandId="org.jboss.tools.arquillian.arquillianShortcut.run"
+            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"/>
    </extension>
    
    <extension
@@ -132,6 +188,26 @@
 				</visibleWhen>
          </command>
       </menuContribution>
+      <menuContribution locationURI="popup:org.eclipse.ui.projectConfigure?after=additions">
+         <command
+               commandId="org.jboss.tools.arquillian.ui.action.removeArquillianSupport"
+               style="push">
+            <visibleWhen checkEnabled="false">
+					<and>
+						<count value="1"/>
+						<iterate ifEmpty="false">
+							<adapt type="org.eclipse.core.resources.IProject">
+								<and>
+									<test 
+										property="org.eclipse.core.resources.projectNature" 
+										value="org.jboss.tools.arquillian.core.arquillianNature"/>
+								</and>
+							</adapt>
+						</iterate>
+					</and>
+				</visibleWhen>
+         </command>
+      </menuContribution>
    </extension>
    
    <extension point="org.eclipse.ui.newWizards">
@@ -162,5 +238,69 @@
             targetId="org.eclipse.jdt.ui.javaCode">
       </hyperlinkDetector>
    </extension>
-    
+   
+   <extension
+         point="org.eclipse.debug.ui.launchConfigurationTypeImages">
+      <launchConfigurationTypeImage
+            icon="icons/arquillian_icon16.png"
+            configTypeID="org.jboss.tools.arquillian.core.launchconfig"
+            id="org.jboss.tools.arquillian.launchimage">
+      </launchConfigurationTypeImage>
+   </extension>
+   <extension
+         point="org.eclipse.debug.ui.launchConfigurationTabGroups">
+      <launchConfigurationTabGroup
+            type="org.jboss.tools.arquillian.core.launchconfig"
+            helpContextId="org.jboss.tools.arquillian.ui.arquillian_tab_group"
+            class="org.jboss.tools.arquillian.ui.internal.launcher.ArquillianTabGroup"
+            id="org.jboss.tools.arquillian.launchConfigurationTabGroup">
+         <launchMode
+               perspective="org.eclipse.debug.ui.DebugPerspective"
+               description="%TabGroupDescription.debug"
+               mode="debug">
+         </launchMode>
+         <launchMode
+               description="%TabGroupDescription.run"
+               mode="run">
+         </launchMode>
+      </launchConfigurationTabGroup>
+   </extension>
+   
+   <extension
+         point="org.eclipse.debug.ui.launchShortcuts">
+      <shortcut
+            label="%Shortcut.label"
+            icon="icons/arquillian_icon16.png"
+            helpContextId="org.jboss.tools.arquillian.launch_shortcut"
+            class="org.jboss.tools.arquillian.ui.internal.launcher.ArquillianLaunchShortcut"
+            modes="run, debug"
+            id="org.jboss.tools.arquillian.arquillianShortcut">
+         <contextualLaunch>
+            <enablement>
+               <with variable="selection">
+                  <count value="1"/>
+               	  <iterate>
+                     <adapt type="org.eclipse.jdt.core.IJavaElement">
+		                <test property="org.eclipse.jdt.core.isInJavaProject"/>
+		                <test property="org.eclipse.jdt.core.hasTypeOnClasspath" value="org.jboss.arquillian.junit.Arquillian"/>
+		                <test property="org.jboss.tools.arquillian.ui.canLaunchAsArquillianTest" value="true" forcePluginActivation="true"/>
+		             </adapt>
+		          </iterate>
+               </with>
+            </enablement>
+         </contextualLaunch>
+         <configurationType
+               id="org.jboss.tools.arquillian.core.launchconfig">
+         </configurationType>
+         <description
+               description="%DebugLaunchShortcut.description"
+               mode="debug">
+         </description>
+         <description
+               description="%RunLaunchShortcut.description"
+               mode="run">
+         </description>
+      </shortcut>
+   </extension>
+   
 </plugin>

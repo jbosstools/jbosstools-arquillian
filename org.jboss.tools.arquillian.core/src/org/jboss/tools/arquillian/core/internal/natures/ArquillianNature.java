@@ -8,12 +8,12 @@
  * Contributors:
  *     JBoss by Red Hat - Initial implementation.
  ************************************************************************************/
-package org.jboss.tools.arquillian.core.internals.natures;
+package org.jboss.tools.arquillian.core.internal.natures;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IProjectNature;
 import org.eclipse.core.runtime.CoreException;
-import org.jboss.tools.arquillian.core.internals.util.ArquillianUtils;
+import org.jboss.tools.arquillian.core.internal.util.ArquillianUtils;
 
 /**
  * 

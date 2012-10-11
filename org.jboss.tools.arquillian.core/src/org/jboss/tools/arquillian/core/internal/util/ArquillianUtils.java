@@ -8,8 +8,7 @@
  * Contributors:
  *     JBoss by Red Hat - Initial implementation.
  ************************************************************************************/
-
-package org.jboss.tools.arquillian.core.internals.util;
+package org.jboss.tools.arquillian.core.internal.util;
 
 import static org.eclipse.m2e.core.ui.internal.editing.PomEdits.createElement;
 import static org.eclipse.m2e.core.ui.internal.editing.PomEdits.createElementWithText;
@@ -62,6 +61,7 @@ import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.emf.ecore.xmi.XMIResource;
+import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.m2e.core.MavenPlugin;
 import org.eclipse.m2e.core.embedder.IMaven;
 import org.eclipse.m2e.core.internal.IMavenConstants;
@@ -113,6 +113,9 @@ public static final String ARQUILLIAN_CORE_GROUP_ID = "org.jboss.arquillian.core
 	
 	public static final String MAVEN_COMPILER_TARGET_LEVEL = "1.6"; //$NON-NLS-1$
 
+	public static final String ORG_JBOSS_ARQUILLIAN_CONTAINER_TEST_API_DEPLOYMENT = "org.jboss.arquillian.container.test.api.Deployment";
+	public static final String SIMPLE_TEST_INTERFACE_NAME= "Test"; //$NON-NLS-1$
+	public final static String TEST_INTERFACE_NAME= "junit.framework.Test"; //$NON-NLS-1$
 
 	public static String getDependencyVersion(MavenProject mavenProject,
 			String gid, String aid) {
@@ -570,6 +573,13 @@ public static final String ARQUILLIAN_CORE_GROUP_ID = "org.jboss.arquillian.core
 		return null;
 	}
 
+	public static Object newInstance(IJavaProject javaProject, String name) throws ClassNotFoundException, InstantiationException, IllegalAccessException {
+		ClassLoader loader = ArquillianCoreActivator.getDefault().getClassLoader(javaProject);
+		Class<?> clazz = Class.forName(name, true, loader);
+		Object object = clazz.newInstance();
+		return object;
+	}
+	
 	private static class UpdateMavenProjectJob extends WorkspaceJob {
 
 		private final IProject project;
