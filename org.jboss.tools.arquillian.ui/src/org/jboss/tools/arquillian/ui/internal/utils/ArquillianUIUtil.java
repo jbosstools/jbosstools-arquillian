@@ -77,7 +77,7 @@ import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.jboss.tools.arquillian.core.ArquillianCoreActivator;
 import org.jboss.tools.arquillian.core.internal.util.ArquillianSearchEngine;
-import org.jboss.tools.arquillian.core.internal.util.ArquillianUtils;
+import org.jboss.tools.arquillian.core.internal.util.ArquillianUtility;
 import org.jboss.tools.arquillian.ui.ArquillianUIActivator;
 import org.jboss.tools.arquillian.ui.internal.launcher.ArquillianProperty;
 import org.jboss.tools.arquillian.ui.internal.wizards.NewArquillianJUnitTestCaseDeploymentPage;
@@ -179,7 +179,7 @@ public class ArquillianUIUtil {
 			importsRewrite = StubUtility.createImportRewrite(icu, true);
 		}
 		String annotation = '@' + addImport(imports, importsRewrite,
-				ArquillianUtils.ORG_JBOSS_ARQUILLIAN_CONTAINER_TEST_API_DEPLOYMENT);
+				ArquillianUtility.ORG_JBOSS_ARQUILLIAN_CONTAINER_TEST_API_DEPLOYMENT);
 		String methodName = CREATE_DEPLOYMENT;
 		addImport(imports, importsRewrite,
 				ORG_JBOSS_SHRINKWRAP_API_SHRINK_WRAP);
@@ -257,12 +257,12 @@ public class ArquillianUIUtil {
 		buffer.append(" {").append(delimiter);
 		if (ArquillianUIActivator.JAR.equals(archiveType)) {
 			addImport(imports, importsRewrite,
-					"org.jboss.shrinkwrap.api.spec.JavaArchive");
+					ArquillianUtility.ORG_JBOSS_SHRINKWRAP_API_SPEC_JAVA_ARCHIVE);
 			buffer.append("JavaArchive archive = ShrinkWrap.create(JavaArchive.class");
 		}
 		if (ArquillianUIActivator.WAR.equals(archiveType)) {
 			addImport(imports, importsRewrite,
-					"org.jboss.shrinkwrap.api.spec.WebArchive");
+					ArquillianUtility.ORG_JBOSS_SHRINKWRAP_API_SPEC_WEB_ARCHIVE);
 			buffer.append("WebArchive archive = ShrinkWrap.create(WebArchive.class");
 		}
 		if (ArquillianUIActivator.EAR.equals(archiveType)) {
@@ -330,7 +330,7 @@ public class ArquillianUIUtil {
 		}
 
 		buffer.append(";").append(delimiter);
-		buffer.append("// System.out.println(archive.toString();").append(
+		buffer.append("// System.out.println(archive.toString(true));").append(
 				delimiter);
 		buffer.append("return archive;").append(delimiter);
 		buffer.append("}"); //$NON-NLS-1$
@@ -453,7 +453,7 @@ public class ArquillianUIUtil {
             	if (ArquillianSearchEngine.isNonAbstractClass(subType)) {
             		Object containerObject = null;
             		try {
-						containerObject = ArquillianUtils.newInstance(javaProject, subType.getFullyQualifiedName());
+						containerObject = ArquillianUtility.newInstance(javaProject, subType.getFullyQualifiedName());
 					} catch (Exception e) {
 						ArquillianUIActivator.log(e);
 						return;
@@ -470,7 +470,7 @@ public class ArquillianUIUtil {
 						        new Class[0]);
 						Class<?> configuration =  (Class<?>) configurationMethod.invoke(containerObject, new Object[0]);
 						
-						Object configurationObject = ArquillianUtils.newInstance(javaProject, configuration.getName());
+						Object configurationObject = ArquillianUtility.newInstance(javaProject, configuration.getName());
 						Method[] methods = configuration.getMethods();
 						for (Method method : methods) {
 							String methodName = method.getName();

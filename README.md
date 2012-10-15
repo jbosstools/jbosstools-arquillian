@@ -35,17 +35,25 @@ Related jira: https://issues.jboss.org/browse/JBIDE-6338
 - checks if there is exactly one implementation of the org.jboss.arquillian.container.spi.client.container.DeployableContainer interface
 - includes the Arquillian tab that enables the user to check/change the Arquillian configuration properties, select maven profiles, review/start/stop WTP servers. The Arquillian configuration properties are added using declarations from the arquillian.xml, arquillian.properties and the default values when instantiating the corresponding container configuration.
 
+6) Arquillian validator
+
+The arquillian validator finds the following issues:
+- classes that are used in a test, but aren't included in the deployment
+- tests without any deployment method and/or any test method
+- resources that can't be found
+Arquillian issues can be ignored, marked as a warning or as an error. It is possible to add quick fixes (haven't been implemented yet) for some or all Arquillian issues.
+
+See the http://screencast.com/t/53XkyHltg screencast.
+
 The following features aren't implemented yet:
 
-- validation
-It will be possible to validate if the classes/resources that are used within the test are included in the deployment as well as if the classes/resources included in the deployment exist.
-- the new Arquillian TestNG Test Case wizard
 - the Arquillian Deployment View
 a separate view that would show Arquillian deployment archive.
 - the Arquillian WTP facet
 will allow the user to add the Arquillian support when creating/changing some WTP project
 - the Arquillian Maven Configurator
 to add the Aruillian support when importing a maven project containing arquillian dependencies.
+- the new Arquillian TestNG Test Case wizard
 - Content Assist
 CA will offer the user available resources/classes that can be added to the deployment method.
 

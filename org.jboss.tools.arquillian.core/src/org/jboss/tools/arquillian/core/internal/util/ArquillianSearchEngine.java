@@ -1,21 +1,36 @@
 package org.jboss.tools.arquillian.core.internal.util;
 
+import java.io.File;
+import java.io.FileFilter;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
+import org.eclipse.core.internal.runtime.InternalPlatform;
+import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.IMarker;
+import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IResource;
+import org.eclipse.core.resources.IResourceProxy;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.NullProgressMonitor;
+import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.SubProgressMonitor;
 import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.IClassFile;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
+import org.eclipse.jdt.core.IJavaModelMarker;
+import org.eclipse.jdt.core.IJavaModelStatusConstants;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IMember;
 import org.eclipse.jdt.core.IMethod;
@@ -26,6 +41,8 @@ import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.Signature;
+import org.eclipse.jdt.core.compiler.CategorizedProblem;
+import org.eclipse.jdt.core.compiler.CharOperation;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTParser;
@@ -44,13 +61,18 @@ import org.eclipse.jdt.core.search.SearchMatch;
 import org.eclipse.jdt.core.search.SearchParticipant;
 import org.eclipse.jdt.core.search.SearchPattern;
 import org.eclipse.jdt.core.search.SearchRequestor;
-import org.eclipse.jdt.internal.junit.JUnitCorePlugin;
+import org.eclipse.jdt.internal.compiler.lookup.MethodBinding;
+import org.eclipse.jdt.internal.compiler.lookup.TypeConstants;
+import org.eclipse.jdt.internal.core.builder.JavaBuilder;
 import org.eclipse.jdt.internal.junit.JUnitMessages;
 import org.eclipse.jdt.internal.junit.launcher.ITestKind;
 import org.eclipse.jdt.internal.junit.util.CoreTestSearchEngine;
 import org.eclipse.jface.operation.IRunnableContext;
 import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.jboss.tools.arquillian.core.ArquillianCoreActivator;
+import org.jboss.tools.arquillian.core.internal.compiler.SourceFile;
+import org.jboss.tools.arquillian.core.internal.preferences.ArquillianConstants;
+import org.osgi.framework.Bundle;
 
 public class ArquillianSearchEngine {
 
@@ -61,7 +83,7 @@ public class ArquillianSearchEngine {
 	
 		private static final Annotation RUN_WITH = new Annotation("org.junit.runner.RunWith"); //$NON-NLS-1$
 		private static final Annotation TEST = new Annotation("org.junit.Test"); //$NON-NLS-1$
-		private static final Annotation DEPLOYMENT = new Annotation(ArquillianUtils.ORG_JBOSS_ARQUILLIAN_CONTAINER_TEST_API_DEPLOYMENT);
+		private static final Annotation DEPLOYMENT = new Annotation(ArquillianUtility.ORG_JBOSS_ARQUILLIAN_CONTAINER_TEST_API_DEPLOYMENT);
 		private final String fName;
 	
 		private Annotation(String name) {
@@ -72,33 +94,9 @@ public class ArquillianSearchEngine {
 			return fName;
 		}
 	
-		private boolean annotates(IAnnotationBinding[] annotations) {
-			for (int i= 0; i < annotations.length; i++) {
-				ITypeBinding annotationType= annotations[i].getAnnotationType();
-				if (annotationType != null && (annotationType.getQualifiedName().equals(fName))) {
-					IMemberValuePairBinding[] pairs = annotations[i].getAllMemberValuePairs();
-					if (pairs != null) {
-						for (IMemberValuePairBinding pair : pairs) {
-							if ("value".equals(pair.getName())) {
-								Object object = pair.getValue();
-								if (object instanceof ITypeBinding) {
-									ITypeBinding value = (ITypeBinding) object;
-									if (ARQUILLIAN_JUNIT_ARQUILLIAN.equals(value.getQualifiedName())) {
-										return true;
-									}
-								}
-							}
-						}
-					}
-					return true;
-				}
-			}
-			return  false;
-		}
-	
 		public boolean annotatesTypeOrSuperTypes(ITypeBinding type) {
 			while (type != null) {
-				if (annotates(type.getAnnotations())) {
+				if (annotates(type.getAnnotations(), fName)) {
 					return true;
 				}
 				type= type.getSuperclass();
@@ -111,7 +109,7 @@ public class ArquillianSearchEngine {
 				IMethodBinding[] declaredMethods= type.getDeclaredMethods();
 				for (int i= 0; i < declaredMethods.length; i++) {
 					IMethodBinding curr= declaredMethods[i];
-					if (annotates(curr.getAnnotations())) {
+					if (annotates(curr.getAnnotations(), fName)) {
 						return true;
 					}
 				}
@@ -153,7 +151,7 @@ public class ArquillianSearchEngine {
 	}
 
 
-	public static boolean isArquillianJUnitTest(IJavaElement element, boolean checkDeployment) {
+	public static boolean isArquillianJUnitTest(IJavaElement element, boolean checkDeployment, boolean checkTest) {
 		try {
 			IType testType= null;
 			if (element instanceof ICompilationUnit) {
@@ -166,7 +164,7 @@ public class ArquillianSearchEngine {
 				testType= ((IMember) element).getDeclaringType();
 			}
 			if (testType != null && testType.exists()) {
-				return isArquillianJunitTest(testType, checkDeployment);
+				return isArquillianJUnitTest(testType, checkDeployment, checkTest);
 			}
 		} catch (CoreException e) {
 			// ignore, return false
@@ -200,20 +198,20 @@ public class ArquillianSearchEngine {
 		if (!Flags.isStatic(method.getFlags()) || !Flags.isPublic(method.getFlags())) {
 			return false;
 		}
-		if (!Signature.getSimpleName(Signature.toString(method.getReturnType())).equals(ArquillianUtils.SIMPLE_TEST_INTERFACE_NAME)) {
+		if (!Signature.getSimpleName(Signature.toString(method.getReturnType())).equals(ArquillianUtility.SIMPLE_TEST_INTERFACE_NAME)) {
 			return false;
 		}
 		return true;
 	}
 
-	private static boolean isArquillianJunitTest(IType type, boolean checkDeployment) throws JavaModelException {
+	private static boolean isArquillianJUnitTest(IType type, boolean checkDeployment, boolean checkTest) throws JavaModelException {
 		if (isAccessibleClass(type)) {
 			if (hasSuiteMethod(type)) {
 				return true;
 			}
 			ITypeBinding binding = getTypeBinding(type);
 			if (binding != null) {
-				return isTest(binding, checkDeployment);
+				return isTest(binding, checkDeployment, checkTest);
 			}
 		}
 		return false;
@@ -250,15 +248,18 @@ public class ArquillianSearchEngine {
 		return range != null && range.getOffset() != -1;
 	}
 
-	static boolean isTest(ITypeBinding binding, boolean checkDeployment) {
+	static boolean isTest(ITypeBinding binding, boolean checkDeployment, boolean checkTest) {
 		if (Modifier.isAbstract(binding.getModifiers()))
 			return false;
 	
-		if (Annotation.RUN_WITH.annotatesTypeOrSuperTypes(binding) && Annotation.TEST.annotatesAtLeastOneMethod(binding)) {
-			if (!checkDeployment) {
-				return true;
+		if (Annotation.RUN_WITH.annotatesTypeOrSuperTypes(binding)) {
+			if (checkDeployment && !Annotation.DEPLOYMENT.annotatesAtLeastOneMethod(binding)) {
+				return false;
 			}
-			return Annotation.DEPLOYMENT.annotatesAtLeastOneMethod(binding);
+			if (checkTest && !Annotation.TEST.annotatesAtLeastOneMethod(binding)) {
+				return false;
+			}
+			return true;
 		}
 		return isTestImplementor(binding);
 	}
@@ -271,7 +272,7 @@ public class ArquillianSearchEngine {
 		ITypeBinding[] interfaces= type.getInterfaces();
 		for (int i= 0; i < interfaces.length; i++) {
 			ITypeBinding curr= interfaces[i];
-			if (ArquillianUtils.TEST_INTERFACE_NAME.equals(curr.getQualifiedName()) || isTestImplementor(curr)) {
+			if (ArquillianUtility.TEST_INTERFACE_NAME.equals(curr.getQualifiedName()) || isTestImplementor(curr)) {
 				return true;
 			}
 		}
@@ -336,7 +337,7 @@ public class ArquillianSearchEngine {
 		}
 
 		if (element instanceof IType) {
-			if (isArquillianJUnitTest((IType) element, true)) {
+			if (isArquillianJUnitTest((IType) element, true, true)) {
 				result.add(element);
 				return;
 			}
@@ -371,7 +372,7 @@ public class ArquillianSearchEngine {
 				IType curr= (IType) iterator.next();
 				if (isAccessibleClass(curr) && !Flags.isAbstract(curr.getFlags()) && region.contains(curr)) {
 					ITypeBinding binding = getTypeBinding(curr);
-					if (binding != null && isTest(binding, true)) {
+					if (binding != null && isTest(binding, true, true)) {
 						result.add(curr);
 					}
 				}
@@ -401,6 +402,346 @@ public class ArquillianSearchEngine {
 			// ignore
 		}
 		return false;
+	}
+
+	public static boolean isArquillianJUnitTest(IResourceProxy proxy,
+			IJavaProject project) {
+		if (proxy == null || project == null || ! (proxy.requestResource() instanceof IFile)) {
+			return false;
+		}
+		IFile file = (IFile) proxy.requestResource();
+		IJavaElement element = JavaCore.create(file);
+		if (!(element instanceof ICompilationUnit)) {
+			return false;
+		}
+		ICompilationUnit cu = (ICompilationUnit) element;
+		IType type = cu.findPrimaryType();
+		ITypeBinding binding;
+		try {
+			if (!isAccessibleClass(type)) {
+				return false;
+			}
+			binding = getTypeBinding(type);
+			if (binding == null) {
+				return false;
+			}
+		} catch (JavaModelException e) {
+			ArquillianCoreActivator.log(e);
+			return false;
+		}
+		if (Modifier.isAbstract(binding.getModifiers())) {
+			return false;
+		}
+		
+		if (!Annotation.RUN_WITH.annotatesTypeOrSuperTypes(binding)) {
+			return false;
+		}
+		
+		return true;
+	}
+
+	public static boolean hasDeploymentMethod(SourceFile sourceFile,
+			IJavaProject project) {
+		IType type = getType(sourceFile);
+		if (type == null) {
+			return false;
+		}
+		return hasDeploymentMethod(type);
+	}
+
+	public static IType getType(SourceFile sourceFile) {
+		IFile file = sourceFile.resource;
+		IJavaElement element = JavaCore.create(file);
+		if (!(element instanceof ICompilationUnit)) {
+			return null;
+		}
+		ICompilationUnit cu = (ICompilationUnit) element;
+		IType type = cu.findPrimaryType();
+		return type;
+	}
+
+	private static boolean hasDeploymentMethod(IType type) {
+		if (type == null) {
+			return false;
+		}
+		try {
+			ITypeBinding binding = getTypeBinding(type);
+			return Annotation.DEPLOYMENT.annotatesAtLeastOneMethod(binding);
+		} catch (JavaModelException e) {
+			ArquillianCoreActivator.log(e);
+			return false;
+		}
+	}
+	
+	public static boolean hasTestMethod(SourceFile sourceFile,
+			IJavaProject project) {
+		IType type = getType(sourceFile);
+		try {
+			ITypeBinding binding = getTypeBinding(type);
+			return Annotation.TEST.annotatesAtLeastOneMethod(binding);
+		} catch (JavaModelException e) {
+			ArquillianCoreActivator.log(e);
+			return false;
+		}
+	}
+	
+	public static boolean annotates(IAnnotationBinding[] annotations, String fName) {
+		for (int i= 0; i < annotations.length; i++) {
+			ITypeBinding annotationType= annotations[i].getAnnotationType();
+			if (annotationType != null && (annotationType.getQualifiedName().equals(fName))) {
+				IMemberValuePairBinding[] pairs = annotations[i].getAllMemberValuePairs();
+				if (pairs != null) {
+					for (IMemberValuePairBinding pair : pairs) {
+						if ("value".equals(pair.getName())) {
+							Object object = pair.getValue();
+							if (object instanceof ITypeBinding) {
+								ITypeBinding value = (ITypeBinding) object;
+								if (ARQUILLIAN_JUNIT_ARQUILLIAN.equals(value.getQualifiedName())) {
+									return true;
+								}
+							}
+						}
+					}
+				}
+				return true;
+			}
+		}
+		return  false;
+	}
+	
+	public static List<File> getDeploymentArchives(IType type) {
+		return getDeploymentArchives(type, false);
+	}
+
+	private static List<File> getDeploymentArchives(IType type, boolean force) {
+		List<File> archives = new ArrayList<File>();
+		if (type == null || !hasDeploymentMethod(type)) {
+			return archives;
+		}
+		Bundle bundle = Platform.getBundle(ArquillianCoreActivator.PLUGIN_ID);
+		if (bundle == null) {
+			ArquillianCoreActivator.log("The " + ArquillianCoreActivator.PLUGIN_ID + "bundle is invalid.");
+			return archives;
+		}
+		IPath stateLocation = InternalPlatform.getDefault().getStateLocation(
+				bundle, true);
+		String projectName = null;
+		ICompilationUnit cu = type.getCompilationUnit();
+		IJavaProject javaProject = null;
+		if (cu != null) {
+			IResource resource = cu.getResource();
+			if (resource != null) {
+//				try {
+//		            resource.deleteMarkers(ArquillianConstants.MARKER_RESOURCE_ID, false, IResource.DEPTH_INFINITE);
+//		        } catch (CoreException e) {
+//		            ArquillianCoreActivator.log(e);
+//		        }
+				IProject project = resource.getProject();
+				if (project != null) {
+					projectName = project.getName();
+					javaProject = JavaCore.create(project);
+				}
+			}
+		}
+
+		if (projectName == null) {
+			ArquillianCoreActivator.log("Cannot find any project for the " + type.getElementName() + "type.");
+			return archives;
+		}
+		IPath location = stateLocation.append(projectName);
+		location = location.append("arquillianDeploymentArchives");
+		String fqn = type.getFullyQualifiedName();
+		fqn = fqn.replace(".", "/");
+		location = location.append(fqn);
+		try {
+			List<IMethodBinding> deploymentMethods = getDeploymentMethods(type);
+			for (IMethodBinding deploymentMethod : deploymentMethods) {
+				String name = deploymentMethod.getName();
+				IPath methodLocation = location.append(name);
+				File file = methodLocation.toFile();
+				if (file.exists()) {
+					if (force) {
+						if (!ArquillianUtility.deleteFile(file)) {
+							ArquillianCoreActivator.log("Cannot delete " + file.getAbsolutePath());
+						}
+					}
+				}
+				if (!file.exists()) {
+					createArchive(javaProject, type, deploymentMethod, file);
+				}
+				if (file.isDirectory()) {
+					File[] files = file.listFiles(new FileFilter() {
+
+						@Override
+						public boolean accept(File pathname) {
+							return pathname.isFile()
+									&& pathname.getName().startsWith("archive");
+						}
+					});
+					if (files != null && files.length > 0 && files[0].isFile()) {
+						archives.add(files[0]);
+					}
+				}
+			}
+		} catch (JavaModelException e) {
+			ArquillianCoreActivator.log(e);
+		}
+
+		return archives;
+	}
+
+	private static File createArchive(IJavaProject javaProject, IType type, IMethodBinding deploymentMethod,
+			File file) {
+		String className = type.getFullyQualifiedName();
+		String methodName = deploymentMethod.getName();
+		ClassLoader loader = ArquillianCoreActivator.getDefault().getClassLoader(javaProject);
+		ClassLoader oldLoader = Thread.currentThread().getContextClassLoader();
+		try {
+			Thread.currentThread().setContextClassLoader(loader);
+			Class<?> clazz = Class.forName(className, true, loader);
+			Object object = clazz.newInstance();
+			Method method = clazz.getMethod(methodName, new Class[0]);
+			
+			Object archiveObject = method.invoke(object, new Object[0]);
+			Class<?> archiveClass = archiveObject.getClass();
+			
+			//archive.as(ZipExporter.class).exportTo(
+			//	    new File("/home/alr/Desktop/myPackage.jar"), true);
+			Class<?> exporterClass = Class.forName("org.jboss.shrinkwrap.api.exporter.ZipExporter", true, loader);
+			Method asMethod = archiveClass.getMethod("as", new Class[] { Class.class });
+			Object asObject = asMethod.invoke(archiveObject, new Object[] {exporterClass});
+			Class<?> asClass = asObject.getClass();
+			Method exportToMethod = asClass.getMethod("exportTo", new Class[] {File.class, boolean.class });
+			Class<?> jarClass = Class.forName(ArquillianUtility.ORG_JBOSS_SHRINKWRAP_API_SPEC_JAVA_ARCHIVE, true, loader);
+			if (jarClass.isAssignableFrom(archiveClass)) {
+				File jarFile = new File(file, "archive.jar");
+				file.mkdirs();
+				exportToMethod.invoke(asObject, new Object[] {jarFile, Boolean.TRUE});
+				return jarFile;
+			}
+			Class<?> warClass = Class.forName(ArquillianUtility.ORG_JBOSS_SHRINKWRAP_API_SPEC_WEB_ARCHIVE, true, loader);
+			if (warClass.isAssignableFrom(archiveClass)) {
+				File warFile = new File(file, "archive.war");
+				
+				file.mkdirs();
+				exportToMethod.invoke(asObject, new Object[] {warFile, Boolean.TRUE});
+				
+				return warFile;
+			}
+		} catch (Exception e) {
+			//ArquillianCoreActivator.log(e);
+			String message = e.getLocalizedMessage();
+			Throwable cause = e.getCause();
+			int i = 0;
+			while (cause != null && i++ < 5) {
+				message = cause.getLocalizedMessage();
+				cause = cause.getCause();
+			}
+			ArquillianCoreActivator.log(message);
+			try {
+				createProblem(message, type, deploymentMethod);
+			} catch (CoreException e1) {
+				ArquillianCoreActivator.log(e1);
+			}
+		} finally {
+			Thread.currentThread().setContextClassLoader(oldLoader);
+		}
+		return null;
+	}
+
+	private static void createProblem(String message, IType type,
+			IMethodBinding deploymentMethod) throws CoreException {
+		String severity = ArquillianCoreActivator.getDefault()
+				.getArquillianSeverityLevel();
+		if (ArquillianConstants.SEVERITY_IGNORE.equals(severity)) {
+			return;
+		}
+		ICompilationUnit cu = type.getCompilationUnit();
+		if (cu == null) {
+			return;
+		}
+		IResource resource = cu.getResource();
+		if (resource == null) {
+			return;
+		}
+		IMarker marker = resource
+				.createMarker(ArquillianConstants.MARKER_RESOURCE_ID);
+    	
+		String[] allNames =  {
+		    	IMarker.MESSAGE,
+		    	IMarker.SEVERITY,
+		    	IJavaModelMarker.ID,
+		    	IMarker.CHAR_START,
+		    	IMarker.CHAR_END,
+		    	IMarker.SOURCE_ID,
+		    };
+		
+		Object[] allValues = new Object[allNames.length];
+		int index = 0;
+		allValues[index++] = message;
+		
+		if (ArquillianConstants.SEVERITY_ERROR.equals(severity)) {
+        	allValues[index++] = new Integer(IMarker.SEVERITY_ERROR);
+        } else {
+        	allValues[index++] = new Integer(IMarker.SEVERITY_WARNING);
+        }
+		allValues[index++] = ArquillianConstants.ARQUILLIAN_PROBLEM_ID;
+		
+		IJavaElement javaElement = deploymentMethod.getJavaElement();
+		ISourceRange range = null;
+		if (javaElement instanceof IMember) {
+			IMember member = (IMember) javaElement;
+			if (javaElement != null) {
+				try {
+					range = member.getNameRange();
+				} catch (JavaModelException e) {
+					if (e.getJavaModelStatus().getCode() != IJavaModelStatusConstants.ELEMENT_DOES_NOT_EXIST) {
+						throw e;
+					}
+					if (!CharOperation.equals(javaElement.getElementName()
+							.toCharArray(), TypeConstants.PACKAGE_INFO_NAME)) {
+						throw e;
+					}
+
+				}
+			}
+		}
+		int start = range == null ? 0 : range.getOffset();
+		int end = range == null ? 1 : start + range.getLength();
+		
+		allValues[index++] = new Integer(start); // start
+		allValues[index++] = new Integer(end > 0 ? end + 1 : end); // end
+
+		allValues[index++] = ArquillianConstants.SOURCE_ID;
+		
+		marker.setAttributes(allNames, allValues);
+	}
+
+	private static List<IMethodBinding> getDeploymentMethods(IType type) throws JavaModelException {
+		List<IMethodBinding> methodBindings = new ArrayList<IMethodBinding>();
+		if (type == null) {
+			return methodBindings;
+		}
+		ITypeBinding binding = getTypeBinding(type);
+		while (binding != null) {
+			IMethodBinding[] declaredMethods= binding.getDeclaredMethods();
+			for (IMethodBinding curr:declaredMethods) {
+				if (annotates(curr.getAnnotations(), ArquillianUtility.ORG_JBOSS_ARQUILLIAN_CONTAINER_TEST_API_DEPLOYMENT)) {
+					int modifiers = curr.getModifiers();
+					if ( (modifiers & Modifier.PUBLIC) != 0 &&
+							(modifiers & Modifier.STATIC) != 0 &&
+							curr.getParameterTypes().length == 0) {
+						ITypeBinding returnType = curr.getReturnType();
+						if ("org.jboss.shrinkwrap.api.Archive".equals(returnType.getBinaryName())) {
+							methodBindings.add(curr);
+						}
+						
+					}
+				}
+			}
+			binding = binding.getSuperclass();
+		}
+		return methodBindings;
 	}
 
 }

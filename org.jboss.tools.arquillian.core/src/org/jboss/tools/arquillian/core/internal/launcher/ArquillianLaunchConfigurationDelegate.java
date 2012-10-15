@@ -45,7 +45,7 @@ public class ArquillianLaunchConfigurationDelegate extends
 		}
 		List<IMember> filteredTests = new ArrayList<IMember>();
 		for (IMember member:tests) {
-			if (member instanceof IType && ArquillianSearchEngine.isArquillianJUnitTest(member, true)) {
+			if (member instanceof IType && ArquillianSearchEngine.isArquillianJUnitTest(member, true, true)) {
 				filteredTests.add(member);
 			}
 		}

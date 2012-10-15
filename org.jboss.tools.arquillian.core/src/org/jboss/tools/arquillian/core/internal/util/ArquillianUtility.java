@@ -83,7 +83,7 @@ import org.w3c.dom.Element;
  * @author snjeza
  * 
  */
-public class ArquillianUtils {
+public class ArquillianUtility {
 	
 public static final String ARQUILLIAN_CORE_GROUP_ID = "org.jboss.arquillian.core"; //$NON-NLS-1$
 	
@@ -117,6 +117,9 @@ public static final String ARQUILLIAN_CORE_GROUP_ID = "org.jboss.arquillian.core
 	public static final String SIMPLE_TEST_INTERFACE_NAME= "Test"; //$NON-NLS-1$
 	public final static String TEST_INTERFACE_NAME= "junit.framework.Test"; //$NON-NLS-1$
 
+	public static final String ORG_JBOSS_SHRINKWRAP_API_SPEC_WEB_ARCHIVE = "org.jboss.shrinkwrap.api.spec.WebArchive";
+	public static final String ORG_JBOSS_SHRINKWRAP_API_SPEC_JAVA_ARCHIVE = "org.jboss.shrinkwrap.api.spec.JavaArchive";
+	
 	public static String getDependencyVersion(MavenProject mavenProject,
 			String gid, String aid) {
 		List<Artifact> artifacts = getArtifacts(mavenProject);
@@ -190,7 +193,7 @@ public static final String ARQUILLIAN_CORE_GROUP_ID = "org.jboss.arquillian.core
 	}
 
 	private static void addArtifacts(IFile pomFile, MavenProject mavenProject) throws CoreException {
-		URL url = ArquillianUtils.getArquillianPomFile(true);
+		URL url = ArquillianUtility.getArquillianPomFile(true);
 		InputStream in = null;
 		try {
 			in = url.openStream();
@@ -619,4 +622,22 @@ public static final String ARQUILLIAN_CORE_GROUP_ID = "org.jboss.arquillian.core
 			return Status.OK_STATUS;
 		}
 	}
+	
+	public static boolean deleteFile(File path) {
+		if (path.exists()) {
+			if (!path.isDirectory()) {
+				return path.delete();
+			}
+			File[] files = path.listFiles();
+			for (File file : files) {
+				if (file.isDirectory()) {
+					deleteFile(file);
+				} else {
+					file.delete();
+				}
+			}
+		}
+		return (path.delete());
+	}
+	
 }

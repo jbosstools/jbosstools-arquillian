@@ -58,4 +58,56 @@
    		</sourcePathComputer>
     </extension>
    
+  <extension 
+  		id="org.jboss.tools.arquillian.core.problem.class"
+  		point="org.eclipse.core.resources.markers"
+  		name="Arquillian Class Problem">
+	<super type="org.eclipse.core.resources.problemmarker"/>
+	<super type="org.eclipse.core.resources.textmarker"/>
+	<persistent value="true"/>
+  </extension>
+
+  <extension 
+  		id="org.jboss.tools.arquillian.core.problem.resource"
+  		point="org.eclipse.core.resources.markers"
+  		name="Arquillian Resource Problem">
+	<super type="org.eclipse.core.resources.problemmarker"/>
+	<super type="org.eclipse.core.resources.textmarker"/>
+	<persistent value="true"/>
+  </extension>
+
+  <extension
+      id="org.jboss.tools.arquillian.core.validation"
+      name="Arquillian validation"
+      point="org.eclipse.jdt.core.compilationParticipant">
+   <compilationParticipant
+         class="org.jboss.tools.arquillian.core.internal.compiler.ArquillianCompilationParticipant"
+         createsProblems="true"
+         id="org.jboss.tools.arquillian.core.compilerParticipant"
+         requiredSourceLevel="1.5">
+      <managedMarker markerType="org.jboss.tools.arquillian.core.problem"/>
+   </compilationParticipant>
+ </extension>
+ 
+ <extension
+         point="org.eclipse.ui.propertyPages">
+      <page
+            class="org.jboss.tools.arquillian.core.internal.preferences.ArquillianPropertyPage"
+            id="org.jboss.tools.arquillian.core.internal.preferences.arquillianPropertyPage"
+            name="Arquillian"
+            nameFilter="*">
+         <enabledWhen>
+               <adapt type="org.eclipse.core.resources.IProject">
+		          <test property="org.eclipse.core.resources.projectNature" 
+		          	value="org.eclipse.jdt.core.javanature"/>
+		     </adapt>  
+         </enabledWhen>
+      </page>
+   </extension>
+   
+ <extension
+         point="org.eclipse.core.runtime.preferences">
+      <initializer class="org.jboss.tools.arquillian.core.internal.preferences.ArquillianPreferencesInitializer"/>
+ </extension>
+   
 </plugin>

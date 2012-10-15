@@ -45,21 +45,21 @@ public class ArquillianPropertyTester extends PropertyTester {
 			return canLaunchAsArquillianJUnitTest(element);
 		} else if (IS_ARQUILLIAN_JUNIT_TEST.equals(property)) {
 			if (receiver instanceof IType) {
-				return ArquillianSearchEngine.isArquillianJUnitTest((IType) receiver, false);
+				return ArquillianSearchEngine.isArquillianJUnitTest((IType) receiver, false, false);
 			}
 			if (receiver instanceof ICompilationUnit) {
 				ICompilationUnit icu = (ICompilationUnit) receiver;
 				try {
 					IType[] types = icu.getAllTypes();
 					if (types.length > 0) {
-						return ArquillianSearchEngine.isArquillianJUnitTest(types[0], false);
+						return ArquillianSearchEngine.isArquillianJUnitTest(types[0], false, false);
 					}
 				} catch (JavaModelException e) {
 					ArquillianUIActivator.log(e);
 				}
 			}
 			if (receiver instanceof ITextSelection) {
-				return ArquillianSearchEngine.isArquillianJUnitTest(ArquillianUIUtil.getActiveType(), false);
+				return ArquillianSearchEngine.isArquillianJUnitTest(ArquillianUIUtil.getActiveType(), false, false);
 			}
 		}
 		return false;
@@ -96,7 +96,7 @@ public class ArquillianPropertyTester extends PropertyTester {
 				case IJavaElement.CLASS_FILE:
 				case IJavaElement.TYPE:
 				case IJavaElement.METHOD:
-					return ArquillianSearchEngine.isArquillianJUnitTest(element, true);
+					return ArquillianSearchEngine.isArquillianJUnitTest(element, true, true);
 				default:
 					return false;
 			}

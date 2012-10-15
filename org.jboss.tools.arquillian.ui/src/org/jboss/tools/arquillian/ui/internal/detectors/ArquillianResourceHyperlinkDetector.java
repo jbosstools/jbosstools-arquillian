@@ -39,7 +39,7 @@ import org.eclipse.jface.text.hyperlink.IHyperlink;
 import org.eclipse.ui.IEditorSite;
 import org.eclipse.ui.texteditor.ITextEditor;
 import org.jboss.tools.arquillian.core.internal.util.ArquillianSearchEngine;
-import org.jboss.tools.arquillian.core.internal.util.ArquillianUtils;
+import org.jboss.tools.arquillian.core.internal.util.ArquillianUtility;
 import org.jboss.tools.arquillian.ui.ArquillianUIActivator;
 import org.jboss.tools.arquillian.ui.internal.utils.ArquillianUIUtil;
 
@@ -66,7 +66,7 @@ public class ArquillianResourceHyperlinkDetector extends
 		if (javaElement == null )
 			return null;
 
-		if (!ArquillianSearchEngine.isArquillianJUnitTest(javaElement.findPrimaryType(), false)) {
+		if (!ArquillianSearchEngine.isArquillianJUnitTest(javaElement.findPrimaryType(), false, false)) {
 			return null;
 		}
 		CompilationUnit ast= SharedASTProvider.getAST(javaElement, SharedASTProvider.WAIT_NO, null);
@@ -112,7 +112,7 @@ public class ArquillianResourceHyperlinkDetector extends
 					IAnnotationBinding[] annotations = binding.getAnnotations();
 					for (IAnnotationBinding annotationBinding:annotations) {
 						ITypeBinding typeBinding = annotationBinding.getAnnotationType();
-						if (ArquillianUtils.ORG_JBOSS_ARQUILLIAN_CONTAINER_TEST_API_DEPLOYMENT.equals(typeBinding.getQualifiedName())) {
+						if (ArquillianUtility.ORG_JBOSS_ARQUILLIAN_CONTAINER_TEST_API_DEPLOYMENT.equals(typeBinding.getQualifiedName())) {
 							StringLiteral stringLiteral = (StringLiteral) node;
 							String resource = stringLiteral.getLiteralValue();
 							IFile file = getFile(resource, javaElement);
