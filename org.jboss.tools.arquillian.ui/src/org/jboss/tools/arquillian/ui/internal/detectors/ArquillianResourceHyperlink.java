@@ -58,11 +58,15 @@ public class ArquillianResourceHyperlink implements IHyperlink {
 	public void open() {
 		if (file != null) {
 			IWorkbenchPage page = ArquillianUIUtil.getActivePage();
-			IFileEditorInput input = new FileEditorInput(file);
 			try {
-				IDE.openEditor(page, input, EditorsUI.DEFAULT_TEXT_EDITOR_ID);
+				IDE.openEditor(page, file);
 			} catch (PartInitException e) {
-				ArquillianUIActivator.log(e);
+				IFileEditorInput input = new FileEditorInput(file);
+				try {
+					IDE.openEditor(page, input, EditorsUI.DEFAULT_TEXT_EDITOR_ID);
+				} catch (PartInitException e1) {
+					ArquillianUIActivator.log(e);
+				}
 			}
 		}
 	}
