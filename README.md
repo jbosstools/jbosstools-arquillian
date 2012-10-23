@@ -22,16 +22,19 @@ The wizard is currently based on the JUnit Test Case wizard, but adds the follow
 - the deployment method
 
 The user can define the name of the deployment method, the name and order of the deployment, the type and name of the archive, add an empty beans.xml, available classes and resources to the deployment archive. 
+
 Related jira: https://issues.jboss.org/browse/JBIDE-6318
 
 See http://screencast.com/t/mjoeU7gqkym
 
-3) Adding the Generate Arquillian Deployment Method action to the context menu of the Java editor and Eclipse views 
+3) Adding the Generate Arquillian Deployment Method action to the context menu of the Java editor and Eclipse views.
+
 Related jira: https://issues.jboss.org/browse/JBIDE-8553
 
 See http://screencast.com/t/OY701ZWeXWsv
 
 4) Ability to click through to resources specified as part of Shrinkwrap definition 
+
 Related jira: https://issues.jboss.org/browse/JBIDE-6338
 
 See http://screencast.com/t/y8bt7See
