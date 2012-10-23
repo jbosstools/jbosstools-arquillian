@@ -1112,7 +1112,11 @@ public class NewArquillianJUnitTestCasePageOne extends NewTypeWizardPage {
 			fMethodStubsButtons.setSelection(IDX_TEARDOWN, settings.getBoolean(STORE_TEARDOWN));
 			fMethodStubsButtons.setSelection(IDX_SETUP_CLASS, settings.getBoolean(STORE_SETUP_CLASS));
 			fMethodStubsButtons.setSelection(IDX_TEARDOWN_CLASS, settings.getBoolean(STORE_TEARDOWN_CLASS));
-			fMethodStubsButtons.setSelection(IDX_DEPLOYMENT, settings.getBoolean(STORE_DEPLOYMENT));
+			if (settings.get(STORE_DEPLOYMENT) == null) {
+				fMethodStubsButtons.setSelection(IDX_DEPLOYMENT, true);
+			} else {
+				fMethodStubsButtons.setSelection(IDX_DEPLOYMENT, settings.getBoolean(STORE_DEPLOYMENT));
+			}
 		} else {
 			fMethodStubsButtons.setSelection(IDX_SETUP, false); //setUp
 			fMethodStubsButtons.setSelection(IDX_TEARDOWN, false); //tearDown

@@ -422,7 +422,7 @@ public class NewArquillianJUnitTestCaseDeploymentPage extends WizardPage {
 		buttonContainer.setLayout(buttonLayout);
 
 		Button addButton = new Button(buttonContainer, SWT.PUSH);
-		addButton.setText("Add");
+		addButton.setText("Add...");
 		gd= new GridData(GridData.FILL_HORIZONTAL | GridData.VERTICAL_ALIGN_BEGINNING);
 		addButton.setLayoutData(gd);
 		LayoutUtil.setButtonDimensionHint(addButton);

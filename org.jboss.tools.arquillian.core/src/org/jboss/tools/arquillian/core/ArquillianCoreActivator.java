@@ -20,6 +20,7 @@ import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IResourceChangeEvent;
 import org.eclipse.core.resources.IResourceChangeListener;
 import org.eclipse.core.resources.IWorkspaceRoot;
+import org.eclipse.core.resources.IncrementalProjectBuilder;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.ILog;
 import org.eclipse.core.runtime.IPath;
@@ -64,10 +65,10 @@ public class ArquillianCoreActivator implements BundleActivator {
 		@Override
 		public void elementChanged(ElementChangedEvent event) {
 			IJavaElementDelta delta = event.getDelta();
-			int kind = delta.getKind();
-			if (kind == IJavaElementDelta.ADDED) {
-				return;
-			}
+//			int kind = delta.getKind();
+//			if (kind == IJavaElementDelta.ADDED) {
+//				return;
+//			}
 			if ((delta.getFlags() & IJavaElementDelta.F_CONTENT) != 0 ) {
 				IJavaElement element = delta.getElement();
 				//if (element instanceof ICompilationUnit) {
@@ -83,10 +84,16 @@ public class ArquillianCoreActivator implements BundleActivator {
 		public void resourceChanged(IResourceChangeEvent event) {
 			if (event.getType() == IResourceChangeEvent.PRE_DELETE ||
 					event.getType() == IResourceChangeEvent.PRE_CLOSE) {
-				IResource project = event.getResource();
-				if (project != null && project instanceof IProject) {
-					removeProjectLoader(project);
-				}
+				remove(event);
+			} else if (event.getType() == IResourceChangeEvent.PRE_BUILD && event.getBuildKind() == IncrementalProjectBuilder.CLEAN_BUILD) {
+				remove(event);
+			}
+		}
+
+		private void remove(IResourceChangeEvent event) {
+			IResource project = event.getResource();
+			if (project != null && project instanceof IProject) {
+				removeProjectLoader(project);
 			}
 		}
 	};
@@ -103,7 +110,7 @@ public class ArquillianCoreActivator implements BundleActivator {
 		plugin = this;
 		ArquillianCoreActivator.context = bundleContext;
 		ResourcesPlugin.getWorkspace().addResourceChangeListener(
-				resourceChangeListener, IResourceChangeEvent.PRE_DELETE|IResourceChangeEvent.PRE_CLOSE);
+				resourceChangeListener, IResourceChangeEvent.PRE_DELETE|IResourceChangeEvent.PRE_CLOSE|IResourceChangeEvent.PRE_BUILD);
 		JavaCore.addElementChangedListener(elementChangedListener);
 	}
 

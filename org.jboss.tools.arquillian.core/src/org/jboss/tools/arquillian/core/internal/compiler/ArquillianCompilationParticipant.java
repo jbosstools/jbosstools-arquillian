@@ -82,7 +82,7 @@ public class ArquillianCompilationParticipant extends CompilationParticipant imp
                     IResource.DEPTH_INFINITE);
             for (IMarker marker:markers) {
                 Integer severity = (Integer) marker.getAttribute(IMarker.SEVERITY);
-                if (severity != null && severity.intValue() == IMarker.SEVERITY_ERROR) {
+                if (severity != null && severity.intValue() == IMarker.SEVERITY_ERROR && JavaBuilder.SOURCE_ID.equals(marker.getAttribute(IMarker.SOURCE_ID))) {
                     return;
                 }
             }
@@ -422,13 +422,13 @@ public class ArquillianCompilationParticipant extends CompilationParticipant imp
     	if (arguments != null && arguments.length > 0) {
 			if (id == IProblem.IsClassPathCorrect) {
 				// Pb(324) The type org.jboss.tools.examples.service.MemberRegistration cannot be resolved. It is indirectly referenced from required .class files
-				message = "Arquillian: The " + arguments[0] + " type isn't  included in any deployment. It is indirectly referenced from required .class files";
+				message = "Arquillian: The " + arguments[0] + " type is not  included in any deployment. It is indirectly referenced from required .class files";
 			} else if (id == IProblem.UndefinedType) {
 				// Pb(2) MemberRegistration cannot be resolved to a type
-				message = "Arquillian: The " + arguments[0] + " type isn't  included in any deployment.";
+				message = "Arquillian: The " + arguments[0] + " type is not  included in any deployment.";
 			} else if (id == IProblem.ImportNotFound) {
 				// Pb(390) The import org.jboss.tools.examples.service.MemberRegistration cannot be resolved
-				message = "Arquillian: The " + arguments[0] + " import isn't  included in any deployment.";
+				message = "Arquillian: The " + arguments[0] + " import is not  included in any deployment.";
 			}
 			allValues[allNames.length-1] = arguments[0];
 		}        
