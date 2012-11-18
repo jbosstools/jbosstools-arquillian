@@ -71,6 +71,9 @@ public class ArquillianCoreActivator implements BundleActivator {
 //			}
 			if ((delta.getFlags() & IJavaElementDelta.F_CONTENT) != 0 ) {
 				IJavaElement element = delta.getElement();
+				if (element.getJavaProject() == null) {
+					return;
+				}
 				//if (element instanceof ICompilationUnit) {
 					removeProjectLoader(element.getJavaProject().getProject());
 				//}

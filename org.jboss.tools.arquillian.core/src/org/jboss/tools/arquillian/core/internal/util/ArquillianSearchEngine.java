@@ -173,6 +173,9 @@ public class ArquillianSearchEngine {
 	}
 
 	public static boolean isAccessibleClass(IType type) throws JavaModelException {
+		if (type == null) {
+			return false;
+		}
 		int flags= type.getFlags();
 		if (Flags.isInterface(flags)) {
 			return false;
