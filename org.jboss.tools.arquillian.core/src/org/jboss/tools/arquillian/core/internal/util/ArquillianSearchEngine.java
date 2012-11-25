@@ -26,6 +26,7 @@ import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.SubProgressMonitor;
 import org.eclipse.jdt.core.Flags;
+import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.IClassFile;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
@@ -41,7 +42,6 @@ import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.Signature;
-import org.eclipse.jdt.core.compiler.CategorizedProblem;
 import org.eclipse.jdt.core.compiler.CharOperation;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
@@ -61,14 +61,13 @@ import org.eclipse.jdt.core.search.SearchMatch;
 import org.eclipse.jdt.core.search.SearchParticipant;
 import org.eclipse.jdt.core.search.SearchPattern;
 import org.eclipse.jdt.core.search.SearchRequestor;
-import org.eclipse.jdt.internal.compiler.lookup.MethodBinding;
 import org.eclipse.jdt.internal.compiler.lookup.TypeConstants;
-import org.eclipse.jdt.internal.core.builder.JavaBuilder;
 import org.eclipse.jdt.internal.junit.JUnitMessages;
 import org.eclipse.jdt.internal.junit.launcher.ITestKind;
 import org.eclipse.jdt.internal.junit.util.CoreTestSearchEngine;
 import org.eclipse.jface.operation.IRunnableContext;
 import org.eclipse.jface.operation.IRunnableWithProgress;
+import org.eclipse.jst.j2ee.internal.common.operations.JavaModelUtil;
 import org.jboss.tools.arquillian.core.ArquillianCoreActivator;
 import org.jboss.tools.arquillian.core.internal.compiler.SourceFile;
 import org.jboss.tools.arquillian.core.internal.preferences.ArquillianConstants;
@@ -335,12 +334,17 @@ public class ArquillianSearchEngine {
 	}
 	
 	public static void findTestsInContainer(IJavaElement element, Set result, IProgressMonitor pm) throws CoreException {
+		findTestsInContainer(element, result, pm, true, true, true);
+	}
+	
+	public static void findTestsInContainer(IJavaElement element, Set result, IProgressMonitor pm,
+			boolean checkDeployment, boolean checkTest, boolean checkSuite) throws CoreException {
 		if (element == null || result == null) {
 			throw new IllegalArgumentException();
 		}
 
 		if (element instanceof IType) {
-			if (isArquillianJUnitTest((IType) element, true, true)) {
+			if (isArquillianJUnitTest((IType) element, checkDeployment, checkTest)) {
 				result.add(element);
 				return;
 			}
@@ -388,7 +392,9 @@ public class ArquillianSearchEngine {
 //			}
 
 			//JUnit 4.3 can also run JUnit-3.8-style public static Test suite() methods:
-			CoreTestSearchEngine.findSuiteMethods(element, result, new SubProgressMonitor(pm, 1));
+			if (checkSuite) {
+				CoreTestSearchEngine.findSuiteMethods(element, result, new SubProgressMonitor(pm, 1));
+			}
 		} finally {
 			pm.done();
 		}
@@ -729,22 +735,59 @@ public class ArquillianSearchEngine {
 		while (binding != null) {
 			IMethodBinding[] declaredMethods= binding.getDeclaredMethods();
 			for (IMethodBinding curr:declaredMethods) {
-				if (annotates(curr.getAnnotations(), ArquillianUtility.ORG_JBOSS_ARQUILLIAN_CONTAINER_TEST_API_DEPLOYMENT)) {
-					int modifiers = curr.getModifiers();
-					if ( (modifiers & Modifier.PUBLIC) != 0 &&
-							(modifiers & Modifier.STATIC) != 0 &&
-							curr.getParameterTypes().length == 0) {
-						ITypeBinding returnType = curr.getReturnType();
-						if ("org.jboss.shrinkwrap.api.Archive".equals(returnType.getBinaryName())) {
-							methodBindings.add(curr);
-						}
-						
-					}
+				if (isDeploymentMethod(curr)) {
+					methodBindings.add(curr);
 				}
 			}
 			binding = binding.getSuperclass();
 		}
 		return methodBindings;
+	}
+	
+	public static boolean isDeploymentMethod(IMethodBinding methodBinding) {
+		if (annotates(methodBinding.getAnnotations(), ArquillianUtility.ORG_JBOSS_ARQUILLIAN_CONTAINER_TEST_API_DEPLOYMENT)) {
+			int modifiers = methodBinding.getModifiers();
+			if ( (modifiers & Modifier.PUBLIC) != 0 &&
+					(modifiers & Modifier.STATIC) != 0 &&
+					methodBinding.getParameterTypes().length == 0) {
+				ITypeBinding returnType = methodBinding.getReturnType();
+				if ("org.jboss.shrinkwrap.api.Archive".equals(returnType.getBinaryName())) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	public static boolean isDeploymentMethod(IMethod method) {
+		if (method == null || !method.exists())
+			return false;
+	
+		try {
+			if (!Flags.isStatic(method.getFlags()) || !Flags.isPublic(method.getFlags())) {
+				return false;
+			}
+			if (method.getParameters().length > 0) {
+				return false;
+			}
+			String type = method.getReturnType();
+			if (type == null) {
+				return false;
+			}
+			String typeSig = Signature.toString(type);
+			if (!"Archive<?>".equals(typeSig)) {
+				return false;
+			}
+			IAnnotation deployment = method.getAnnotation("Deployment");
+			if (deployment != null && deployment.exists()) {
+				return true;
+			}
+		} catch (JavaModelException e) {
+			ArquillianCoreActivator.log(e);
+			return false;
+		}
+		
+		return false;
 	}
 
 }

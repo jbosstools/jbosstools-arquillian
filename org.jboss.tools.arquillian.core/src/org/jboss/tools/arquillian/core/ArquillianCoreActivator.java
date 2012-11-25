@@ -77,6 +77,7 @@ public class ArquillianCoreActivator implements BundleActivator {
 				//if (element instanceof ICompilationUnit) {
 					removeProjectLoader(element.getJavaProject().getProject());
 				//}
+					
 			}
 		}
 	};

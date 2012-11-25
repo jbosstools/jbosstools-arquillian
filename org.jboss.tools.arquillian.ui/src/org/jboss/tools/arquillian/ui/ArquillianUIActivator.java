@@ -11,8 +11,14 @@
 package org.jboss.tools.arquillian.ui;
 
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
+import org.eclipse.jface.resource.ImageDescriptor;
+import org.eclipse.jface.resource.ImageRegistry;
+import org.eclipse.swt.graphics.Image;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.osgi.framework.BundleContext;
 
@@ -30,6 +36,8 @@ public class ArquillianUIActivator extends AbstractUIPlugin {
 
 	// The shared instance
 	private static ArquillianUIActivator plugin;
+	
+	private static Map<ImageDescriptor, Image> images;
 	
 	/**
 	 * The constructor
@@ -73,6 +81,18 @@ public class ArquillianUIActivator extends AbstractUIPlugin {
 		IStatus status = new Status(IStatus.ERROR, PLUGIN_ID, e
 				.getLocalizedMessage(), e);
 		plugin.getLog().log(status);
+	}
+
+	public static Image getImage(ImageDescriptor descriptor) {
+		if (images == null) {
+			images = new HashMap<ImageDescriptor, Image>();
+		}
+		Image image = images.get(descriptor);
+		if (image == null) {
+			image = descriptor.createImage();
+			images.put(descriptor, image);
+		}
+		return image;
 	}
 
 }

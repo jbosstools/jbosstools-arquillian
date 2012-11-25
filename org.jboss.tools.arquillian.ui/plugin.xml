@@ -303,4 +303,63 @@
       </shortcut>
    </extension>
    
+   <extension
+         point="org.eclipse.ui.views">
+      <view
+            category="org.jboss.tools.common.model.ui.views"
+            class="org.jboss.tools.arquillian.ui.internal.views.ArquillianView"
+            icon="icons/arquillian_icon16.png"
+            id="org.jboss.tools.arquillian.ui.views.arquillianView"
+            name="Arquillia Cruiser">
+      </view>
+   </extension>
+   
+   <extension
+         point="org.eclipse.ui.navigator.viewer">
+      <viewerActionBinding
+            viewerId="org.jboss.tools.arquillian.ui.views.arquillianView">
+      </viewerActionBinding>
+      <viewerContentBinding
+            viewerId="org.jboss.tools.arquillian.ui.views.arquillianView">
+         <includes>
+				<contentExtension pattern="org.eclipse.jdt.java.ui.javaContent" />
+				<contentExtension pattern="org.eclipse.jdt.java.ui.filters.*" />
+				<contentExtension pattern="org.jboss.tools.arquillian.ui.filters.*" />
+				<contentExtension pattern="org.jboss.tools.arquillian.ui.deplymentContent" />	
+				<contentExtension pattern="org.eclipse.jdt.java.ui.javaLinkHelper" />	
+	     </includes>
+      </viewerContentBinding>
+   </extension>
+   
+   <extension
+         point="org.eclipse.ui.navigator.navigatorContent">
+      <commonFilter
+            activeByDefault="true"
+            class="org.jboss.tools.arquillian.ui.internal.filters.ArquillianFilter"
+            id="org.jboss.tools.arquillian.ui.filters.projectFilter"
+            name="Arquillian Filter">
+      </commonFilter>
+   </extension>
+   
+   <extension
+         point="org.eclipse.ui.navigator.navigatorContent">
+      <navigatorContent
+            activeByDefault="true"
+            contentProvider="org.jboss.tools.arquillian.ui.internal.views.DeploymentContentProvider"
+            icon="$nl$/icons/jar_obj.gif"
+            id="org.jboss.tools.arquillian.ui.deplymentContent"
+            labelProvider="org.jboss.tools.arquillian.ui.internal.views.DeploymentLabelProvider"
+            name="Deployment Content"
+            priority="higher">
+         <triggerPoints>
+			<instanceof value="org.eclipse.jdt.core.ICompilationUnit"/>
+         </triggerPoints>
+         <possibleChildren>
+            <or>
+               <instanceof value="org.jboss.tools.arquillian.ui.internal.model.ArquillianZipEntry"/>  
+            </or>
+         </possibleChildren>
+      </navigatorContent>
+   </extension>
+   
 </plugin>
