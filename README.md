@@ -11,9 +11,6 @@ Related jira: https://issues.jboss.org/browse/JBIDE-6319
 
 See http://screencast.com/t/gUh1IjTBfnE
 
-TODO:
-- contribute an Arquillian preferences page to enable the user to choose which Arquillian version and artifacts to add
-
 2) New Arquillian JUnit Test Case wizard
 
 The wizard is currently based on the JUnit Test Case wizard, but adds the following to the created class:
@@ -58,14 +55,16 @@ Arquillian issues can be ignored, marked as a warning or as an error. It is poss
 
 See http://screencast.com/t/53XkyHltg
 
-The following features aren't implemented yet:
+7) Arquillian view
 
-- the Arquillian Deployment View
-a separate view that would show Arquillian deployment archive.
-- the Arquillian WTP facet
-will allow the user to add the Arquillian support when creating/changing some WTP project
-- the Arquillian Maven Configurator
-to add the Aruillian support when importing a maven project containing arquillian dependencies.
+The Arquillian view (Arquillia Cruiser) shows Arquillian deployment archives.
+
+Related jira: https://issues.jboss.org/browse/JBIDE-6662
+
+See http://screencast.com/t/P3mnJy8UV
+
+TODO:
+- contribute an Arquillian preferences page to enable the user to choose which Arquillian version and artifacts to add
 - the new Arquillian TestNG Test Case wizard
 - Content Assist
 CA will offer the user available resources/classes that can be added to the deployment method.
