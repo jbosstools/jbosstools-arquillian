@@ -28,6 +28,7 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.NullProgressMonitor;
+import org.eclipse.core.runtime.Platform;
 import org.eclipse.jdt.core.IJavaModelStatusConstants;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IMember;
@@ -57,6 +58,7 @@ import org.eclipse.jdt.internal.core.util.Util;
 import org.jboss.tools.arquillian.core.ArquillianCoreActivator;
 import org.jboss.tools.arquillian.core.internal.preferences.ArquillianConstants;
 import org.jboss.tools.arquillian.core.internal.util.ArquillianSearchEngine;
+import org.jboss.tools.arquillian.core.internal.util.ArquillianUtility;
 
 public class ArquillianCompilationParticipant extends CompilationParticipant implements ICompilerRequestor {
 
@@ -68,13 +70,16 @@ public class ArquillianCompilationParticipant extends CompilationParticipant imp
 
     @Override
     public void buildFinished(IJavaProject project) {
+    	if (ArquillianCoreActivator.getDefault() == null) {
+    		return;
+    	}
     	try {
 			project.getProject().deleteMarkers(ArquillianConstants.MARKER_CLASS_ID, false, IResource.DEPTH_INFINITE);
 			project.getProject().deleteMarkers(ArquillianConstants.MARKER_RESOURCE_ID, false, IResource.DEPTH_INFINITE);
 		} catch (CoreException e) {
 			ArquillianCoreActivator.log(e);
 		}
-    	if (ArquillianConstants.SEVERITY_IGNORE.equals(ArquillianCoreActivator.getDefault().getArquillianSeverityLevel())) {
+    	if (!ArquillianUtility.isValidatorEnabled(project.getProject())) {
             return;
     	}
         try {
@@ -112,17 +117,22 @@ public class ArquillianCompilationParticipant extends CompilationParticipant imp
         	SourceFile sourceFile = iterator.next();
         	
         	boolean remove = false;
-        	if (!ArquillianSearchEngine.hasDeploymentMethod(sourceFile, project)) {
+        	String preference = ArquillianUtility.getPreference(ArquillianConstants.MISSING_DEPLOYMENT_METHOD, project.getProject());
+    		
+        	if (!JavaCore.IGNORE.equals(preference) && !ArquillianSearchEngine.hasDeploymentMethod(sourceFile, project)) {
         		try {
-            		storeProblem(sourceFile, "Arquillian test requires at least one method annotated with @Deployment");
+        			Integer severity = ArquillianUtility.getSeverity(preference);
+        			storeProblem(sourceFile, "Arquillian test requires at least one method annotated with @Deployment", severity);
 				} catch (CoreException e) {
 					ArquillianCoreActivator.log(e);
 				}
         		remove = true;
         	}
-        	if (!ArquillianSearchEngine.hasTestMethod(sourceFile, project)) {
+        	preference = ArquillianUtility.getPreference(ArquillianConstants.MISSING_TEST_METHOD, project.getProject());
+        	if (!JavaCore.IGNORE.equals(preference) && !ArquillianSearchEngine.hasTestMethod(sourceFile, project)) {
         		try {
-        			storeProblem(sourceFile, "Arquillian test requires at least one method annotated with @Test");
+        			Integer severity = ArquillianUtility.getSeverity(preference);
+        			storeProblem(sourceFile, "Arquillian test requires at least one method annotated with @Test", severity);
 				} catch (CoreException e) {
 					ArquillianCoreActivator.log(e);
 				}
@@ -141,8 +151,11 @@ public class ArquillianCompilationParticipant extends CompilationParticipant imp
         
     }
     
-	private void storeProblem(SourceFile sourceFile, String message)
+	private void storeProblem(SourceFile sourceFile, String message, Integer severity)
 			throws CoreException {
+		if (severity == null) {
+			return;
+		}
 		IMarker marker = sourceFile.resource
 				.createMarker(ArquillianConstants.MARKER_CLASS_ID);
 		String[] attributeNames = ArquillianConstants.ARQUILLIAN_PROBLEM_MARKER_ATTRIBUTE_NAMES;
@@ -156,13 +169,8 @@ public class ArquillianCompilationParticipant extends CompilationParticipant imp
 		sb.append(message);
 
 		allValues[index++] = sb.toString(); // message
-		String severity = ArquillianCoreActivator.getDefault()
-				.getArquillianSeverityLevel();
-		if (ArquillianConstants.SEVERITY_ERROR.equals(severity)) {
-			allValues[index++] = new Integer(IMarker.SEVERITY_ERROR);
-		} else {
-			allValues[index++] = new Integer(IMarker.SEVERITY_WARNING);
-		}
+		allValues[index++] = severity;
+		
 		ISourceRange range = null;
 		IMember javaElement = ArquillianSearchEngine.getType(sourceFile);
 		if (javaElement != null) {
@@ -391,6 +399,12 @@ public class ArquillianCompilationParticipant extends CompilationParticipant imp
     		// ignore
     		return;
     	}
+    	String typePreference = ArquillianUtility.getPreference(ArquillianConstants.TYPE_IS_NOT_INCLUDED_IN_ANY_DEPLOYMENT, resource.getProject());
+    	String importPreference = ArquillianUtility.getPreference(ArquillianConstants.IMPORT_IS_NOT_INCLUDED_IN_ANY_DEPLOYMENT, resource.getProject());
+    	
+    	if (JavaCore.IGNORE.equals(typePreference) && JavaCore.IGNORE.equals(importPreference)) {
+    		return;
+    	}
     	int id = problem.getID();
     	if (id != IProblem.IsClassPathCorrect &&  id != IProblem.UndefinedType && id != IProblem.ImportNotFound) {
     		// ignore
@@ -419,26 +433,29 @@ public class ArquillianCompilationParticipant extends CompilationParticipant imp
         int index = 0;
         String[] arguments = problem.getArguments();
     	String message = "Arquillian: " + problem.getMessage();
+    	Integer severity = null;
     	if (arguments != null && arguments.length > 0) {
 			if (id == IProblem.IsClassPathCorrect) {
 				// Pb(324) The type org.jboss.tools.examples.service.MemberRegistration cannot be resolved. It is indirectly referenced from required .class files
 				message = "Arquillian: The " + arguments[0] + " type is not  included in any deployment. It is indirectly referenced from required .class files";
+				severity = ArquillianUtility.getSeverity(typePreference);
 			} else if (id == IProblem.UndefinedType) {
 				// Pb(2) MemberRegistration cannot be resolved to a type
 				message = "Arquillian: The " + arguments[0] + " type is not  included in any deployment.";
+				severity = ArquillianUtility.getSeverity(typePreference);
 			} else if (id == IProblem.ImportNotFound) {
 				// Pb(390) The import org.jboss.tools.examples.service.MemberRegistration cannot be resolved
 				message = "Arquillian: The " + arguments[0] + " import is not  included in any deployment.";
+				severity = ArquillianUtility.getSeverity(importPreference);
 			}
 			allValues[allNames.length-1] = arguments[0];
 		}        
+    	if (severity == null) {
+    		return;
+    	}
         allValues[index++] = message; // message
-        String severity = ArquillianCoreActivator.getDefault().getArquillianSeverityLevel();
-        if (ArquillianConstants.SEVERITY_ERROR.equals(severity)) {
-        	allValues[index++] = new Integer(IMarker.SEVERITY_ERROR);
-        } else {
-        	allValues[index++] = new Integer(IMarker.SEVERITY_WARNING);
-        }
+        allValues[index++] = severity;
+        
         allValues[index++] = new Integer(problem.getID()); // ID
         allValues[index++] = new Integer(problem.getSourceStart()); // start
         int end = problem.getSourceEnd();

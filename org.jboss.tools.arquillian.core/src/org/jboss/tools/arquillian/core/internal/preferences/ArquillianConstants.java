@@ -12,7 +12,7 @@ package org.jboss.tools.arquillian.core.internal.preferences;
 
 import org.eclipse.core.resources.IMarker;
 import org.eclipse.jdt.core.IJavaModelMarker;
-import org.eclipse.jdt.core.compiler.IProblem;
+import org.jboss.tools.arquillian.core.ArquillianCoreActivator;
 
 /**
  * 
@@ -21,17 +21,21 @@ import org.eclipse.jdt.core.compiler.IProblem;
  */
 public class ArquillianConstants {
 	
-	public static final String ARQUILLIAN_SEVERITY_LEVEL = "arquillianSeverityLevel";
-
+	public static final String ENABLE_ARQUILLIAN_VALIDATOR = "enableArquillianValidator"; //$NON-NLS-1$
+	
+	public static final boolean ENABLE_ARQUILLIAN_VALIDATOR_DEFAULT = true;
+	
 	public static final String SEVERITY_ERROR = "Error";
 	public static final String SEVERITY_WARNING = "Warning";
 	public static final String SEVERITY_IGNORE = "Ignore";
 	
-	public static final String ARQUILLIAN_SEVERITY_LEVEL_DEFAULT = SEVERITY_WARNING;
-
 	public static final String[] SEVERITY_LEVELS = new String[] { SEVERITY_ERROR, SEVERITY_WARNING, SEVERITY_IGNORE} ;
 
-	public static final String MARKER_CLASS_NAME = "markerClassName";
+	public static final String ARQUILLIAN_VERSION = "arquillianVersion"; //$NON-NLS-1$
+
+	public static final String ARQUILLIAN_VERSION_DEFAULT = "1.0.3.Final"; //$NON-NLS-1$
+	
+	public static final String MARKER_CLASS_NAME = "markerClassName"; //$NON-NLS-1$
 
 	public static final String MARKER_CLASS_ID = "org.jboss.tools.arquillian.core.problem.class";  //$NON-NLS-1$
 	
@@ -50,6 +54,16 @@ public class ArquillianConstants {
 
 	public static final int ARQUILLIAN_PROBLEM_ID = 1;
 
-	public static final Object SOURCE_ID ="Arquillian";
-    
+	public static final Object SOURCE_ID ="Arquillian"; //$NON-NLS-1$
+	
+	public static final String MISSING_DEPLOYMENT_METHOD = ArquillianCoreActivator.PLUGIN_ID + ".missingDeploymentMethod"; //$NON-NLS-1$
+	
+	public static final String MISSING_TEST_METHOD = ArquillianCoreActivator.PLUGIN_ID + ".missingTestMethod"; //$NON-NLS-1$
+	
+	public static final String TYPE_IS_NOT_INCLUDED_IN_ANY_DEPLOYMENT = ArquillianCoreActivator.PLUGIN_ID + ".typeIsNotIncludedInAnyDeployment"; //$NON-NLS-1$
+	
+	public static final String IMPORT_IS_NOT_INCLUDED_IN_ANY_DEPLOYMENT = ArquillianCoreActivator.PLUGIN_ID + ".importIsNotIncludedInAnyDeployment"; //$NON-NLS-1$
+	
+	public static final String DEPLOYMENT_ARCHIVE_CANNOT_BE_CREATED = ArquillianCoreActivator.PLUGIN_ID + ".deploymentArchiveCannotBeCreated"; //$NON-NLS-1$
+	
 }

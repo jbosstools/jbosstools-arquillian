@@ -648,7 +648,8 @@ public class ArquillianSearchEngine {
 			}
 			ArquillianCoreActivator.log(message);
 			try {
-				createProblem(message, type, deploymentMethod);
+				Integer severity = ArquillianUtility.getSeverity(ArquillianUtility.getPreference(ArquillianConstants.DEPLOYMENT_ARCHIVE_CANNOT_BE_CREATED));
+				createProblem(message, type, deploymentMethod, severity);
 			} catch (CoreException e1) {
 				ArquillianCoreActivator.log(e1);
 			}
@@ -659,10 +660,12 @@ public class ArquillianSearchEngine {
 	}
 
 	private static void createProblem(String message, IType type,
-			IMethodBinding deploymentMethod) throws CoreException {
-		String severity = ArquillianCoreActivator.getDefault()
-				.getArquillianSeverityLevel();
-		if (ArquillianConstants.SEVERITY_IGNORE.equals(severity)) {
+			IMethodBinding deploymentMethod, Integer severity) throws CoreException {
+		if (severity == null || type == null || type.getJavaProject() == null) {
+			return;
+		}
+		boolean enable = ArquillianUtility.isValidatorEnabled(type.getJavaProject().getProject());
+		if (!enable) {
 			return;
 		}
 		ICompilationUnit cu = type.getCompilationUnit();
@@ -689,11 +692,8 @@ public class ArquillianSearchEngine {
 		int index = 0;
 		allValues[index++] = message;
 		
-		if (ArquillianConstants.SEVERITY_ERROR.equals(severity)) {
-        	allValues[index++] = new Integer(IMarker.SEVERITY_ERROR);
-        } else {
-        	allValues[index++] = new Integer(IMarker.SEVERITY_WARNING);
-        }
+		allValues[index++] = severity;
+        
 		allValues[index++] = ArquillianConstants.ARQUILLIAN_PROBLEM_ID;
 		
 		IJavaElement javaElement = deploymentMethod.getJavaElement();

@@ -205,16 +205,12 @@ public class ArquillianCoreActivator implements BundleActivator {
 		return new File(base, name);
 	}
 	
-	 public IPreferenceStore getPreferenceStore() {
-	        if (preferenceStore == null) {
-	            preferenceStore = new ScopedPreferenceStore(InstanceScope.INSTANCE, PLUGIN_ID);
-
-	        }
-	        return preferenceStore;
-	    }
-
-	public String getArquillianSeverityLevel() {
-		return getPreferenceStore().getString(ArquillianConstants.ARQUILLIAN_SEVERITY_LEVEL);
+	public IPreferenceStore getPreferenceStore() {
+		if (preferenceStore == null) {
+			preferenceStore = new ScopedPreferenceStore(InstanceScope.INSTANCE,
+					PLUGIN_ID);
+		}
+		return preferenceStore;
 	}
 
 }

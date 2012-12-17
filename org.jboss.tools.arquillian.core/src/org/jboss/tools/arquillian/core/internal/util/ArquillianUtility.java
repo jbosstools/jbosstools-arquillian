@@ -45,9 +45,11 @@ import org.apache.maven.model.Profile;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.settings.Settings;
 import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IncrementalProjectBuilder;
+import org.eclipse.core.resources.ProjectScope;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.resources.WorkspaceJob;
 import org.eclipse.core.runtime.CoreException;
@@ -56,12 +58,19 @@ import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.OperationCanceledException;
+import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.jobs.Job;
+import org.eclipse.core.runtime.preferences.DefaultScope;
+import org.eclipse.core.runtime.preferences.IEclipsePreferences;
+import org.eclipse.core.runtime.preferences.IPreferencesService;
+import org.eclipse.core.runtime.preferences.IScopeContext;
+import org.eclipse.core.runtime.preferences.InstanceScope;
 import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.emf.ecore.xmi.XMIResource;
 import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.m2e.core.MavenPlugin;
 import org.eclipse.m2e.core.embedder.IMaven;
 import org.eclipse.m2e.core.internal.IMavenConstants;
@@ -75,6 +84,7 @@ import org.eclipse.wst.sse.core.StructuredModelManager;
 import org.eclipse.wst.xml.core.internal.provisional.document.IDOMDocument;
 import org.eclipse.wst.xml.core.internal.provisional.document.IDOMModel;
 import org.jboss.tools.arquillian.core.ArquillianCoreActivator;
+import org.jboss.tools.arquillian.core.internal.preferences.ArquillianConstants;
 import org.jboss.tools.maven.core.MavenCoreActivator;
 import org.w3c.dom.Element;
 
@@ -85,7 +95,9 @@ import org.w3c.dom.Element;
  */
 public class ArquillianUtility {
 	
-public static final String ARQUILLIAN_CORE_GROUP_ID = "org.jboss.arquillian.core"; //$NON-NLS-1$
+	private static final String ARQUILLIAN_VERSION = "arquillian.version";
+
+	public static final String ARQUILLIAN_CORE_GROUP_ID = "org.jboss.arquillian.core"; //$NON-NLS-1$
 	
 	public static final String ARQUILLIAN_CORE_API_ARTIFACT_ID = "arquillian-core-api"; //$NON-NLS-1$
 	
@@ -253,7 +265,12 @@ public static final String ARQUILLIAN_CORE_GROUP_ID = "org.jboss.arquillian.core
 		Set<Entry<Object,Object>> entries = properties.entrySet();
 		for (Entry<Object,Object> entry:entries) {
 			String key = (String) entry.getKey();
-			String value = (String) entry.getValue();
+			String value;
+			if (ARQUILLIAN_VERSION.equals(key)) {
+				value = ArquillianUtility.getPreference(ArquillianConstants.ARQUILLIAN_VERSION);
+			} else {
+				value = (String) entry.getValue();
+			}
 			Element property = findChild(propertiesEl, key);
 			if (property == null) {
 				createElementWithText(propertiesEl, key, value);
@@ -640,4 +657,50 @@ public static final String ARQUILLIAN_CORE_GROUP_ID = "org.jboss.arquillian.core
 		return (path.delete());
 	}
 	
+	public static String getPreference(String name) {
+		return getPreference(name, null);
+	}
+	
+	public static String getPreference(String name, IProject project) {
+		IEclipsePreferences[] preferencesLookup;
+		if (project != null) {
+			preferencesLookup = new IEclipsePreferences[] {
+					new ProjectScope(project).getNode(ArquillianCoreActivator.PLUGIN_ID),
+					InstanceScope.INSTANCE.getNode(ArquillianCoreActivator.PLUGIN_ID),
+					DefaultScope.INSTANCE.getNode(ArquillianCoreActivator.PLUGIN_ID)
+			};
+		} else {
+			preferencesLookup = new IEclipsePreferences[] {
+					InstanceScope.INSTANCE.getNode(ArquillianCoreActivator.PLUGIN_ID),
+					DefaultScope.INSTANCE.getNode(ArquillianCoreActivator.PLUGIN_ID)
+			};
+		}
+		IPreferencesService service = Platform.getPreferencesService();
+		String value = service.get(name, null, preferencesLookup);
+		return value;
+	}
+	
+	public static boolean validateDeploymentMethod(IProject project) {
+		String preference = getPreference(ArquillianConstants.MISSING_DEPLOYMENT_METHOD, project);
+		return !JavaCore.IGNORE.equals(preference);
+	}
+	
+	public static boolean validateTestMethod(IProject project) {
+		String preference = getPreference(ArquillianConstants.MISSING_TEST_METHOD, project);
+		return !JavaCore.IGNORE.equals(preference);
+	}
+
+	public static boolean isValidatorEnabled(IProject project) {
+		String preference = getPreference(ArquillianConstants.ENABLE_ARQUILLIAN_VALIDATOR, project);
+		return "true".equals(preference);
+	}
+	
+	public static Integer getSeverity(String preference) {
+		if (JavaCore.WARNING.equals(preference)) {
+			return new Integer(IMarker.SEVERITY_WARNING);
+		} else if (JavaCore.ERROR.equals(preference))  {
+			return new Integer(IMarker.SEVERITY_ERROR);
+		}
+		return null;
+	}
 }

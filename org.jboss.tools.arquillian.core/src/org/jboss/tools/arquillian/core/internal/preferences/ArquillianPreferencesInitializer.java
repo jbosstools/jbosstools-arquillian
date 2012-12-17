@@ -11,7 +11,9 @@
 package org.jboss.tools.arquillian.core.internal.preferences;
 
 import org.eclipse.core.runtime.preferences.AbstractPreferenceInitializer;
-import org.eclipse.jface.preference.IPreferenceStore;
+import org.eclipse.core.runtime.preferences.DefaultScope;
+import org.eclipse.core.runtime.preferences.IEclipsePreferences;
+import org.eclipse.jdt.core.JavaCore;
 import org.jboss.tools.arquillian.core.ArquillianCoreActivator;
 
 /** 
@@ -24,8 +26,14 @@ public class ArquillianPreferencesInitializer extends
 
 	@Override
 	public void initializeDefaultPreferences() {
-		IPreferenceStore preferences = ArquillianCoreActivator.getDefault().getPreferenceStore();
-		preferences.setDefault(ArquillianConstants.ARQUILLIAN_SEVERITY_LEVEL, ArquillianConstants.ARQUILLIAN_SEVERITY_LEVEL_DEFAULT);
+		IEclipsePreferences preferences = DefaultScope.INSTANCE.getNode(ArquillianCoreActivator.PLUGIN_ID);
+		preferences.putBoolean(ArquillianConstants.ENABLE_ARQUILLIAN_VALIDATOR, true);
+		preferences.put(ArquillianConstants.MISSING_DEPLOYMENT_METHOD, JavaCore.WARNING);
+		preferences.put(ArquillianConstants.MISSING_TEST_METHOD, JavaCore.WARNING);
+		preferences.put(ArquillianConstants.TYPE_IS_NOT_INCLUDED_IN_ANY_DEPLOYMENT, JavaCore.WARNING);
+		preferences.put(ArquillianConstants.IMPORT_IS_NOT_INCLUDED_IN_ANY_DEPLOYMENT, JavaCore.WARNING);
+		preferences.put(ArquillianConstants.DEPLOYMENT_ARCHIVE_CANNOT_BE_CREATED, JavaCore.WARNING);
+		
 	}
 
 }

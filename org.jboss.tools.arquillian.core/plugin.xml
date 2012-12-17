@@ -88,23 +88,7 @@
       <managedMarker markerType="org.jboss.tools.arquillian.core.problem"/>
    </compilationParticipant>
  </extension>
- 
- <extension
-         point="org.eclipse.ui.propertyPages">
-      <page
-            class="org.jboss.tools.arquillian.core.internal.preferences.ArquillianPropertyPage"
-            id="org.jboss.tools.arquillian.core.internal.preferences.arquillianPropertyPage"
-            name="Arquillian"
-            nameFilter="*">
-         <enabledWhen>
-               <adapt type="org.eclipse.core.resources.IProject">
-		          <test property="org.eclipse.core.resources.projectNature" 
-		          	value="org.eclipse.jdt.core.javanature"/>
-		     </adapt>  
-         </enabledWhen>
-      </page>
-   </extension>
-   
+    
  <extension
          point="org.eclipse.core.runtime.preferences">
       <initializer class="org.jboss.tools.arquillian.core.internal.preferences.ArquillianPreferencesInitializer"/>

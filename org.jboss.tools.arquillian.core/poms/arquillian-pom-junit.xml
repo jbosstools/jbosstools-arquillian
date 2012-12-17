@@ -13,6 +13,7 @@
     
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <arquillian.version>1.0.2.Final</arquillian.version>
     </properties>
     <build>
         <plugins>
@@ -35,7 +36,7 @@
             <dependency>
                 <groupId>org.jboss.arquillian</groupId>
                 <artifactId>arquillian-bom</artifactId>
-                <version>1.0.2.Final</version>
+                <version>${arquillian.version}</version>
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
