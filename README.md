@@ -64,9 +64,8 @@ Related jira: https://issues.jboss.org/browse/JBIDE-6662
 See http://screencast.com/t/P3mnJy8UV
 
 TODO:
-- contribute an Arquillian preferences page to enable the user to choose which Arquillian version and artifacts to add
 - the new Arquillian TestNG Test Case wizard
 - Content Assist
 CA will offer the user available resources/classes that can be added to the deployment method.
 
-Update Site: http://anonsvn.jboss.org/repos/jbosstools/workspace/snjeza/org.jboss.tools.arquillian.updatesite
+Update Site: http://snjeza.github.com/arquillian-eclipse
