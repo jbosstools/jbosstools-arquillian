@@ -51,6 +51,7 @@ import org.sonatype.aether.version.Version;
 public class ArquillianPreferencePage extends PreferencePage implements
 		IWorkbenchPreferencePage {
 
+	public static final String ID = "org.jboss.tools.arquillian.ui.preferences.arquillianPreferencePage"; //$NON-NLS-1$
 	private Combo combo;
 
 	private static final String[] defaultVersions = new String[] {ArquillianConstants.ARQUILLIAN_VERSION_DEFAULT};

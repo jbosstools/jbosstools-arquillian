@@ -205,7 +205,7 @@ public class ArquillianUtility {
 	}
 
 	private static void addArtifacts(IFile pomFile, MavenProject mavenProject) throws CoreException {
-		URL url = ArquillianUtility.getArquillianPomFile(true);
+		URL url = getArquillianPomFile(true);
 		InputStream in = null;
 		try {
 			in = url.openStream();
