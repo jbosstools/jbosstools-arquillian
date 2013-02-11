@@ -75,8 +75,8 @@ import org.osgi.framework.Bundle;
 
 public class ArquillianSearchEngine {
 
-	private static final String ARQUILLIAN_JUNIT_ARQUILLIAN = "org.jboss.arquillian.junit.Arquillian";
-	public static final String CONTAINER_DEPLOYABLE_CONTAINER = "org.jboss.arquillian.container.spi.client.container.DeployableContainer";
+	public static final String ARQUILLIAN_JUNIT_ARQUILLIAN = "org.jboss.arquillian.junit.Arquillian"; //$NON-NLS-1$
+	public static final String CONTAINER_DEPLOYABLE_CONTAINER = "org.jboss.arquillian.container.spi.client.container.DeployableContainer"; //$NON-NLS-1$
 
 	private static class Annotation {
 	

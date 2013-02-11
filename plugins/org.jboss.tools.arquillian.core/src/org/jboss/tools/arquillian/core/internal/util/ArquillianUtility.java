@@ -64,7 +64,6 @@ import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.core.runtime.preferences.DefaultScope;
 import org.eclipse.core.runtime.preferences.IEclipsePreferences;
 import org.eclipse.core.runtime.preferences.IPreferencesService;
-import org.eclipse.core.runtime.preferences.IScopeContext;
 import org.eclipse.core.runtime.preferences.InstanceScope;
 import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.ecore.util.EcoreUtil;
@@ -267,7 +266,7 @@ public class ArquillianUtility {
 			String key = (String) entry.getKey();
 			String value;
 			if (ARQUILLIAN_VERSION.equals(key)) {
-				value = ArquillianUtility.getPreference(ArquillianConstants.ARQUILLIAN_VERSION);
+				value = ArquillianUtility.getPreference(ArquillianConstants.ARQUILLIAN_VERSION, ArquillianConstants.ARQUILLIAN_VERSION_DEFAULT);
 			} else {
 				value = (String) entry.getValue();
 			}
@@ -658,10 +657,18 @@ public class ArquillianUtility {
 	}
 	
 	public static String getPreference(String name) {
-		return getPreference(name, null);
+		return getPreference(name, null, null);
+	}
+	
+	public static String getPreference(String name, String defaultValue) {
+		return getPreference(name, defaultValue, null);
 	}
 	
 	public static String getPreference(String name, IProject project) {
+		return getPreference(name, null, project);
+	}
+	
+	public static String getPreference(String name, String defaultValue, IProject project) {
 		IEclipsePreferences[] preferencesLookup;
 		if (project != null) {
 			preferencesLookup = new IEclipsePreferences[] {
@@ -676,7 +683,7 @@ public class ArquillianUtility {
 			};
 		}
 		IPreferencesService service = Platform.getPreferencesService();
-		String value = service.get(name, null, preferencesLookup);
+		String value = service.get(name, defaultValue, preferencesLookup);
 		return value;
 	}
 	

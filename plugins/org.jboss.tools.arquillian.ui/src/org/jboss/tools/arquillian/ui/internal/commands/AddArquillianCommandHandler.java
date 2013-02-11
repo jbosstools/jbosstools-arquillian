@@ -45,6 +45,10 @@ public class AddArquillianCommandHandler extends ArquillianAbstractHandler {
 	@Override
 	public Object execute(ExecutionEvent event) throws ExecutionException {
 		IProject project = getProject(event);
+		return execute(project);
+	}
+
+	public Object execute(IProject project) {
 		try {
 			if (project != null
 					&& !project.hasNature(ArquillianNature.ARQUILLIAN_NATURE_ID)) {

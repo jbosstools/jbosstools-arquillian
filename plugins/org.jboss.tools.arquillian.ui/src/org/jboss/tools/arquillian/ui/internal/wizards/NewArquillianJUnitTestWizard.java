@@ -13,6 +13,8 @@ import org.eclipse.core.runtime.SubProgressMonitor;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.ui.ISharedImages;
+import org.eclipse.jdt.ui.JavaUI;
 import org.eclipse.jdt.ui.text.java.ClasspathFixProcessor;
 import org.eclipse.jdt.ui.text.java.ClasspathFixProcessor.ClasspathFixProposal;
 import org.eclipse.jface.dialogs.IDialogConstants;
@@ -28,6 +30,7 @@ import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.ViewerComparator;
 import org.eclipse.jface.window.Window;
 import org.eclipse.ltk.core.refactoring.Change;
+import org.eclipse.ltk.core.refactoring.NullChange;
 import org.eclipse.ltk.core.refactoring.PerformChangeOperation;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionEvent;
@@ -39,7 +42,9 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.dialogs.PreferencesUtil;
+import org.jboss.tools.arquillian.core.internal.util.ArquillianSearchEngine;
 import org.jboss.tools.arquillian.ui.ArquillianUIActivator;
+import org.jboss.tools.arquillian.ui.internal.commands.AddArquillianCommandHandler;
 
 /**
  * A wizard for creating test cases.
@@ -86,15 +91,23 @@ public class NewArquillianJUnitTestWizard extends ArquillianWizard {
 		IJavaProject project= newArquillianJUnitTestCasePageOne.getJavaProject();
 		IRunnableWithProgress runnable= newArquillianJUnitTestCasePageOne.getRunnable();
 		try {
-			if (project.findType(JUNIT4_ANNOTATION_NAME) == null) {
-				runnable= addJUnitToClasspath(project, runnable, true);
+			if (!ArquillianSearchEngine.hasArquillianType(project)) {
+				runnable= addArquillianToClasspath(project, runnable);
 			}
-		} catch (JavaModelException e) {
-			// ignore
 		} catch (OperationCanceledException e) {
 			return false;
 		}
 
+//		try {
+//			if (project.findType(JUNIT4_ANNOTATION_NAME) == null) {
+//				runnable= addJUnitToClasspath(project, runnable, true);
+//			}
+//		} catch (JavaModelException e) {
+//			// ignore
+//		} catch (OperationCanceledException e) {
+//			return false;
+//		}
+		
 		if (finishPage(runnable)) {
 			IType newClass= newArquillianJUnitTestCasePageOne.getCreatedType();
 			IResource resource= newClass.getCompilationUnit().getResource();
@@ -107,16 +120,16 @@ public class NewArquillianJUnitTestWizard extends ArquillianWizard {
 		return false;
 	}
 
-	private IRunnableWithProgress addJUnitToClasspath(IJavaProject project, final IRunnableWithProgress runnable, boolean isJUnit4) {
-		String typeToLookup= isJUnit4 ? "org.junit.*" : "junit.awtui.*";  //$NON-NLS-1$//$NON-NLS-2$
-		ClasspathFixProposal[] fixProposals= ClasspathFixProcessor.getContributedFixImportProposals(project, typeToLookup, null);
-
-		ClasspathFixSelectionDialog dialog= new ClasspathFixSelectionDialog(getShell(), isJUnit4, project, fixProposals);
+	private IRunnableWithProgress addArquillianToClasspath(IJavaProject project, final IRunnableWithProgress runnable) {
+		ClasspathFixProposal[] fixProposals = new ArquillianClasspathFixProposal[1];
+		fixProposals[0] = new ArquillianClasspathFixProposal(project, 15);
+		
+		ClasspathFixSelectionDialog dialog = new ClasspathFixSelectionDialog(getShell(), project, fixProposals);
 		if (dialog.open() != 0) {
 			throw new OperationCanceledException();
 		}
 
-		final ClasspathFixProposal fix= dialog.getSelectedClasspathFix();
+		final ClasspathFixProposal fix = dialog.getSelectedClasspathFix();
 		if (fix != null) {
 			return new IRunnableWithProgress() {
 
@@ -178,8 +191,8 @@ public class NewArquillianJUnitTestWizard extends ArquillianWizard {
 
 		private ClasspathFixProposal fSelectedFix;
 
-		public ClasspathFixSelectionDialog(Shell parent, boolean isJUnit4, IJavaProject project, ClasspathFixProposal[] fixProposals) {
-			super(parent, "New Arquillian Junit test case", null, getDialogMessage(isJUnit4), MessageDialog.QUESTION, new String[] { IDialogConstants.OK_LABEL, IDialogConstants.CANCEL_LABEL }, 0);
+		public ClasspathFixSelectionDialog(Shell parent, IJavaProject project, ClasspathFixProposal[] fixProposals) {
+			super(parent, "New Arquillian JUnit test case", null, getDialogMessage(), MessageDialog.QUESTION, new String[] { IDialogConstants.OK_LABEL, IDialogConstants.CANCEL_LABEL }, 0);
 			fProject= project;
 			fFixProposals= fixProposals;
 			fSelectedFix= null;
@@ -190,8 +203,8 @@ public class NewArquillianJUnitTestWizard extends ArquillianWizard {
 			return true;
 		}
 
-		private static String getDialogMessage(boolean isJunit4) {
-			return "JUnit 4 is not on the build path. Do you want to add it?";
+		private static String getDialogMessage() {
+			return "Arquillian JUnit is not on the build path. Do you want to add it?";
 		}
 
 		@Override
@@ -294,6 +307,47 @@ public class NewArquillianJUnitTestWizard extends ArquillianWizard {
 
 	public NewArquillianJUnitTestCasePageOne getNewArquillianJUnitTestCasePageOne() {
 		return newArquillianJUnitTestCasePageOne;
+	}
+
+	private static class ArquillianClasspathFixProposal extends ClasspathFixProposal {
+
+		private static final String ADD_ARQUILLIAN_SUPPORT = "Add Arquillian Support";
+		private final int fRelevance;
+		private final IJavaProject fProject;
+		public ArquillianClasspathFixProposal(IJavaProject project, int relevance) {
+			fProject= project;
+			fRelevance= relevance;
+		}
+
+		@Override
+		public String getAdditionalProposalInfo() {
+			return ADD_ARQUILLIAN_SUPPORT;
+		}
+
+		@Override
+		public Change createChange(IProgressMonitor monitor) throws CoreException {
+			if (monitor == null) {
+				monitor= new NullProgressMonitor();
+			}
+			new AddArquillianCommandHandler().execute(fProject.getProject());
+			
+			return new NullChange();
+		}
+
+		@Override
+		public String getDisplayString() {
+			return ADD_ARQUILLIAN_SUPPORT;
+		}
+
+		@Override
+		public Image getImage() {
+			return JavaUI.getSharedImages().getImage(ISharedImages.IMG_OBJS_LIBRARY);
+		}
+
+		@Override
+		public int getRelevance() {
+			return fRelevance;
+		}
 	}
 
 	public NewArquillianJUnitTestCasePageTwo getNewArquillianJUnitTestCasePageTwo() {
