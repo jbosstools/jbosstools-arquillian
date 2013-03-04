@@ -34,7 +34,8 @@ public class ArquillianPreferencesInitializer extends
 		preferences.put(ArquillianConstants.TYPE_IS_NOT_INCLUDED_IN_ANY_DEPLOYMENT, JavaCore.WARNING);
 		preferences.put(ArquillianConstants.IMPORT_IS_NOT_INCLUDED_IN_ANY_DEPLOYMENT, JavaCore.WARNING);
 		preferences.put(ArquillianConstants.DEPLOYMENT_ARCHIVE_CANNOT_BE_CREATED, JavaCore.WARNING);
-		
+		preferences.put(ArquillianConstants.SELECTED_ARQUILLIAN_PROFILES, ArquillianConstants.JBOSS_AS_REMOTE_7_X);
+		preferences.put(ArquillianConstants.ACTIVATED_ARQUILLIAN_PROFILES, ArquillianConstants.JBOSS_AS_REMOTE_7_X);
 	}
 
 }

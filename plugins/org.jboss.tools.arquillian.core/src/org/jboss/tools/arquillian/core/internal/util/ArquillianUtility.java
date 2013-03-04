@@ -1,5 +1,5 @@
 /*************************************************************************************
- * Copyright (c) 2008-2012 Red Hat, Inc. and others.
+ * Copyright (c) 2008-2013 Red Hat, Inc. and others.
  * All rights reserved. This program and the accompanying materials 
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -26,6 +26,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -43,7 +44,11 @@ import org.apache.maven.model.Parent;
 import org.apache.maven.model.Plugin;
 import org.apache.maven.model.Profile;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.repository.internal.MavenRepositorySystemSession;
 import org.apache.maven.settings.Settings;
+import org.codehaus.plexus.DefaultPlexusContainer;
+import org.codehaus.plexus.PlexusContainerException;
+import org.codehaus.plexus.component.repository.exception.ComponentLookupException;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.IProject;
@@ -82,9 +87,20 @@ import org.eclipse.m2e.model.edit.pom.util.PomResourceImpl;
 import org.eclipse.wst.sse.core.StructuredModelManager;
 import org.eclipse.wst.xml.core.internal.provisional.document.IDOMDocument;
 import org.eclipse.wst.xml.core.internal.provisional.document.IDOMModel;
+import org.jboss.forge.arquillian.container.Container;
 import org.jboss.tools.arquillian.core.ArquillianCoreActivator;
+import org.jboss.tools.arquillian.core.internal.container.ContainerParser;
+import org.jboss.tools.arquillian.core.internal.container.ProfileGenerator;
 import org.jboss.tools.arquillian.core.internal.preferences.ArquillianConstants;
 import org.jboss.tools.maven.core.MavenCoreActivator;
+import org.sonatype.aether.RepositorySystem;
+import org.sonatype.aether.repository.LocalRepository;
+import org.sonatype.aether.repository.RemoteRepository;
+import org.sonatype.aether.resolution.VersionRangeRequest;
+import org.sonatype.aether.resolution.VersionRangeResolutionException;
+import org.sonatype.aether.resolution.VersionRangeResult;
+import org.sonatype.aether.util.artifact.DefaultArtifact;
+import org.sonatype.aether.version.Version;
 import org.w3c.dom.Element;
 
 /**
@@ -94,7 +110,7 @@ import org.w3c.dom.Element;
  */
 public class ArquillianUtility {
 	
-	private static final String ARQUILLIAN_VERSION = "arquillian.version";
+	private static final String ARQUILLIAN_VERSION = "version.arquillian_core"; //$NON-NLS-1$
 
 	public static final String ARQUILLIAN_CORE_GROUP_ID = "org.jboss.arquillian.core"; //$NON-NLS-1$
 	
@@ -124,12 +140,12 @@ public class ArquillianUtility {
 	
 	public static final String MAVEN_COMPILER_TARGET_LEVEL = "1.6"; //$NON-NLS-1$
 
-	public static final String ORG_JBOSS_ARQUILLIAN_CONTAINER_TEST_API_DEPLOYMENT = "org.jboss.arquillian.container.test.api.Deployment";
+	public static final String ORG_JBOSS_ARQUILLIAN_CONTAINER_TEST_API_DEPLOYMENT = "org.jboss.arquillian.container.test.api.Deployment"; //$NON-NLS-1$
 	public static final String SIMPLE_TEST_INTERFACE_NAME= "Test"; //$NON-NLS-1$
 	public final static String TEST_INTERFACE_NAME= "junit.framework.Test"; //$NON-NLS-1$
 
-	public static final String ORG_JBOSS_SHRINKWRAP_API_SPEC_WEB_ARCHIVE = "org.jboss.shrinkwrap.api.spec.WebArchive";
-	public static final String ORG_JBOSS_SHRINKWRAP_API_SPEC_JAVA_ARCHIVE = "org.jboss.shrinkwrap.api.spec.JavaArchive";
+	public static final String ORG_JBOSS_SHRINKWRAP_API_SPEC_WEB_ARCHIVE = "org.jboss.shrinkwrap.api.spec.WebArchive"; //$NON-NLS-1$
+	public static final String ORG_JBOSS_SHRINKWRAP_API_SPEC_JAVA_ARCHIVE = "org.jboss.shrinkwrap.api.spec.JavaArchive"; //$NON-NLS-1$
 	
 	public static String getDependencyVersion(MavenProject mavenProject,
 			String gid, String aid) {
@@ -203,13 +219,12 @@ public class ArquillianUtility {
 		}
 	}
 
-	private static void addArtifacts(IFile pomFile, MavenProject mavenProject) throws CoreException {
+	public static Model getArquilianModel(boolean isJunit) throws CoreException {
 		URL url = getArquillianPomFile(true);
 		InputStream in = null;
 		try {
 			in = url.openStream();
-			Model arquillianModel = MavenPlugin.getMaven().readModel(in);
-			mergeModel(pomFile, mavenProject, arquillianModel);
+			return MavenPlugin.getMaven().readModel(in);
 		} catch (IOException e) {
 			ArquillianCoreActivator.log(e);
 			IStatus status = new Status(IStatus.ERROR, ArquillianCoreActivator.PLUGIN_ID, e
@@ -225,6 +240,12 @@ public class ArquillianUtility {
 			}
 		}
 	}
+	
+	private static void addArtifacts(IFile pomFile, MavenProject mavenProject)
+			throws CoreException {
+		Model arquillianModel = getArquilianModel(true);
+		mergeModel(pomFile, mavenProject, arquillianModel);
+	}
 
 	private static void mergeModel(IFile pomFile, MavenProject mavenProject, Model arquillianModel) {
 		IDOMModel model = null;
@@ -237,7 +258,7 @@ public class ArquillianUtility {
 			addDependencies(mavenProject, arquillianModel, model);
 			addDependencyManagement(mavenProject, arquillianModel, model);
 			addPlugins(mavenProject, arquillianModel, model);
-			addProfiles(mavenProject, pomFile, arquillianModel);
+			addProfiles(mavenProject, pomFile, model);
 		} catch (Exception e) {
 			ArquillianCoreActivator.log(e);
 		} finally {
@@ -357,13 +378,20 @@ public class ArquillianUtility {
 	}
 
 	private static Element getOrCreateElement(Element parent, String name) {
+		return getOrCreateElement(parent, name, false);
+	}
+
+	private static Element getOrCreateElement(Element parent, String name, boolean format) {
 		Element element = findChild(parent, name);
 		if (element == null) {
 			element = createElement(parent, name);
+			if (format) {
+				format(element);
+			}
 		}
 		return element;
 	}
-
+	
 	private static void addPlugins(MavenProject mavenProject,
 			Model arquillianModel, IDOMModel model) throws CoreException {
 		Build build = arquillianModel.getBuild();
@@ -443,24 +471,37 @@ public class ArquillianUtility {
 		format(dependenciesEl);
 	}
 
-	private static void addProfiles(MavenProject mavenProject, IFile pomFile, Model arquillianModel) throws CoreException {
-		List<Profile> arquillianProfiles = arquillianModel.getProfiles();
-		if (arquillianProfiles == null || arquillianProfiles.size() <= 0) {
+	private static void addProfiles(MavenProject mavenProject, IFile pomFile , IDOMModel model) throws CoreException {
+		
+		List<String> selectedProfiles = getProfilesFromPreferences(ArquillianConstants.SELECTED_ARQUILLIAN_PROFILES);
+		if (selectedProfiles == null || selectedProfiles.size() <= 0) {
 			return;
 		}
+		List<Container> selectedContainers = new ArrayList<Container>();
 		Model projectModel = mavenProject.getModel();
 		List<String> allProfiles = getProfiles(projectModel);
+		for(Container container:ContainerParser.getContainers()) {
+			if (selectedProfiles.contains(container.getId()) &&
+					!allProfiles.contains(container.getId())) {
+				selectedContainers.add(container);
+			}
+		}
+		if (selectedContainers.size() <= 0) {
+			return;
+		}
+		
+		//Element root = model.getDocument().getDocumentElement();
+		//Element profiles = getOrCreateElement(root, PomEdits.PROFILES);
+		
 		
 		PomResourceImpl projectResource = MavenCoreActivator.loadResource(pomFile);
-		PomResourceImpl profileResource = MavenCoreActivator.loadResource(getArquillianProfileUrl());
-		EList<org.eclipse.m2e.model.edit.pom.Profile> profiles = profileResource.getModel().getProfiles();
+		//PomResourceImpl profileResource = MavenCoreActivator.loadResource(getArquillianProfileUrl());
+		EList<org.eclipse.m2e.model.edit.pom.Profile> profiles = projectResource.getModel().getProfiles();
 		boolean save = false;
-		for (org.eclipse.m2e.model.edit.pom.Profile profile:profiles) {
-			if (!allProfiles.contains(profile.getId())) {
-				org.eclipse.m2e.model.edit.pom.Profile newProfile = EcoreUtil.copy(profile);
-				projectResource.getModel().getProfiles().add(newProfile);
-				save = true;
-			}
+		for (Container container:selectedContainers) {
+			org.eclipse.m2e.model.edit.pom.Profile profile = ProfileGenerator.getProfile(container);
+			profiles.add(EcoreUtil.copy(profile));
+			save = true;
 		}
 		if (save) {
 			try {
@@ -471,7 +512,6 @@ public class ArquillianUtility {
 				MavenCoreActivator.log(e);
 			} finally {
 				projectResource.unload();
-				profileResource.unload();
 			}
 		}
 	}
@@ -709,5 +749,87 @@ public class ArquillianUtility {
 			return new Integer(IMarker.SEVERITY_ERROR);
 		}
 		return null;
+	}
+
+	public static VersionRangeResult getVersionRangeResult(String coords)
+			throws ComponentLookupException, PlexusContainerException,
+			CoreException, VersionRangeResolutionException {
+		RepositorySystem system = new DefaultPlexusContainer()
+				.lookup(RepositorySystem.class);
+
+		MavenRepositorySystemSession session = new MavenRepositorySystemSession();
+		IMaven maven = MavenPlugin.getMaven();
+		String localRepoHome = maven.getLocalRepositoryPath();
+		LocalRepository localRepo = new LocalRepository(localRepoHome);
+		session.setLocalRepositoryManager(system
+				.newLocalRepositoryManager(localRepo));
+
+		VersionRangeRequest rangeRequest = new VersionRangeRequest();
+		rangeRequest.setArtifact(new DefaultArtifact(coords));
+
+		List<ArtifactRepository> repos = new ArrayList<ArtifactRepository>();
+		repos.addAll(maven.getArtifactRepositories(false));
+
+		for (ArtifactRepository repo : repos) {
+			RemoteRepository remoteRepo = new RemoteRepository(repo.getId(),
+					"default", repo.getUrl()); //$NON-NLS-1$
+			rangeRequest.addRepository(remoteRepo);
+		}
+		return system.resolveVersionRange(session, rangeRequest);
+	}
+	
+	public static String[] getVersions(String coords, String[] defaultVersions) {
+		VersionRangeResult result;
+		try {
+			result = getVersionRangeResult(coords);
+		} catch (Exception e) {
+			ArquillianCoreActivator.log(e);
+			return defaultVersions;
+		} 
+		List<Version> versions = result.getVersions();
+		if (versions == null || versions.size() <= 0) {
+			return defaultVersions;
+		}
+		String[] versionStrings = new String[versions.size()];
+		int i = 0;
+		for (Version version : versions) {
+			versionStrings[i++] = version.toString();
+		}
+		return versionStrings;
+	}
+	
+	public static String getHighestVersion(String coords) {
+		VersionRangeResult result;
+		try {
+			result = getVersionRangeResult(coords);
+		} catch (Exception e) {
+			ArquillianCoreActivator.log(e);
+			return null;
+		} 
+		List<Version> versions = result.getVersions();
+		for (Iterator<Version> iterator = versions.iterator(); iterator.hasNext();) {
+			Version version = (Version) iterator.next();
+			if (version.toString().endsWith("-SNAPSHOT")) { //$NON-NLS-1$
+				iterator.remove();
+			}
+		}
+		Version version = result.getHighestVersion();
+		return version.toString();
+	}
+	
+	public static List<String> getProfilesFromPreferences(String preference) {
+		List<String> selectedProfiles = new ArrayList<String>();
+		String prefs = ArquillianUtility.getPreference(preference);
+		if (prefs == null) {
+			return selectedProfiles;
+		}
+		String[] profiles = prefs.split(ArquillianConstants.COMMA);
+		for (String profile:profiles) {
+			if (profile == null || profile.trim().isEmpty()) {
+				continue;
+			}
+			selectedProfiles.add(profile.trim());
+		}
+		return selectedProfiles;
 	}
 }

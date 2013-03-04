@@ -68,4 +68,12 @@ public class ArquillianConstants {
 	
 	public static final String DEPLOYMENT_ARCHIVE_CANNOT_BE_CREATED = ArquillianCoreActivator.PLUGIN_ID + ".deploymentArchiveCannotBeCreated"; //$NON-NLS-1$
 	
+	public static final String SELECTED_ARQUILLIAN_PROFILES = "selectedArquillianProfiles"; //$NON-NLS-1$
+	
+	public static final String ACTIVATED_ARQUILLIAN_PROFILES = "activatedArquillianProfiles"; //$NON-NLS-1$
+	
+	public static final String JBOSS_AS_REMOTE_7_X = "JBOSS_AS_REMOTE_7.X"; //$NON-NLS-1$
+
+	public static final String COMMA = ","; //$NON-NLS-1$
+
 }
