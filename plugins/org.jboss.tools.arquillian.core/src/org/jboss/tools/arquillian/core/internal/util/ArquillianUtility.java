@@ -494,6 +494,11 @@ public class ArquillianUtility {
 		//Element profiles = getOrCreateElement(root, PomEdits.PROFILES);
 		
 		
+		addProfiles(pomFile, selectedContainers);
+	}
+
+	public static void addProfiles(IFile pomFile,
+			List<Container> selectedContainers) throws CoreException {
 		PomResourceImpl projectResource = MavenCoreActivator.loadResource(pomFile);
 		//PomResourceImpl profileResource = MavenCoreActivator.loadResource(getArquillianProfileUrl());
 		EList<org.eclipse.m2e.model.edit.pom.Profile> profiles = projectResource.getModel().getProfiles();

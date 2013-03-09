@@ -30,6 +30,11 @@
 			name="%generateArquillianDeployment"
 			categoryId="org.jboss.tools.arquillian.category"
 			defaultHandler="org.jboss.tools.arquillian.ui.internal.commands.GenerateArquillianDeploymentHandler"/>
+		<command
+			id="org.jboss.tools.arquillian.ui.action.addArquillianProfiles"
+			name="%addArquillianProfiles"
+			categoryId="org.jboss.tools.arquillian.category"
+			defaultHandler="org.jboss.tools.arquillian.ui.internal.commands.AddArquillianProfilesCommandHandler"/>
 			
 		<category
 			id="org.jboss.tools.arquillian.category"
@@ -99,7 +104,7 @@
             commandId="org.jboss.tools.arquillian.ui.action.addArquillianSupport"
             icon="icons/arquillian_icon16.png">
       </image>
-       <image
+      <image
             commandId="org.jboss.tools.arquillian.ui.action.removeArquillianSupport"
             icon="icons/arquillian_icon16.png">
       </image>
@@ -191,6 +196,26 @@
       <menuContribution locationURI="popup:org.eclipse.ui.projectConfigure?after=additions">
          <command
                commandId="org.jboss.tools.arquillian.ui.action.removeArquillianSupport"
+               style="push">
+            <visibleWhen checkEnabled="false">
+					<and>
+						<count value="1"/>
+						<iterate ifEmpty="false">
+							<adapt type="org.eclipse.core.resources.IProject">
+								<and>
+									<test 
+										property="org.eclipse.core.resources.projectNature" 
+										value="org.jboss.tools.arquillian.core.arquillianNature"/>
+								</and>
+							</adapt>
+						</iterate>
+					</and>
+				</visibleWhen>
+         </command>
+      </menuContribution>
+      <menuContribution locationURI="popup:org.eclipse.ui.projectConfigure?after=additions">
+         <command
+               commandId="org.jboss.tools.arquillian.ui.action.addArquillianProfiles"
                style="push">
             <visibleWhen checkEnabled="false">
 					<and>

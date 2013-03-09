@@ -22,6 +22,9 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Bundle-Vendor: %Bundle-Vendor
 Bundle-Localization: plugin
 Export-Package: org.jboss.forge.arquillian.container,
+ org.jboss.forge.parser.xml,
+ org.jboss.forge.parser.xml.query,
+ org.jboss.forge.parser.xml.util,
  org.jboss.tools.arquillian.core,
  org.jboss.tools.arquillian.core.internal.classpath,
  org.jboss.tools.arquillian.core.internal.compiler,

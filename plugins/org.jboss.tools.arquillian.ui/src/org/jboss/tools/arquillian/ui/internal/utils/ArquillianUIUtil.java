@@ -33,6 +33,7 @@ import org.apache.maven.project.MavenProject;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
@@ -68,18 +69,44 @@ import org.eclipse.jdt.internal.ui.javaeditor.CompilationUnitEditor;
 import org.eclipse.jdt.launching.IJavaLaunchConfigurationConstants;
 import org.eclipse.jdt.ui.CodeGeneration;
 import org.eclipse.jdt.ui.wizards.NewTypeWizardPage.ImportsManager;
+import org.eclipse.jface.viewers.CheckboxTableViewer;
+import org.eclipse.jface.viewers.ColumnLabelProvider;
+import org.eclipse.jface.viewers.ColumnLayoutData;
+import org.eclipse.jface.viewers.ColumnViewerEditor;
+import org.eclipse.jface.viewers.ColumnViewerEditorActivationEvent;
+import org.eclipse.jface.viewers.ColumnViewerEditorActivationStrategy;
+import org.eclipse.jface.viewers.ColumnWeightData;
+import org.eclipse.jface.viewers.FocusCellOwnerDrawHighlighter;
+import org.eclipse.jface.viewers.IStructuredContentProvider;
+import org.eclipse.jface.viewers.TableLayout;
+import org.eclipse.jface.viewers.TableViewerColumn;
+import org.eclipse.jface.viewers.TableViewerEditor;
+import org.eclipse.jface.viewers.TableViewerFocusCellManager;
+import org.eclipse.jface.viewers.Viewer;
+import org.eclipse.jface.viewers.ViewerCell;
 import org.eclipse.m2e.core.MavenPlugin;
 import org.eclipse.m2e.core.internal.IMavenConstants;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Table;
 import org.eclipse.text.edits.TextEdit;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.IWorkbenchWindow;
+import org.jboss.forge.arquillian.container.Container;
+import org.jboss.forge.parser.xml.XMLParser;
+import org.jboss.forge.parser.xml.XMLParserException;
 import org.jboss.tools.arquillian.core.ArquillianCoreActivator;
+import org.jboss.tools.arquillian.core.internal.preferences.ArquillianConstants;
 import org.jboss.tools.arquillian.core.internal.util.ArquillianSearchEngine;
 import org.jboss.tools.arquillian.core.internal.util.ArquillianUtility;
 import org.jboss.tools.arquillian.ui.ArquillianUIActivator;
 import org.jboss.tools.arquillian.ui.internal.launcher.ArquillianProperty;
+import org.jboss.tools.arquillian.ui.internal.launcher.AutoResizeTableLayout;
+import org.jboss.tools.arquillian.ui.internal.preferences.ContainerEditingSupport;
 import org.jboss.tools.arquillian.ui.internal.wizards.NewArquillianJUnitTestCaseDeploymentPage;
 import org.jboss.tools.arquillian.ui.internal.wizards.ProjectResource;
 import org.w3c.dom.DOMException;
@@ -96,22 +123,22 @@ import org.xml.sax.SAXException;
  */
 public class ArquillianUIUtil {
 
-	private static final String CONFIGURATION = "configuration";
-	private static final String ARQ_PREFIX = "arq";
-	private static final String CONTAINER = "container";
-	private static final String PERIOD = ".";
-	private static final String NAME = "name";
-	private static final String PROPERTY = "property";
-	private static final String QUALIFIER = "qualifier";
-	private static final String ARQUILLIAN_XML = "arquillian.xml";
-	private static final String ARQUILLIAN_PROPERTIES = "arquillian.properties";
-	private static final String ARQUILLIAN_LAUNCH = "arquillian.launch";
-	private static final String CREATE_DEPLOYMENT = "createDeployment";
-	private static final String ORG_JBOSS_SHRINKWRAP_API_ARCHIVE = "org.jboss.shrinkwrap.api.Archive";
-	private static final String ORG_JBOSS_SHRINKWRAP_API_SHRINK_WRAP = "org.jboss.shrinkwrap.api.ShrinkWrap";
-	public static final String ADD_AS_MANIFEST_RESOURCE_METHOD = "addAsManifestResource";
-	public static final String ADD_AS_WEB_INF_RESOURCE_METHOD = "addAsWebInfResource";
-	public static final String ADD_AS_RESOURCE_METHOD = "addAsResource";
+	private static final String CONFIGURATION = "configuration"; //$NON-NLS-1$
+	private static final String ARQ_PREFIX = "arq"; //$NON-NLS-1$
+	private static final String CONTAINER = "container"; //$NON-NLS-1$
+	private static final String PERIOD = "."; //$NON-NLS-1$
+	private static final String NAME = "name"; //$NON-NLS-1$
+	private static final String PROPERTY = "property"; //$NON-NLS-1$
+	private static final String QUALIFIER = "qualifier"; //$NON-NLS-1$
+	private static final String ARQUILLIAN_XML = "arquillian.xml"; //$NON-NLS-1$
+	private static final String ARQUILLIAN_PROPERTIES = "arquillian.properties"; //$NON-NLS-1$
+	private static final String ARQUILLIAN_LAUNCH = "arquillian.launch"; //$NON-NLS-1$
+	private static final String CREATE_DEPLOYMENT = "createDeployment"; //$NON-NLS-1$
+	private static final String ORG_JBOSS_SHRINKWRAP_API_ARCHIVE = "org.jboss.shrinkwrap.api.Archive"; //$NON-NLS-1$
+	private static final String ORG_JBOSS_SHRINKWRAP_API_SHRINK_WRAP = "org.jboss.shrinkwrap.api.ShrinkWrap"; //$NON-NLS-1$
+	public static final String ADD_AS_MANIFEST_RESOURCE_METHOD = "addAsManifestResource"; //$NON-NLS-1$
+	public static final String ADD_AS_WEB_INF_RESOURCE_METHOD = "addAsWebInfResource"; //$NON-NLS-1$
+	public static final String ADD_AS_RESOURCE_METHOD = "addAsResource"; //$NON-NLS-1$
 
 	public static IWorkbenchWindow getActiveWorkbenchWindow() {
 		IWorkbench workbench = ArquillianUIActivator.getDefault()
@@ -137,6 +164,10 @@ public class ArquillianUIUtil {
 		if (editor instanceof CompilationUnitEditor) {
 			CompilationUnitEditor cue = (CompilationUnitEditor) editor;
 			try {
+				IJavaElement element = SelectionConverter.getElementAtOffset(cue);
+				if (element == null) {
+					return null;
+				}
 				return SelectionConverter.getTypeAtOffset(cue);
 			} catch (JavaModelException e) {
 				ArquillianUIActivator.log(e);
@@ -406,7 +437,33 @@ public class ArquillianUIUtil {
 			} catch (Exception e) {
 				ArquillianUIActivator.log(e);
 			}
-			String qualifier = arquillianXmlProperties.getProperty(QUALIFIER, "Unknown");
+			String qualifier = arquillianXmlProperties.getProperty(QUALIFIER, null);
+			if (qualifier == null) {
+				qualifier = "JBossToolsDefaultContainer"; //$NON-NLS-1$
+				IFile file = getFile(javaProject, ARQUILLIAN_XML);
+				if (file == null) {
+					file = getNewFile(javaProject, ARQUILLIAN_XML);
+					String s = "<arquillian xmlns=\"http://jboss.org/schema/arquillian\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n" //$NON-NLS-1$
+		                    + "            xsi:schemaLocation=\"http://jboss.org/schema/arquillian http://jboss.org/schema/arquillian/arquillian_1_0.xsd\">\n" //$NON-NLS-1$
+		                    + "</arquillian>"; //$NON-NLS-1$
+					file.create(new ByteArrayInputStream(s.getBytes()), true,null);
+				}
+				InputStream is = null;
+				try {
+					is = file.getContents();
+					org.jboss.forge.parser.xml.Node xml = XMLParser.parse(is);
+					
+					xml.getOrCreate("container@qualifier=" + qualifier + "&default=true"); //$NON-NLS-1$ //$NON-NLS-2$
+						
+					String content = XMLParser.toXMLString(xml);
+					ByteArrayInputStream input = new ByteArrayInputStream(content.getBytes());
+					file.setContents(input, IResource.FORCE, null);
+				} catch (XMLParserException e) {
+					ArquillianCoreActivator.log(e);
+				} finally {
+					close(is);
+				}
+			}
 			arquillianXmlProperties.remove(QUALIFIER);
 			addContainerProperties(javaProject, properties, qualifier);
 			
@@ -414,7 +471,7 @@ public class ArquillianUIUtil {
 			while (keys.hasMoreElements()) {
 				String key = (String) keys.nextElement();
 				String value = arquillianXmlProperties.getProperty(key);
-				ArquillianProperty property = new ArquillianProperty(key, value, "arquillian.xml", false);
+				ArquillianProperty property = new ArquillianProperty(key, value, ARQUILLIAN_XML, false);
 				properties.remove(property);;
 				properties.add(property);
 			}
@@ -424,7 +481,7 @@ public class ArquillianUIUtil {
 			while (keys.hasMoreElements()) {
 				String key = (String) keys.nextElement();
 				String value = arquillianProperties.getProperty(key);
-				ArquillianProperty property = new ArquillianProperty(key, value, "arquillian.properties", false);
+				ArquillianProperty property = new ArquillianProperty(key, value, ARQUILLIAN_PROPERTIES, false);
 				properties.remove(property);;
 				properties.add(property);
 			}
@@ -474,13 +531,13 @@ public class ArquillianUIUtil {
 						Method[] methods = configuration.getMethods();
 						for (Method method : methods) {
 							String methodName = method.getName();
-							if (methodName.matches("^set[A-Z].*")
+							if (methodName.matches("^set[A-Z].*") //$NON-NLS-1$
 									&& method.getReturnType().equals(Void.TYPE)
 									&& method.getParameterTypes().length == 1) {
 								method.setAccessible(true);
 								String name = methodName.substring(3, 4)
 										.toLowerCase() + methodName.substring(4);
-								String getterName = "get" + methodName.substring(3);
+								String getterName = "get" + methodName.substring(3); //$NON-NLS-1$
 								String value = null;
 								try {
 									Method getter =  configuration.getMethod(getterName, new Class[0]);
@@ -676,8 +733,8 @@ public class ArquillianUIUtil {
 						return container;
 					}
 				} else {
-					String defaultString = container.getAttribute("default");
-					if ("true".equals(defaultString)) {
+					String defaultString = container.getAttribute("default"); //$NON-NLS-1$
+					if ("true".equals(defaultString)) { //$NON-NLS-1$
 						return container;
 					}
 				}
@@ -826,10 +883,11 @@ public class ArquillianUIUtil {
 		return folder.getFile(arquillianProperties);
 	}
 
+    
 	private static void createEmptyFile(IFile file) throws CoreException {
 		InputStream input = null;
 		try {
-			input = new ByteArrayInputStream("".getBytes());
+			input = new ByteArrayInputStream("".getBytes()); //$NON-NLS-1$
 			file.create(input, true, null);
 		} catch (Exception e) {
 			throw new CoreException(new Status(Status.ERROR, ArquillianUIActivator.PLUGIN_ID, e.getMessage(), e));
@@ -839,4 +897,132 @@ public class ArquillianUIUtil {
 			}
 		}
 	}
+	
+	public static CheckboxTableViewer createProfilesViewer(Composite parent, List<Container> containers, int heightHint) {
+		final CheckboxTableViewer viewer = CheckboxTableViewer.newCheckList(parent, SWT.SINGLE | SWT.FULL_SELECTION | SWT.H_SCROLL
+				| SWT.V_SCROLL | SWT.BORDER);
+		GridData gd = new GridData(SWT.FILL, SWT.FILL,true,false);
+		gd.heightHint = heightHint;
+		viewer.getTable().setLayoutData(gd);
+		
+		Table table = viewer.getTable();
+		table.setHeaderVisible(true);
+		table.setLinesVisible(true);
+		table.setFont(parent.getFont());
+		
+		viewer.setContentProvider(new ContainerContentProvider(containers));
+		
+		String[] columnHeaders = {"ID", "Name"};
+		
+		for (int i = 0; i < columnHeaders.length; i++) {
+			TableViewerColumn column = new TableViewerColumn(viewer, SWT.NONE);
+			column.setLabelProvider(new ContainerLabelProvider(i));
+			column.getColumn().setText(columnHeaders[i]);
+			column.getColumn().setResizable(true);
+			column.getColumn().setMoveable(true);
+			column.setEditingSupport(new ContainerEditingSupport(viewer, i));
+		}
+		
+		ColumnLayoutData[] containersLayouts= {
+				new ColumnWeightData(200,200),
+				new ColumnWeightData(150,150),
+				//new ColumnWeightData(50,50)
+			};
+		
+		TableLayout layout = new AutoResizeTableLayout(table);
+		for (int i = 0; i < containersLayouts.length; i++) {
+			layout.addColumnData(containersLayouts[i]);
+		}
+		
+		viewer.getTable().setLayout(layout);
+		
+		configureViewer(viewer);
+		
+		viewer.setInput(containers);
+		
+		return viewer;
+	}
+	
+	public static void initializeViewer(CheckboxTableViewer viewer, List<Container> containers) {
+		List<String> selectedProfiles = ArquillianUtility.getProfilesFromPreferences(ArquillianConstants.SELECTED_ARQUILLIAN_PROFILES);
+		List<String> activatedProfiles = ArquillianUtility.getProfilesFromPreferences(ArquillianConstants.ACTIVATED_ARQUILLIAN_PROFILES);
+
+		for(Container container:containers) {
+			container.setActivate(activatedProfiles.contains(container.getId()));
+			viewer.setChecked(container, selectedProfiles.contains(container.getId()));
+		}
+		viewer.refresh();
+	}
+
+	static class ContainerContentProvider implements IStructuredContentProvider {
+		private List<Container> containers;
+
+		public ContainerContentProvider(List<Container> containers) {
+			this.containers = containers;
+		}
+
+		public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
+		}
+
+		public Object[] getElements(Object inputElement) {
+			return containers.toArray();
+		}
+
+		public void dispose() {
+		}
+	}
+	
+	static class ContainerLabelProvider extends ColumnLabelProvider {
+
+		private int columnIndex;
+
+		public ContainerLabelProvider(int i) {
+			this.columnIndex = i;
+		}
+
+		public String getText(Object element) {
+			if (element instanceof Container) {
+				Container container = (Container) element;
+				switch (columnIndex) {
+				case 0:
+					return container.getId();
+				case 1:
+					String name = container.getName();
+					if (name == null) {
+						return null;
+					}
+					return name.replace(Container.ARQUILLIAN_CONTAINER_NAME_START,""); //$NON-NLS-1$
+				}
+			}
+			return null;
+		}
+
+		@Override
+		public Image getImage(Object element) {
+			return null;
+		}
+	}
+
+	private static void configureViewer(final CheckboxTableViewer viewer) {
+		TableViewerFocusCellManager focusCellManager = new TableViewerFocusCellManager(viewer, new FocusCellOwnerDrawHighlighter(viewer));
+		
+		ColumnViewerEditorActivationStrategy actSupport = new ColumnViewerEditorActivationStrategy(viewer) {
+			protected boolean isEditorActivationEvent(
+					ColumnViewerEditorActivationEvent event) {
+				ViewerCell cell = viewer.getColumnViewerEditor().getFocusCell();
+				if (cell != null && cell.getColumnIndex() == 1) {
+					return super.isEditorActivationEvent(event);
+				}
+				return event.eventType == ColumnViewerEditorActivationEvent.TRAVERSAL
+						|| event.eventType == ColumnViewerEditorActivationEvent.MOUSE_DOUBLE_CLICK_SELECTION
+						|| (event.eventType == ColumnViewerEditorActivationEvent.KEY_PRESSED && event.keyCode == SWT.CR)
+						|| event.eventType == ColumnViewerEditorActivationEvent.PROGRAMMATIC;
+			}
+		};
+		
+		TableViewerEditor.create(viewer, focusCellManager, actSupport, ColumnViewerEditor.TABBING_HORIZONTAL
+				| ColumnViewerEditor.TABBING_MOVE_TO_ROW_NEIGHBOR
+				| ColumnViewerEditor.TABBING_VERTICAL | ColumnViewerEditor.KEYBOARD_ACTIVATION);
+	}
+
 }

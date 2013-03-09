@@ -622,7 +622,7 @@ public class ArquillianTab extends AbstractLaunchConfigurationTab {
 		if (name == null) {
 			return null;
 		}
-		int index = name.lastIndexOf(".");
+		int index = name.lastIndexOf("."); //$NON-NLS-1$
 		if (index > 0) {
 			name = name.substring(index + 1);
 		}

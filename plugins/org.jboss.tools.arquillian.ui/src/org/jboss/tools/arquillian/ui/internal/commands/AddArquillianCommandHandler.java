@@ -71,11 +71,6 @@ public class AddArquillianCommandHandler extends ArquillianAbstractHandler {
 		return null;
 	}
 
-	private Shell getShell() {
-		Shell shell = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell();
-		return shell;
-	}
-
 	private class AddArquillianNatureDialog extends MessageDialog {
 		
 

@@ -33,7 +33,7 @@ import org.jboss.tools.arquillian.core.internal.util.ArquillianSearchEngine;
 public class ArquillianLaunchConfigurationDelegate extends
 		JUnitLaunchConfigurationDelegate {
 
-	public static final String ID = ArquillianCoreActivator.PLUGIN_ID + ".launchconfig";
+	public static final String ID = ArquillianCoreActivator.PLUGIN_ID + ".launchconfig"; //$NON-NLS-1$
 
 	@Override
 	protected IMember[] evaluateTests(ILaunchConfiguration configuration,
