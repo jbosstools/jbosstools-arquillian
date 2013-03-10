@@ -83,7 +83,7 @@ import org.eclipse.wst.server.core.IServer;
 import org.eclipse.wst.server.core.IServerListener;
 import org.eclipse.wst.server.core.ServerCore;
 import org.eclipse.wst.server.core.ServerEvent;
-import org.jboss.tools.arquillian.core.internal.preferences.ArquillianConstants;
+import org.jboss.tools.arquillian.core.internal.ArquillianConstants;
 import org.jboss.tools.arquillian.core.internal.util.ArquillianUtility;
 import org.jboss.tools.arquillian.ui.ArquillianUIActivator;
 import org.jboss.tools.arquillian.ui.internal.utils.ArquillianUIUtil;
@@ -168,7 +168,7 @@ public class ArquillianTab extends AbstractLaunchConfigurationTab {
 				
 				@Override
 				public void run() {
-					if (serversViewer != null) {
+					if (serversViewer != null && !serversViewer.getControl().isDisposed()) {
 						serversViewer.refresh();
 						updateServerButtons();
 					}

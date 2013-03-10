@@ -80,8 +80,8 @@ import org.eclipse.jface.operation.IRunnableContext;
 import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.eclipse.jst.j2ee.internal.common.operations.JavaModelUtil;
 import org.jboss.tools.arquillian.core.ArquillianCoreActivator;
+import org.jboss.tools.arquillian.core.internal.ArquillianConstants;
 import org.jboss.tools.arquillian.core.internal.compiler.SourceFile;
-import org.jboss.tools.arquillian.core.internal.preferences.ArquillianConstants;
 import org.osgi.framework.Bundle;
 
 /**

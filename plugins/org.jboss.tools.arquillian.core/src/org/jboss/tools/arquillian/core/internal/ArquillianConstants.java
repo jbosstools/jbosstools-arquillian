@@ -8,7 +8,7 @@
  * Contributors:
  *     JBoss by Red Hat - Initial implementation.
  ************************************************************************************/
-package org.jboss.tools.arquillian.core.internal.preferences;
+package org.jboss.tools.arquillian.core.internal;
 
 import org.eclipse.core.resources.IMarker;
 import org.eclipse.jdt.core.IJavaModelMarker;
@@ -26,6 +26,19 @@ public class ArquillianConstants {
 	public static final String TEST_ARQUILLIAN_CONTAINER = "testArquillianContainer"; //$NON-NLS-1$
 	
 	public static final boolean ENABLE_ARQUILLIAN_VALIDATOR_DEFAULT = true;
+	
+	public static final String ENABLE_DEFAULT_VM_ARGUMENTS = "enableDefaultVMArguments"; //$NON-NLS-1$
+	
+	public static final boolean ENABLE_DEFAULT_VM_ARGUMENTS_VALUE = false;
+	
+	public static final String ADD_DEFAULT_VM_ARGUMENTS_TO_JUNIT_TESTNG = "addDefaultVMArgumentstoJUnitTestNG"; //$NON-NLS-1$
+	
+	public static final boolean ADD_DEFAULT_VM_ARGUMENTS_TO_JUNIT_TESTNG_VALUE = false;
+	
+	public static final String DEFAULT_VM_ARGUMENTS = "defaultVMArguments"; //$NON-NLS-1$
+	
+	public static final String DEFAULT_VM_ARGUMENTS_VALUE = "-Darquillian.debug=true";  //$NON-NLS-1$
+	
 	
 	public static final String SEVERITY_ERROR = "Error";
 	public static final String SEVERITY_WARNING = "Warning";
@@ -89,4 +102,9 @@ public class ArquillianConstants {
 	public static final String ADD_ARQUILLIAN_PROFILES = "Add Arquillian Profiles";
 	
 	public static final String SELECT_MAVEN_PROFILES = "Select Maven Profiles";
+	
+	public static final String JUNIT_LAUNCHCONFIG_TYPE_ID = "org.eclipse.jdt.junit.launchconfig"; //$NON-NLS-1$
+
+	public static final String TESTNG_LAUNCHCONFIG_TYPE_ID = "org.testng.eclipse.launchconfig"; //$NON-NLS-1$
+	
 }

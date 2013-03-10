@@ -22,14 +22,17 @@ import org.eclipse.core.resources.IResourceChangeListener;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.IncrementalProjectBuilder;
 import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.ILog;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.preferences.InstanceScope;
+import org.eclipse.debug.core.DebugPlugin;
+import org.eclipse.debug.core.ILaunchConfiguration;
+import org.eclipse.debug.core.ILaunchConfigurationListener;
 import org.eclipse.jdt.core.ElementChangedEvent;
-import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IElementChangedListener;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaElementDelta;
@@ -37,9 +40,11 @@ import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.ui.preferences.ScopedPreferenceStore;
+import org.jboss.tools.arquillian.core.internal.ArquillianConstants;
 import org.jboss.tools.arquillian.core.internal.classpath.ArquillianClassLoader;
-import org.jboss.tools.arquillian.core.internal.preferences.ArquillianConstants;
+import org.jboss.tools.arquillian.core.internal.launcher.ArquillianLaunchConfigurationDelegate;
 import org.jboss.tools.arquillian.core.internal.util.ArquillianUtility;
+import org.jboss.tools.common.jdt.debug.RemoteDebugActivator;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
@@ -102,6 +107,42 @@ public class ArquillianCoreActivator implements BundleActivator {
 		}
 	};
 
+	private ILaunchConfigurationListener launchConfigurationListener = new ILaunchConfigurationListener() {
+		
+		@Override
+		public void launchConfigurationRemoved(ILaunchConfiguration configuration) {}
+		
+		@Override
+		public void launchConfigurationChanged(ILaunchConfiguration configuration) {}
+		
+		@Override
+		public void launchConfigurationAdded(ILaunchConfiguration configuration) {
+			if (configuration.getName() != null && configuration.getName().startsWith(RemoteDebugActivator.JBOSS_TEMP_JAVA_APPLICATION)) {
+				return;
+			}
+			IPreferenceStore prefs = ArquillianCoreActivator.getDefault().getPreferenceStore();
+			boolean enabled = prefs.getBoolean(ArquillianConstants.ENABLE_DEFAULT_VM_ARGUMENTS);
+			if (!enabled) {
+				return;
+			}
+			try {
+				String typeId = configuration.getType().getIdentifier();
+				boolean add = prefs.getBoolean(ArquillianConstants.ADD_DEFAULT_VM_ARGUMENTS_TO_JUNIT_TESTNG) && 
+						(ArquillianConstants.JUNIT_LAUNCHCONFIG_TYPE_ID.equals(typeId) || 
+						 ArquillianConstants.TESTNG_LAUNCHCONFIG_TYPE_ID.equals(typeId) );
+				if (add || ArquillianLaunchConfigurationDelegate.ID.equals(typeId)) {
+					String arguments = prefs.getString(ArquillianConstants.DEFAULT_VM_ARGUMENTS);
+					if (arguments != null && !arguments.isEmpty()) {
+						arguments = arguments.trim();
+						ArquillianUtility.addArguments(configuration, arguments, true);
+					}
+				}
+			} catch (CoreException e) {
+				log(e);
+			}
+		}
+	};
+	
 	static BundleContext getContext() {
 		return context;
 	}
@@ -116,6 +157,7 @@ public class ArquillianCoreActivator implements BundleActivator {
 		ResourcesPlugin.getWorkspace().addResourceChangeListener(
 				resourceChangeListener, IResourceChangeEvent.PRE_DELETE|IResourceChangeEvent.PRE_CLOSE|IResourceChangeEvent.PRE_BUILD);
 		JavaCore.addElementChangedListener(elementChangedListener);
+		DebugPlugin.getDefault().getLaunchManager().addLaunchConfigurationListener(launchConfigurationListener);
 	}
 
 	/*
@@ -128,6 +170,7 @@ public class ArquillianCoreActivator implements BundleActivator {
 		ResourcesPlugin.getWorkspace().removeResourceChangeListener(
 				resourceChangeListener);
 		JavaCore.removeElementChangedListener(elementChangedListener);
+		DebugPlugin.getDefault().getLaunchManager().removeLaunchConfigurationListener(launchConfigurationListener);
 	}
 
 	/**

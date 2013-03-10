@@ -71,6 +71,7 @@ import org.eclipse.core.runtime.preferences.IEclipsePreferences;
 import org.eclipse.core.runtime.preferences.IPreferencesService;
 import org.eclipse.core.runtime.preferences.InstanceScope;
 import org.eclipse.debug.core.ILaunchConfiguration;
+import org.eclipse.debug.core.ILaunchConfigurationWorkingCopy;
 import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.emf.ecore.xmi.XMIResource;
@@ -98,9 +99,9 @@ import org.eclipse.wst.xml.core.internal.provisional.document.IDOMDocument;
 import org.eclipse.wst.xml.core.internal.provisional.document.IDOMModel;
 import org.jboss.forge.arquillian.container.Container;
 import org.jboss.tools.arquillian.core.ArquillianCoreActivator;
+import org.jboss.tools.arquillian.core.internal.ArquillianConstants;
 import org.jboss.tools.arquillian.core.internal.container.ContainerParser;
 import org.jboss.tools.arquillian.core.internal.container.ProfileGenerator;
-import org.jboss.tools.arquillian.core.internal.preferences.ArquillianConstants;
 import org.jboss.tools.maven.core.MavenCoreActivator;
 import org.jboss.tools.maven.profiles.core.MavenProfilesCoreActivator;
 import org.jboss.tools.maven.profiles.core.profiles.ProfileStatus;
@@ -908,5 +909,22 @@ public class ArquillianUtility {
 			ArquillianCoreActivator.log(e);
 		}
 		return profileStatuses;
+	}
+	
+	public static void addArguments(ILaunchConfiguration configuration, String arguments, boolean save) throws CoreException {
+		String vmArguments = configuration.getAttribute(IJavaLaunchConfigurationConstants.ATTR_VM_ARGUMENTS, ""); //$NON-NLS-1$
+		if (!vmArguments.contains(arguments)) {
+			String newArguments;
+			if (vmArguments.trim().length()  > 0) {
+				newArguments = vmArguments + " " + arguments; //$NON-NLS-1$
+			} else {
+				newArguments = arguments;
+			}
+			ILaunchConfigurationWorkingCopy wc = configuration.getWorkingCopy();
+			wc.setAttribute(IJavaLaunchConfigurationConstants.ATTR_VM_ARGUMENTS, newArguments);
+			if (save) {
+				wc.doSave();
+			}
+		}
 	}
 }

@@ -1,5 +1,5 @@
 /*************************************************************************************
- * Copyright (c) 2008-2012 Red Hat, Inc. and others.
+ * Copyright (c) 2008-2013 Red Hat, Inc. and others.
  * All rights reserved. This program and the accompanying materials 
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -15,6 +15,7 @@ import org.eclipse.core.runtime.preferences.DefaultScope;
 import org.eclipse.core.runtime.preferences.IEclipsePreferences;
 import org.eclipse.jdt.core.JavaCore;
 import org.jboss.tools.arquillian.core.ArquillianCoreActivator;
+import org.jboss.tools.arquillian.core.internal.ArquillianConstants;
 
 /** 
  * 
@@ -36,6 +37,9 @@ public class ArquillianPreferencesInitializer extends
 		preferences.put(ArquillianConstants.DEPLOYMENT_ARCHIVE_CANNOT_BE_CREATED, JavaCore.WARNING);
 		preferences.put(ArquillianConstants.SELECTED_ARQUILLIAN_PROFILES, ArquillianConstants.JBOSS_AS_REMOTE_7_X);
 		preferences.put(ArquillianConstants.ACTIVATED_ARQUILLIAN_PROFILES, ArquillianConstants.JBOSS_AS_REMOTE_7_X);
+		preferences.putBoolean(ArquillianConstants.ENABLE_DEFAULT_VM_ARGUMENTS, ArquillianConstants.ENABLE_DEFAULT_VM_ARGUMENTS_VALUE);
+		preferences.put(ArquillianConstants.DEFAULT_VM_ARGUMENTS, ArquillianConstants.DEFAULT_VM_ARGUMENTS_VALUE);
+		preferences.putBoolean(ArquillianConstants.ADD_DEFAULT_VM_ARGUMENTS_TO_JUNIT_TESTNG, ArquillianConstants.ADD_DEFAULT_VM_ARGUMENTS_TO_JUNIT_TESTNG_VALUE);
 	}
 
 }

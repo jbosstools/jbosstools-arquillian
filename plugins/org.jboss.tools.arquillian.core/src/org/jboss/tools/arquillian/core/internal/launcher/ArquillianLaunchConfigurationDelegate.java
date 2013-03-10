@@ -12,23 +12,18 @@ package org.jboss.tools.arquillian.core.internal.launcher;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.eclipse.core.resources.IResourceChangeEvent;
 import org.eclipse.core.resources.IResourceChangeListener;
 import org.eclipse.core.resources.ResourcesPlugin;
-import org.eclipse.core.resources.WorkspaceJob;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.OperationCanceledException;
 import org.eclipse.core.runtime.Status;
-import org.eclipse.core.runtime.SubMonitor;
-import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.debug.core.ILaunch;
 import org.eclipse.debug.core.ILaunchConfiguration;
 import org.eclipse.debug.internal.ui.DebugUIPlugin;
@@ -43,7 +38,6 @@ import org.eclipse.jdt.junit.launcher.JUnitLaunchConfigurationDelegate;
 import org.eclipse.jdt.ui.ISharedImages;
 import org.eclipse.jdt.ui.JavaUI;
 import org.eclipse.jdt.ui.text.java.ClasspathFixProcessor.ClasspathFixProposal;
-import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.viewers.ArrayContentProvider;
@@ -58,8 +52,6 @@ import org.eclipse.jface.window.Window;
 import org.eclipse.ltk.core.refactoring.Change;
 import org.eclipse.ltk.core.refactoring.NullChange;
 import org.eclipse.ltk.core.refactoring.PerformChangeOperation;
-import org.eclipse.m2e.core.MavenPlugin;
-import org.eclipse.m2e.core.project.IMavenProjectFacade;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
@@ -72,18 +64,10 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.dialogs.PreferencesUtil;
 import org.jboss.tools.arquillian.core.ArquillianCoreActivator;
-import org.jboss.tools.arquillian.core.internal.preferences.ArquillianConstants;
+import org.jboss.tools.arquillian.core.internal.ArquillianConstants;
 import org.jboss.tools.arquillian.core.internal.util.ArquillianSearchEngine;
 import org.jboss.tools.arquillian.core.internal.util.ArquillianUtility;
 import org.jboss.tools.common.jdt.debug.RemoteDebugActivator;
-import org.jboss.tools.maven.profiles.core.MavenProfilesCoreActivator;
-import org.jboss.tools.maven.profiles.core.profiles.IProfileManager;
-import org.jboss.tools.maven.profiles.core.profiles.ProfileState;
-import org.jboss.tools.maven.profiles.core.profiles.ProfileStatus;
-import org.jboss.tools.maven.profiles.ui.Activator;
-import org.jboss.tools.maven.profiles.ui.Messages;
-import org.jboss.tools.maven.profiles.ui.internal.ProfileSelection;
-import org.jboss.tools.maven.profiles.ui.internal.SelectProfilesDialog;
 
 /**
  * 
@@ -340,46 +324,13 @@ public class ArquillianLaunchConfigurationDelegate extends
 					}
 				}
 			}
-			//super.buttonPressed(buttonId);
 			final ArquillianLaunchFixProposal fix = getSelectedClasspathFix();
 			if (fix != null) {
 				try {
 					IProgressMonitor monitor = new NullProgressMonitor();
-					if (ArquillianConstants.SELECT_MAVEN_PROFILES_COMMAND.equals(fix.getActionId())) {
-						IMavenProjectFacade facade = MavenPlugin.getMavenProjectRegistry().getProject(fProject.getProject());
-						
-						Map<IMavenProjectFacade, List<ProfileStatus>> allProfiles =
-								new HashMap<IMavenProjectFacade, List<ProfileStatus>>(1);
-						final IProfileManager profileManager = MavenProfilesCoreActivator.getDefault().getProfileManager();
-						List<ProfileStatus> profiles = profileManager.getProfilesStatuses(facade, monitor);
-						allProfiles.put(facade, profiles);
-						List<ProfileStatus> profileStatuses = ArquillianUtility.getProfileStatuses(fProject.getProject());
-						Set<IMavenProjectFacade> facades = new HashSet<IMavenProjectFacade>();
-						facades.add(facade);
-						List<ProfileSelection> sharedProfiles = new ArrayList<ProfileSelection>();
-						for (ProfileStatus p : profiles) {
-							ProfileSelection ps = new ProfileSelection();
-							ps.setId(p.getId());
-							ps.setActivationState(p.getActivationState());
-							ps.setAutoActive(p.isAutoActive());
-							ps.setSource(p.getSource());
-							ps.setSelected(p.isUserSelected());
-							sharedProfiles.add(ps);
-						}
 
-
-						final SelectProfilesDialog dialog = new SelectProfilesDialog(getShell(), 
-								facades, 
-								sharedProfiles);
-						if(dialog.open() == Dialog.OK) {
-							Job job = new UpdateProfilesJob(allProfiles, sharedProfiles, profileManager, dialog);
-							job.setRule( MavenPlugin.getProjectConfigurationManager().getRule());
-							job.schedule();
-						}
-					} else {
-						Change change = fix.createChange(monitor);
-						new PerformChangeOperation(change).run(monitor);
-					}
+					Change change = fix.createChange(monitor);
+					new PerformChangeOperation(change).run(monitor);
 					IStatus status = ArquillianSearchEngine.validateDeployableContainer(fProject);
 					if (status.isOK()) {
 						super.okPressed();
@@ -387,8 +338,7 @@ public class ArquillianLaunchConfigurationDelegate extends
 				} catch (OperationCanceledException e) {
 					cancelPressed();
 				} catch (Exception e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+					ArquillianCoreActivator.log(e);
 				}							
 			}
 
@@ -461,96 +411,6 @@ public class ArquillianLaunchConfigurationDelegate extends
 
 		public String getActionId() {
 			return actionId;
-		}
-	}
-
-	private static class UpdateProfilesJob extends WorkspaceJob {
-
-		private Map<IMavenProjectFacade, List<ProfileStatus>> allProfiles;
-		private List<ProfileSelection> sharedProfiles;
-		private IProfileManager profileManager;
-		private SelectProfilesDialog dialog;
-
-		private UpdateProfilesJob(Map<IMavenProjectFacade, List<ProfileStatus>> allProfiles,
-				List<ProfileSelection> sharedProfiles, IProfileManager profileManager, SelectProfilesDialog dialog) {
-			super(Messages.ProfileManager_Updating_maven_profiles);
-			this.allProfiles = allProfiles;
-			this.sharedProfiles = sharedProfiles;
-			this.profileManager = profileManager;
-			this.dialog = dialog;
-		}
-
-		public IStatus runInWorkspace(IProgressMonitor monitor) {
-			try {
-				SubMonitor progress = SubMonitor.convert(monitor, Messages.ProfileManager_Updating_maven_profiles, 100);
-				SubMonitor subProgress = SubMonitor.convert(progress.newChild(5), allProfiles.size() * 100);
-				for (Map.Entry<IMavenProjectFacade, List<ProfileStatus>> entry : allProfiles.entrySet()) {
-					if (progress.isCanceled()) {
-						throw new OperationCanceledException();
-					}
-					IMavenProjectFacade facade = entry.getKey();
-					List<String> activeProfiles = getActiveProfiles(sharedProfiles, entry.getValue());
-
-					profileManager.updateActiveProfiles(facade, activeProfiles,
-							dialog.isOffline(), dialog.isForceUpdate(), subProgress.newChild(100));
-				}
-			} catch (CoreException ex) {
-				Activator.log(ex);
-				return ex.getStatus();
-			}
-			return Status.OK_STATUS;
-		}
-
-		private List<String> getActiveProfiles(
-				List<ProfileSelection> sharedProfiles,
-				List<ProfileStatus> availableProfiles) {
-			List<String> ids = new ArrayList<String>();
-
-			for (ProfileStatus st : availableProfiles) {
-				ProfileSelection selection = findSelectedProfile(st.getId(), sharedProfiles);
-				String id = null;
-				boolean isDisabled = false;
-				if (selection == null) {
-					// was not displayed. Use existing value.
-					if (st.isUserSelected()) {
-						id = st.getId();
-						isDisabled = st.getActivationState().equals(ProfileState.Disabled);
-					}
-				} else {
-					if (null == selection.getSelected()) {
-						// Value was displayed but its state is unknown, use
-						// previous state
-						if (st.isUserSelected()) {
-							id = st.getId();
-							isDisabled = st.getActivationState().equals(ProfileState.Disabled);
-						}
-					} else {
-						// Value was displayed and is consistent
-						if (Boolean.TRUE.equals(selection.getSelected())) {
-							id = selection.getId();
-							isDisabled = selection.getActivationState().equals(ProfileState.Disabled);
-						}
-					}
-				}
-
-				if (id != null) {
-					if (isDisabled) {
-						id = "!" + id; //$NON-NLS-1$
-					}
-					ids.add(id);
-				}
-			}
-			return ids;
-		}
-
-		private ProfileSelection findSelectedProfile(String id,
-				List<ProfileSelection> sharedProfiles) {
-			for (ProfileSelection sel : sharedProfiles) {
-				if (id.equals(sel.getId())) {
-					return sel;
-				}
-			}
-			return null;
 		}
 	}
 

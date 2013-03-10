@@ -26,7 +26,7 @@ import org.jboss.tools.common.jdt.debug.RemoteDebugActivator;
  */
 public class ArquillianRuntimeClasspathProvider extends StandardClasspathProvider {
 
-	public static final String ID = "org.jboss.tools.arquillian.core.launchconfig.classpathProvider";
+	public static final String ID = "org.jboss.tools.arquillian.core.launchconfig.classpathProvider"; //$NON-NLS-1$
 	
 	@Override
 	public IRuntimeClasspathEntry[] computeUnresolvedClasspath(

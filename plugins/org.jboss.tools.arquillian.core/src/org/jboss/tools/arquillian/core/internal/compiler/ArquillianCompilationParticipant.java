@@ -56,7 +56,7 @@ import org.eclipse.jdt.internal.core.builder.ProblemFactory;
 import org.eclipse.jdt.internal.core.util.Messages;
 import org.eclipse.jdt.internal.core.util.Util;
 import org.jboss.tools.arquillian.core.ArquillianCoreActivator;
-import org.jboss.tools.arquillian.core.internal.preferences.ArquillianConstants;
+import org.jboss.tools.arquillian.core.internal.ArquillianConstants;
 import org.jboss.tools.arquillian.core.internal.util.ArquillianSearchEngine;
 import org.jboss.tools.arquillian.core.internal.util.ArquillianUtility;
 

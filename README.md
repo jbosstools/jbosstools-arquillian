@@ -67,6 +67,10 @@ See http://screencast.com/t/P3mnJy8UV
 
 See http://screencast.com/t/HDAPlRjWsD
 
+9) Adding default VM arguments to Arquillian/Junit/TestNG launch configurations
+
+See http://screencast.com/t/Lrh0AA2hD55
+
 TODO:
 - the new Arquillian TestNG Test Case wizard
 - Content Assist

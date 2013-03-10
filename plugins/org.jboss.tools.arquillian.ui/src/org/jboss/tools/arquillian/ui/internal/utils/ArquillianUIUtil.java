@@ -96,7 +96,7 @@ import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.jboss.forge.arquillian.container.Container;
 import org.jboss.tools.arquillian.core.ArquillianCoreActivator;
-import org.jboss.tools.arquillian.core.internal.preferences.ArquillianConstants;
+import org.jboss.tools.arquillian.core.internal.ArquillianConstants;
 import org.jboss.tools.arquillian.core.internal.util.ArquillianSearchEngine;
 import org.jboss.tools.arquillian.core.internal.util.ArquillianUtility;
 import org.jboss.tools.arquillian.ui.ArquillianUIActivator;

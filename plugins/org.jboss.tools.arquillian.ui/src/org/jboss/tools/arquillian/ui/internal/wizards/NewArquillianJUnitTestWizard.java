@@ -42,7 +42,7 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.dialogs.PreferencesUtil;
-import org.jboss.tools.arquillian.core.internal.preferences.ArquillianConstants;
+import org.jboss.tools.arquillian.core.internal.ArquillianConstants;
 import org.jboss.tools.arquillian.core.internal.util.ArquillianSearchEngine;
 import org.jboss.tools.arquillian.ui.ArquillianUIActivator;
 import org.jboss.tools.arquillian.ui.internal.commands.AddArquillianCommandHandler;
