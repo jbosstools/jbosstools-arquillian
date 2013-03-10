@@ -5,10 +5,22 @@
 	<parent>
 		<groupId>org.jboss.tools.arquillian</groupId>
 		<artifactId>plugins</artifactId>
-		<version>1.0.3-SNAPSHOT</version>
+		<version>1.0.4-SNAPSHOT</version>
 	</parent>
 	<groupId>org.jboss.tools.arquillian.plugins</groupId>
 	<artifactId>org.jboss.tools.arquillian.core</artifactId>
 	
 	<packaging>eclipse-plugin</packaging>
+	
+	<build>
+	  <plugins>
+	  	<plugin>
+			<groupId>org.eclipse.tycho</groupId>
+			<artifactId>tycho-compiler-plugin</artifactId>
+			<configuration>
+				<compilerArgument>-warn:+discouraged,forbidden</compilerArgument>
+			</configuration>
+		</plugin>
+	  </plugins>
+	</build>
 </project>
