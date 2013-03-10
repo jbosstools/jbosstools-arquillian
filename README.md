@@ -63,6 +63,10 @@ Related jira: https://issues.jboss.org/browse/JBIDE-6662
 
 See http://screencast.com/t/P3mnJy8UV
 
+8) Add Arquillian Profiles
+
+See http://screencast.com/t/HDAPlRjWsD
+
 TODO:
 - the new Arquillian TestNG Test Case wizard
 - Content Assist

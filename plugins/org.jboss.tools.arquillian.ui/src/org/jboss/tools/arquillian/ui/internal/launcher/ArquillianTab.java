@@ -1,3 +1,13 @@
+/*************************************************************************************
+ * Copyright (c) 2008-2013 Red Hat, Inc. and others.
+ * All rights reserved. This program and the accompanying materials 
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
+ * 
+ * Contributors:
+ *     JBoss by Red Hat - Initial implementation.
+ ************************************************************************************/
 package org.jboss.tools.arquillian.ui.internal.launcher;
 
 import java.io.IOException;
@@ -5,7 +15,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
-import java.net.UnknownHostException;
 import java.util.Set;
 
 import org.eclipse.core.resources.IProject;
@@ -41,11 +50,9 @@ import org.eclipse.jface.viewers.EditingSupport;
 import org.eclipse.jface.viewers.FocusCellOwnerDrawHighlighter;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
-import org.eclipse.jface.viewers.ISelectionProvider;
 import org.eclipse.jface.viewers.IStructuredContentProvider;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
-import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.jface.viewers.TableLayout;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
@@ -70,28 +77,30 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Table;
-import org.eclipse.ui.IViewPart;
-import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.PlatformUI;
-import org.eclipse.ui.handlers.IHandlerService;
 import org.eclipse.wst.server.core.IRuntime;
 import org.eclipse.wst.server.core.IServer;
 import org.eclipse.wst.server.core.IServerListener;
 import org.eclipse.wst.server.core.ServerCore;
 import org.eclipse.wst.server.core.ServerEvent;
+import org.jboss.tools.arquillian.core.internal.preferences.ArquillianConstants;
+import org.jboss.tools.arquillian.core.internal.util.ArquillianUtility;
 import org.jboss.tools.arquillian.ui.ArquillianUIActivator;
 import org.jboss.tools.arquillian.ui.internal.utils.ArquillianUIUtil;
 import org.osgi.framework.Bundle;
 
+/**
+ * 
+ * @author snjeza
+ *
+ */
 public class ArquillianTab extends AbstractLaunchConfigurationTab {
 
-	private static final String MANAGEMENT_ADDRESS = "managementAddress";
-	private static final String MANAGEMENT_PORT = "managementPort";
-	private static final String RUN_MODE = "run";
-	private static final String DEBUG_MODE = "debug";
+	private static final String MANAGEMENT_ADDRESS = "managementAddress"; //$NON-NLS-1$
+	private static final String MANAGEMENT_PORT = "managementPort"; //$NON-NLS-1$
+	private static final String RUN_MODE = "run"; //$NON-NLS-1$
+	private static final String DEBUG_MODE = "debug"; //$NON-NLS-1$
 	
-	private static final String MAVEN_PROFILES_UI_PLUGIN_ID = "org.jboss.tools.maven.profiles.ui";
-	private static final String SELECT_MAVEN_PROFILE_COMMAND = "org.jboss.tools.maven.ui.commands.selectMavenProfileCommand";
 	public static final String ID = "org.jboss.tools.arquillian.ui.arquillianTab"; //$NON-NLS-1$
 	private Image checkboxOn;
 	private Image checkboxOff;
@@ -100,7 +109,8 @@ public class ArquillianTab extends AbstractLaunchConfigurationTab {
 	private TableViewer serversViewer;
 	private Button saveButton;
 	private ILaunchConfiguration configuration;
-	private Button profilesButton;
+	private Button selectProfilesButton;
+	private Button addProfilesButton;
 	
 	private IResourceChangeListener resourceChangeListener = new IResourceChangeListener() {
 
@@ -111,7 +121,7 @@ public class ArquillianTab extends AbstractLaunchConfigurationTab {
 			}
 			String name = null;
 			try {
-				name = ArquillianUIUtil.getJavaProject(configuration).getElementName();
+				name = ArquillianUtility.getJavaProject(configuration).getElementName();
 			} catch (CoreException e) {
 				// ignore
 			}
@@ -199,7 +209,7 @@ public class ArquillianTab extends AbstractLaunchConfigurationTab {
 		gd = new GridData(SWT.RIGHT, SWT.FILL, true, false);
 		propertiesButtonComposite.setLayoutData(gd);
 		
-		propertiesButtonComposite.setLayout(new GridLayout(3, false));
+		propertiesButtonComposite.setLayout(new GridLayout(4, false));
 		testButton = createButton(propertiesButtonComposite, "Test Management");
 		testButton.addSelectionListener(new SelectionAdapter() {
 
@@ -271,22 +281,21 @@ public class ArquillianTab extends AbstractLaunchConfigurationTab {
 			}
 			
 		});
+		addProfilesButton = createButton(propertiesButtonComposite, ArquillianConstants.ADD_ARQUILLIAN_PROFILES);
+		addProfilesButton.addSelectionListener(new SelectionAdapter() {
+			
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				ArquillianUtility.runAction(configuration, ArquillianConstants.ADD_ARQUILLIAN_PROFILES_COMMAND, true);
+			}
+		});
 		if (mavenProfileExists()) {
-			profilesButton = createButton(propertiesButtonComposite, "Select Maven Profiles");
-			profilesButton.addSelectionListener(new SelectionAdapter() {
+			selectProfilesButton = createButton(propertiesButtonComposite, ArquillianConstants.SELECT_MAVEN_PROFILES);
+			selectProfilesButton.addSelectionListener(new SelectionAdapter() {
 				
 				@Override
 				public void widgetSelected(SelectionEvent e) {
-					try {
-						IHandlerService handler = (IHandlerService) PlatformUI.getWorkbench().getActiveWorkbenchWindow().getService(IHandlerService.class);
-						IWorkbenchPage page = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
-						page.showView("org.eclipse.jdt.ui.PackageExplorer");
-						ISelectionProvider provider = page.getActivePart().getSite().getSelectionProvider();
-						provider.setSelection(new StructuredSelection(ArquillianUIUtil.getJavaProject(configuration)));
-						handler.executeCommand(SELECT_MAVEN_PROFILE_COMMAND, null);
-					} catch (Exception e1) {
-						MessageDialog.openConfirm(getShell(), "Error", e1.getMessage());
-					}
+					ArquillianUtility.runAction(configuration, ArquillianConstants.SELECT_MAVEN_PROFILES_COMMAND, true);
 				}
 			});
 		} else {
@@ -418,7 +427,7 @@ public class ArquillianTab extends AbstractLaunchConfigurationTab {
 	}
 
 	private boolean mavenProfileExists() {
-		Bundle bundle = Platform.getBundle(MAVEN_PROFILES_UI_PLUGIN_ID);
+		Bundle bundle = Platform.getBundle(ArquillianConstants.MAVEN_PROFILES_UI_PLUGIN_ID);
 		return bundle != null;
 	}
 	
@@ -444,7 +453,7 @@ public class ArquillianTab extends AbstractLaunchConfigurationTab {
 
 	private TableViewer createServersSection(Composite parent) {
 		TableViewer viewer = new TableViewer(parent, SWT.SINGLE | SWT.SINGLE | SWT.H_SCROLL
-				| SWT.V_SCROLL | SWT.BORDER);
+				| SWT.V_SCROLL | SWT.BORDER | SWT.FULL_SELECTION);
 		GridData gd = new GridData(GridData.FILL_BOTH);
 		gd.heightHint = 80;
 		viewer.getTable().setLayoutData(gd);

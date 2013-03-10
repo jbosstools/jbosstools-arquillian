@@ -42,6 +42,7 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.dialogs.PreferencesUtil;
+import org.jboss.tools.arquillian.core.internal.preferences.ArquillianConstants;
 import org.jboss.tools.arquillian.core.internal.util.ArquillianSearchEngine;
 import org.jboss.tools.arquillian.ui.ArquillianUIActivator;
 import org.jboss.tools.arquillian.ui.internal.commands.AddArquillianCommandHandler;
@@ -311,7 +312,6 @@ public class NewArquillianJUnitTestWizard extends ArquillianWizard {
 
 	private static class ArquillianClasspathFixProposal extends ClasspathFixProposal {
 
-		private static final String ADD_ARQUILLIAN_SUPPORT = "Add Arquillian Support";
 		private final int fRelevance;
 		private final IJavaProject fProject;
 		public ArquillianClasspathFixProposal(IJavaProject project, int relevance) {
@@ -321,7 +321,7 @@ public class NewArquillianJUnitTestWizard extends ArquillianWizard {
 
 		@Override
 		public String getAdditionalProposalInfo() {
-			return ADD_ARQUILLIAN_SUPPORT;
+			return ArquillianConstants.ADD_ARQUILLIAN_SUPPORT;
 		}
 
 		@Override
@@ -336,7 +336,7 @@ public class NewArquillianJUnitTestWizard extends ArquillianWizard {
 
 		@Override
 		public String getDisplayString() {
-			return ADD_ARQUILLIAN_SUPPORT;
+			return ArquillianConstants.ADD_ARQUILLIAN_SUPPORT;
 		}
 
 		@Override

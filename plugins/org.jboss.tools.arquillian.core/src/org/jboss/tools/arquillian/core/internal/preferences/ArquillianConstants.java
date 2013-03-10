@@ -75,5 +75,18 @@ public class ArquillianConstants {
 	public static final String JBOSS_AS_REMOTE_7_X = "JBOSS_AS_REMOTE_7.X"; //$NON-NLS-1$
 
 	public static final String COMMA = ","; //$NON-NLS-1$
-
+	
+	public static final String MAVEN_PROFILES_UI_PLUGIN_ID = "org.jboss.tools.maven.profiles.ui"; //$NON-NLS-1$
+	
+	public static final String SELECT_MAVEN_PROFILES_COMMAND = "org.jboss.tools.maven.ui.commands.selectMavenProfileCommand"; //$NON-NLS-1$
+	
+	public static final String ADD_ARQUILLIAN_PROFILES_COMMAND = "org.jboss.tools.arquillian.ui.action.addArquillianProfiles"; //$NON-NLS-1$
+	
+	public static final String ADD_ARQUILLIAN_SUPPORT_COMMAND = "org.jboss.tools.arquillian.ui.action.addArquillianSupport"; //$NON-NLS-1$
+	
+	public static final String ADD_ARQUILLIAN_SUPPORT = "Add Arquillian Support";
+	
+	public static final String ADD_ARQUILLIAN_PROFILES = "Add Arquillian Profiles";
+	
+	public static final String SELECT_MAVEN_PROFILES = "Select Maven Profiles";
 }

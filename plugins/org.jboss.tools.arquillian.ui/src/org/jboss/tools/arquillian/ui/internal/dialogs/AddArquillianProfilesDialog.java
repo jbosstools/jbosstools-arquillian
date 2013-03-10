@@ -57,24 +57,6 @@ public class AddArquillianProfilesDialog extends TitleAreaDialog {
 		this.project = project;
 	}
 
-	
-	private List<String> getProfiles() {
-		List<String> profiles = new ArrayList<String>();
-		IMavenProjectFacade facade = MavenPlugin.getMavenProjectRegistry().getProject(project);
-		List<ProfileStatus> profileStatuses = null;
-		try {
-			profileStatuses = MavenProfilesCoreActivator.getDefault().getProfileManager().getProfilesStatuses(facade, new NullProgressMonitor());
-		} catch (CoreException e) {
-			ArquillianUIActivator.log(e);
-		}
-		if (profileStatuses != null) {
-			for(ProfileStatus profileStatus:profileStatuses) {
-				profiles.add(profileStatus.getId());
-			}
-		}
-		return profiles;
-	}
-
 
 	@Override
 	protected Control createDialogArea(Composite parent) {
@@ -100,7 +82,7 @@ public class AddArquillianProfilesDialog extends TitleAreaDialog {
 		
         containers = ContainerParser.getContainers();
 		viewer = ArquillianUIUtil.createProfilesViewer(profilesGroup, containers, 400);
-		profiles = getProfiles();
+		profiles = ArquillianUtility.getProfiles(project);
 		viewer.addSelectionChangedListener(new ISelectionChangedListener() {
 			
 			@Override

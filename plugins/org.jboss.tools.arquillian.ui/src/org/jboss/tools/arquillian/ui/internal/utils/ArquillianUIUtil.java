@@ -33,7 +33,6 @@ import org.apache.maven.project.MavenProject;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IProject;
-import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
@@ -53,7 +52,6 @@ import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.ISourceRange;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.ITypeHierarchy;
-import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.Signature;
 import org.eclipse.jdt.core.dom.rewrite.ImportRewrite;
@@ -97,8 +95,6 @@ import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.jboss.forge.arquillian.container.Container;
-import org.jboss.forge.parser.xml.XMLParser;
-import org.jboss.forge.parser.xml.XMLParserException;
 import org.jboss.tools.arquillian.core.ArquillianCoreActivator;
 import org.jboss.tools.arquillian.core.internal.preferences.ArquillianConstants;
 import org.jboss.tools.arquillian.core.internal.util.ArquillianSearchEngine;
@@ -123,6 +119,7 @@ import org.xml.sax.SAXException;
  */
 public class ArquillianUIUtil {
 
+	private static final String UNKNOWN = "Unknown"; //$NON-NLS-1$
 	private static final String CONFIGURATION = "configuration"; //$NON-NLS-1$
 	private static final String ARQ_PREFIX = "arq"; //$NON-NLS-1$
 	private static final String CONTAINER = "container"; //$NON-NLS-1$
@@ -422,7 +419,7 @@ public class ArquillianUIUtil {
 	public static Set<ArquillianProperty> getArquillianProperties(ILaunchConfiguration configuration) {
 		Set<ArquillianProperty> properties = new TreeSet<ArquillianProperty>();
 		try {
-			IJavaProject javaProject = getJavaProject(configuration);
+			IJavaProject javaProject = ArquillianUtility.getJavaProject(configuration);
 			if (javaProject == null) {
 				return properties;
 			}
@@ -439,7 +436,7 @@ public class ArquillianUIUtil {
 			}
 			String qualifier = arquillianXmlProperties.getProperty(QUALIFIER, null);
 			if (qualifier == null) {
-				qualifier = "JBossToolsDefaultContainer"; //$NON-NLS-1$
+				qualifier = UNKNOWN;
 				IFile file = getFile(javaProject, ARQUILLIAN_XML);
 				if (file == null) {
 					file = getNewFile(javaProject, ARQUILLIAN_XML);
@@ -448,21 +445,21 @@ public class ArquillianUIUtil {
 		                    + "</arquillian>"; //$NON-NLS-1$
 					file.create(new ByteArrayInputStream(s.getBytes()), true,null);
 				}
-				InputStream is = null;
-				try {
-					is = file.getContents();
-					org.jboss.forge.parser.xml.Node xml = XMLParser.parse(is);
-					
-					xml.getOrCreate("container@qualifier=" + qualifier + "&default=true"); //$NON-NLS-1$ //$NON-NLS-2$
-						
-					String content = XMLParser.toXMLString(xml);
-					ByteArrayInputStream input = new ByteArrayInputStream(content.getBytes());
-					file.setContents(input, IResource.FORCE, null);
-				} catch (XMLParserException e) {
-					ArquillianCoreActivator.log(e);
-				} finally {
-					close(is);
-				}
+//				InputStream is = null;
+//				try {
+//					is = file.getContents();
+//					org.jboss.forge.parser.xml.Node xml = XMLParser.parse(is);
+//					
+//					xml.getOrCreate("container@qualifier=" + qualifier + "&default=true"); //$NON-NLS-1$ //$NON-NLS-2$
+//						
+//					String content = XMLParser.toXMLString(xml);
+//					ByteArrayInputStream input = new ByteArrayInputStream(content.getBytes());
+//					file.setContents(input, IResource.FORCE, null);
+//				} catch (XMLParserException e) {
+//					ArquillianCoreActivator.log(e);
+//				} finally {
+//					close(is);
+//				}
 			}
 			arquillianXmlProperties.remove(QUALIFIER);
 			addContainerProperties(javaProject, properties, qualifier);
@@ -647,8 +644,10 @@ public class ArquillianUIUtil {
 		buf.append(PERIOD);
 		buf.append(CONTAINER);
 		buf.append(PERIOD);
-		buf.append(qualifier);
-		buf.append(PERIOD);
+		if (!UNKNOWN.equals(qualifier)) {
+			buf.append(qualifier);
+			buf.append(PERIOD);
+		}
 		buf.append( CONFIGURATION);
 		buf.append(PERIOD);
 		buf.append(name);
@@ -764,26 +763,11 @@ public class ArquillianUIUtil {
 		return properties;
 	}
 
-	public static IJavaProject getJavaProject(ILaunchConfiguration configuration) throws CoreException {
-		if (configuration == null) {
-			return null;
-		}
-		String projectName = configuration.getAttribute(IJavaLaunchConfigurationConstants.ATTR_PROJECT_NAME, "");
-		if (projectName == null || projectName.isEmpty()) {
-			return null;
-		}
-		IProject project = ResourcesPlugin.getWorkspace().getRoot().getProject(projectName);
-		if (project == null || !project.isAccessible() || !project.hasNature(JavaCore.NATURE_ID)) {
-			return null;
-		}
-		return JavaCore.create(project);
-	}
-
 	public static void save(Set<ArquillianProperty> arquillianProperties, ILaunchConfiguration configuration) throws CoreException {
 		if (arquillianProperties == null || configuration == null) {
 			return;
 		}
-		IJavaProject javaProject = getJavaProject(configuration);
+		IJavaProject javaProject = ArquillianUtility.getJavaProject(configuration);
 		if (javaProject == null) {
 			return;
 		}

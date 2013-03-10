@@ -70,11 +70,16 @@ import org.eclipse.core.runtime.preferences.DefaultScope;
 import org.eclipse.core.runtime.preferences.IEclipsePreferences;
 import org.eclipse.core.runtime.preferences.IPreferencesService;
 import org.eclipse.core.runtime.preferences.InstanceScope;
+import org.eclipse.debug.core.ILaunchConfiguration;
 import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.emf.ecore.xmi.XMIResource;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaCore;
+import org.eclipse.jdt.launching.IJavaLaunchConfigurationConstants;
+import org.eclipse.jface.dialogs.MessageDialog;
+import org.eclipse.jface.viewers.ISelectionProvider;
+import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.m2e.core.MavenPlugin;
 import org.eclipse.m2e.core.embedder.IMaven;
 import org.eclipse.m2e.core.internal.IMavenConstants;
@@ -84,6 +89,10 @@ import org.eclipse.m2e.core.project.MavenUpdateRequest;
 import org.eclipse.m2e.core.ui.internal.editing.PomEdits;
 import org.eclipse.m2e.core.ui.internal.editing.PomHelper;
 import org.eclipse.m2e.model.edit.pom.util.PomResourceImpl;
+import org.eclipse.swt.widgets.Shell;
+import org.eclipse.ui.IWorkbenchPage;
+import org.eclipse.ui.PlatformUI;
+import org.eclipse.ui.handlers.IHandlerService;
 import org.eclipse.wst.sse.core.StructuredModelManager;
 import org.eclipse.wst.xml.core.internal.provisional.document.IDOMDocument;
 import org.eclipse.wst.xml.core.internal.provisional.document.IDOMModel;
@@ -93,6 +102,8 @@ import org.jboss.tools.arquillian.core.internal.container.ContainerParser;
 import org.jboss.tools.arquillian.core.internal.container.ProfileGenerator;
 import org.jboss.tools.arquillian.core.internal.preferences.ArquillianConstants;
 import org.jboss.tools.maven.core.MavenCoreActivator;
+import org.jboss.tools.maven.profiles.core.MavenProfilesCoreActivator;
+import org.jboss.tools.maven.profiles.core.profiles.ProfileStatus;
 import org.sonatype.aether.RepositorySystem;
 import org.sonatype.aether.repository.LocalRepository;
 import org.sonatype.aether.repository.RemoteRepository;
@@ -836,5 +847,66 @@ public class ArquillianUtility {
 			selectedProfiles.add(profile.trim());
 		}
 		return selectedProfiles;
+	}
+	
+	public static IJavaProject getJavaProject(ILaunchConfiguration configuration) throws CoreException {
+		if (configuration == null) {
+			return null;
+		}
+		String projectName = configuration.getAttribute(IJavaLaunchConfigurationConstants.ATTR_PROJECT_NAME, ""); //$NON-NLS-1$
+		if (projectName == null || projectName.isEmpty()) {
+			return null;
+		}
+		IProject project = ResourcesPlugin.getWorkspace().getRoot().getProject(projectName);
+		if (project == null || !project.isAccessible() || !project.hasNature(JavaCore.NATURE_ID)) {
+			return null;
+		}
+		return JavaCore.create(project);
+	}
+	
+	public static void runAction(ILaunchConfiguration configuration, String actionId, boolean select) {
+		try {
+			IHandlerService handler = (IHandlerService) PlatformUI.getWorkbench().getActiveWorkbenchWindow().getService(IHandlerService.class);
+			if (select) {
+				IWorkbenchPage page = PlatformUI.getWorkbench()
+						.getActiveWorkbenchWindow().getActivePage();
+				page.showView("org.eclipse.jdt.ui.PackageExplorer"); //$NON-NLS-1$
+				ISelectionProvider provider = page.getActivePart().getSite()
+						.getSelectionProvider();
+				provider.setSelection(new StructuredSelection(ArquillianUtility
+						.getJavaProject(configuration)));
+			}
+			handler.executeCommand(actionId, null);
+		} catch (Exception e1) {
+			ArquillianCoreActivator.log(e1);
+			MessageDialog.openConfirm(getShell(), "Error", e1.getMessage());
+		}
+	}
+
+	public static Shell getShell() {
+		Shell shell = PlatformUI.getWorkbench().getModalDialogShellProvider().getShell();
+		return shell;
+	}
+	
+	public static List<String> getProfiles(IProject project) {
+		List<String> profiles = new ArrayList<String>();
+		List<ProfileStatus> profileStatuses = getProfileStatuses(project);
+		if (profileStatuses != null) {
+			for(ProfileStatus profileStatus:profileStatuses) {
+				profiles.add(profileStatus.getId());
+			}
+		}
+		return profiles;
+	}
+
+	public static List<ProfileStatus> getProfileStatuses(IProject project) {
+		IMavenProjectFacade facade = MavenPlugin.getMavenProjectRegistry().getProject(project);
+		List<ProfileStatus> profileStatuses = null;
+		try {
+			profileStatuses = MavenProfilesCoreActivator.getDefault().getProfileManager().getProfilesStatuses(facade, new NullProgressMonitor());
+		} catch (CoreException e) {
+			ArquillianCoreActivator.log(e);
+		}
+		return profileStatuses;
 	}
 }

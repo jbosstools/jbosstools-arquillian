@@ -94,6 +94,8 @@ public class ArquillianSearchEngine {
 	public static final String ARQUILLIAN_JUNIT_ARQUILLIAN = "org.jboss.arquillian.junit.Arquillian"; //$NON-NLS-1$
 	public static final String CONTAINER_DEPLOYABLE_CONTAINER = "org.jboss.arquillian.container.spi.client.container.DeployableContainer"; //$NON-NLS-1$
 
+	public static final int CONTAINER_DEPLOYABLE_CONTAINER_NOT_EXISTS = 0;
+	
 	private static class Annotation {
 	
 		private static final Annotation RUN_WITH = new Annotation("org.junit.runner.RunWith"); //$NON-NLS-1$
@@ -301,9 +303,14 @@ public class ArquillianSearchEngine {
 		try {
 			IType type = javaProject.findType(CONTAINER_DEPLOYABLE_CONTAINER);
 			if (type == null) {
-				return new Status(IStatus.ERROR, ArquillianCoreActivator.PLUGIN_ID, "Cannot find 'org.jboss.arquillian.container.spi.client.container.DeployableContainer' on project build path. Arquillian tests can only be run if DeployableContainer is on the build path.");
+				return new Status(
+						IStatus.ERROR,
+						ArquillianCoreActivator.PLUGIN_ID,
+						CONTAINER_DEPLOYABLE_CONTAINER_NOT_EXISTS,
+						"Cannot find 'org.jboss.arquillian.container.spi.client.container.DeployableContainer' on project build path. Do you want to add it.",
+						null);
 			}
-			ITypeHierarchy hierarchy = type.newTypeHierarchy(new NullProgressMonitor());
+			ITypeHierarchy hierarchy = type.newTypeHierarchy(javaProject, new NullProgressMonitor());
             IType[] subTypes = hierarchy.getAllSubtypes(type);
             int count = 0;
             for (IType subType:subTypes) {
@@ -312,9 +319,8 @@ public class ArquillianSearchEngine {
             	}
             }
             if (count != 1) {
-            	return new Status(IStatus.ERROR, ArquillianCoreActivator.PLUGIN_ID, 
-            			"Arquillian tests require exactly one implementation of DeploymentContainer on the build path." +
-            			" Please check classpath for conflicting jar versions.");
+            	return new Status(IStatus.ERROR, ArquillianCoreActivator.PLUGIN_ID, 1 ,  
+            			"Arquillian tests require exactly one implementation of DeploymentContainer on the build path. Do you want to configure it?", null);
             }
 		} catch (JavaModelException e) {
 			return new Status(IStatus.ERROR, ArquillianCoreActivator.PLUGIN_ID, e.getLocalizedMessage(), e);
