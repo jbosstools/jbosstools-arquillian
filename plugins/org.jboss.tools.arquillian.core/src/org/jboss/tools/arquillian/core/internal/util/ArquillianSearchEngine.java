@@ -407,13 +407,6 @@ public class ArquillianSearchEngine {
 				}
 			}
 
-			// add all classes implementing JUnit 3.8's Test interface in the region
-//			IType testInterface= element.getJavaProject().findType(JUnitCorePlugin.TEST_INTERFACE_NAME);
-//			if (testInterface != null) {
-//				CoreTestSearchEngine.findTestImplementorClasses(hierarchy, testInterface, region, result);
-//			}
-
-			//JUnit 4.3 can also run JUnit-3.8-style public static Test suite() methods:
 			if (checkSuite) {
 				CoreTestSearchEngine.findSuiteMethods(element, result, new SubProgressMonitor(pm, 1));
 			}

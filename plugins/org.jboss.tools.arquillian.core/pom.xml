@@ -12,15 +12,4 @@
 	
 	<packaging>eclipse-plugin</packaging>
 	
-	<build>
-	  <plugins>
-	  	<plugin>
-			<groupId>org.eclipse.tycho</groupId>
-			<artifactId>tycho-compiler-plugin</artifactId>
-			<configuration>
-				<compilerArgument>-warn:+discouraged,forbidden</compilerArgument>
-			</configuration>
-		</plugin>
-	  </plugins>
-	</build>
 </project>

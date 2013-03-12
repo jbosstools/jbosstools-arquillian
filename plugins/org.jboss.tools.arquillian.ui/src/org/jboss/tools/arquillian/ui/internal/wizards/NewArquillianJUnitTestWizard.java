@@ -98,16 +98,6 @@ public class NewArquillianJUnitTestWizard extends ArquillianWizard {
 		} catch (OperationCanceledException e) {
 			return false;
 		}
-
-//		try {
-//			if (project.findType(JUNIT4_ANNOTATION_NAME) == null) {
-//				runnable= addJUnitToClasspath(project, runnable, true);
-//			}
-//		} catch (JavaModelException e) {
-//			// ignore
-//		} catch (OperationCanceledException e) {
-//			return false;
-//		}
 		
 		if (finishPage(runnable)) {
 			IType newClass= newArquillianJUnitTestCasePageOne.getCreatedType();

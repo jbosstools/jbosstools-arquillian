@@ -14,5 +14,6 @@
 	<packaging>pom</packaging>
 	<modules>
 		<module>org.jboss.tools.arquillian.feature</module>
+		<module>org.jboss.tools.arquillian.test.feature</module>
 	</modules>
 </project>

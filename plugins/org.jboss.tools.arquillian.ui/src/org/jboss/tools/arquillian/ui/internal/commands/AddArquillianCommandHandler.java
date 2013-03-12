@@ -32,6 +32,7 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.dialogs.PreferencesUtil;
 import org.jboss.tools.arquillian.core.internal.natures.ArquillianNature;
+import org.jboss.tools.arquillian.core.internal.util.ArquillianUtility;
 import org.jboss.tools.arquillian.ui.ArquillianUIActivator;
 import org.jboss.tools.arquillian.ui.internal.preferences.ArquillianPreferencePage;
 
@@ -57,13 +58,7 @@ public class AddArquillianCommandHandler extends ArquillianAbstractHandler {
 				if (ret != Window.OK) {
 					return null;
 				}
-				IProjectDescription description = project.getDescription();
-				String[] prevNatures = description.getNatureIds();
-				String[] newNatures = new String[prevNatures.length + 1];
-				System.arraycopy(prevNatures, 0, newNatures, 0, prevNatures.length);
-				newNatures[prevNatures.length] = ArquillianNature.ARQUILLIAN_NATURE_ID;
-				description.setNatureIds(newNatures);
-				project.setDescription(description, new NullProgressMonitor());
+				ArquillianUtility.addArquillianNature(project);
 			}
 		} catch (CoreException e) {
 			ArquillianUIActivator.log(e);

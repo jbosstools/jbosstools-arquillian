@@ -52,11 +52,13 @@ import org.codehaus.plexus.component.repository.exception.ComponentLookupExcepti
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IProjectDescription;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IncrementalProjectBuilder;
 import org.eclipse.core.resources.ProjectScope;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.resources.WorkspaceJob;
+import org.eclipse.core.runtime.Assert;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.FileLocator;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -102,6 +104,7 @@ import org.jboss.tools.arquillian.core.ArquillianCoreActivator;
 import org.jboss.tools.arquillian.core.internal.ArquillianConstants;
 import org.jboss.tools.arquillian.core.internal.container.ContainerParser;
 import org.jboss.tools.arquillian.core.internal.container.ProfileGenerator;
+import org.jboss.tools.arquillian.core.internal.natures.ArquillianNature;
 import org.jboss.tools.maven.core.MavenCoreActivator;
 import org.jboss.tools.maven.profiles.core.MavenProfilesCoreActivator;
 import org.jboss.tools.maven.profiles.core.profiles.ProfileStatus;
@@ -756,7 +759,7 @@ public class ArquillianUtility {
 
 	public static boolean isValidatorEnabled(IProject project) {
 		String preference = getPreference(ArquillianConstants.ENABLE_ARQUILLIAN_VALIDATOR, project);
-		return "true".equals(preference);
+		return Boolean.TRUE.toString().equals(preference);
 	}
 	
 	public static Integer getSeverity(String preference) {
@@ -926,5 +929,16 @@ public class ArquillianUtility {
 				wc.doSave();
 			}
 		}
+	}
+	
+	public static void addArquillianNature(IProject project) throws CoreException {
+		Assert.isNotNull(project);
+		IProjectDescription description = project.getDescription();
+		String[] prevNatures = description.getNatureIds();
+		String[] newNatures = new String[prevNatures.length + 1];
+		System.arraycopy(prevNatures, 0, newNatures, 0, prevNatures.length);
+		newNatures[prevNatures.length] = ArquillianNature.ARQUILLIAN_NATURE_ID;
+		description.setNatureIds(newNatures);
+		project.setDescription(description, new NullProgressMonitor());
 	}
 }
