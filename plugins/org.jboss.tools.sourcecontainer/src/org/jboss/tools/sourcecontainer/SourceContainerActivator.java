@@ -1,5 +1,5 @@
 /*************************************************************************************
- * Copyright (c) 2008-2012 Red Hat, Inc. and others.
+ * Copyright (c) 2008-2013 Red Hat, Inc. and others.
  * All rights reserved. This program and the accompanying materials 
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -8,40 +8,28 @@
  * Contributors:
  *     JBoss by Red Hat - Initial implementation.
  ************************************************************************************/
-package org.jboss.tools.arquillian.ui;
-
-
-import java.util.HashMap;
-import java.util.Map;
+package org.jboss.tools.sourcecontainer;
 
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
-import org.eclipse.jface.resource.ImageDescriptor;
-import org.eclipse.swt.graphics.Image;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.osgi.framework.BundleContext;
 
 /**
  * The activator class controls the plug-in life cycle
  */
-public class ArquillianUIActivator extends AbstractUIPlugin {
+public class SourceContainerActivator extends AbstractUIPlugin {
 
 	// The plug-in ID
-	public static final String PLUGIN_ID = "org.jboss.tools.arquillian.ui"; //$NON-NLS-1$
-
-	public static final String JAR = "jar"; //$NON-NLS-1$
-	public static final String WAR = "war"; //$NON-NLS-1$
-	public static final String EAR = "ear"; //$NON-NLS-1$
+	public static final String PLUGIN_ID = "org.jboss.tools.sourcecontainer"; //$NON-NLS-1$
 
 	// The shared instance
-	private static ArquillianUIActivator plugin;
-	
-	private static Map<ImageDescriptor, Image> images;
+	private static SourceContainerActivator plugin;
 	
 	/**
 	 * The constructor
 	 */
-	public ArquillianUIActivator() {
+	public SourceContainerActivator() {
 	}
 
 	/*
@@ -67,7 +55,7 @@ public class ArquillianUIActivator extends AbstractUIPlugin {
 	 *
 	 * @return the shared instance
 	 */
-	public static ArquillianUIActivator getDefault() {
+	public static SourceContainerActivator getDefault() {
 		return plugin;
 	}
 	
@@ -80,18 +68,6 @@ public class ArquillianUIActivator extends AbstractUIPlugin {
 		IStatus status = new Status(IStatus.ERROR, PLUGIN_ID, e
 				.getLocalizedMessage(), e);
 		plugin.getLog().log(status);
-	}
-
-	public static Image getImage(ImageDescriptor descriptor) {
-		if (images == null) {
-			images = new HashMap<ImageDescriptor, Image>();
-		}
-		Image image = images.get(descriptor);
-		if (image == null) {
-			image = descriptor.createImage();
-			images.put(descriptor, image);
-		}
-		return image;
 	}
 
 }

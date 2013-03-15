@@ -31,8 +31,8 @@ import org.jboss.tools.arquillian.ui.internal.utils.ArquillianUIUtil;
  */
 public class ArquillianPropertyTester extends PropertyTester {
 
-	private static final String IS_ARQUILLIAN_JUNIT_TEST = "isArquillianJUnitTest";
-	private static final String CAN_LAUNCH_AS_ARQUILLIAN_TEST = "canLaunchAsArquillianTest";
+	private static final String IS_ARQUILLIAN_JUNIT_TEST = "isArquillianJUnitTest"; //$NON-NLS-1$
+	private static final String CAN_LAUNCH_AS_ARQUILLIAN_TEST = "canLaunchAsArquillianTest"; //$NON-NLS-1$
 
 	@Override
 	public boolean test(Object receiver, String property, Object[] args,

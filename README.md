@@ -71,6 +71,10 @@ See http://screencast.com/t/HDAPlRjWsD
 
 See http://screencast.com/t/Lrh0AA2hD55
 
+10) JBoss Java Project Source Container
+
+See https://community.jboss.org/en/tools/blog/2013/03/15/debugging-arquillian-tests--jboss-java-project-source-container
+
 TODO:
 - the new Arquillian TestNG Test Case wizard
 - Content Assist

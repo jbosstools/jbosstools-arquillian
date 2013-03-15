@@ -104,7 +104,7 @@ import com.ibm.icu.text.UTF16;
  */
 public class NewArquillianJUnitTestCasePageOne extends NewTypeWizardPage {
 
-	private static final String ORG_JUNIT_RUNNER_RUNWITH = "org.junit.runner.RunWith";
+	private static final String ORG_JUNIT_RUNNER_RUNWITH = "org.junit.runner.RunWith"; //$NON-NLS-1$
 
 	private final static String JUNIT4_ANNOTATION_NAME= "org.junit.Test"; //$NON-NLS-1$
 	

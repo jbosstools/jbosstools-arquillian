@@ -35,7 +35,7 @@ public class CreateArquillianDeploymentMethodWizard extends Wizard implements
 		super();
 		this.javaElement = javaElement;
 		setWindowTitle("New Arquillian Deployment Method");
-		setDefaultPageImageDescriptor(ArquillianUIActivator.imageDescriptorFromPlugin(ArquillianUIActivator.PLUGIN_ID, "icons/arquillian_icon64.png"));
+		setDefaultPageImageDescriptor(ArquillianUIActivator.imageDescriptorFromPlugin(ArquillianUIActivator.PLUGIN_ID, "icons/arquillian_icon64.png")); //$NON-NLS-1$
 		//initDialogSettings();
 	}
 	

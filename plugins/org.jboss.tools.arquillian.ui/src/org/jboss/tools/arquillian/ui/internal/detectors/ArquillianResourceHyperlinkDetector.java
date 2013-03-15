@@ -103,7 +103,7 @@ public class ArquillianResourceHyperlinkDetector extends
 					IMethod method = (IMethod) binding.getJavaElement();
 					try {
 						String signature = method.getSignature();
-						if (!"()QArchive<*>;".equals(signature)) {
+						if (!"()QArchive<*>;".equals(signature)) { //$NON-NLS-1$
 							break;
 						}
 					} catch (JavaModelException e) {

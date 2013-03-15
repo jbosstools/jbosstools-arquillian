@@ -1,0 +1,17 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: %Bundle-Name
+Bundle-SymbolicName: org.jboss.tools.sourcecontainer;singleton:=true
+Bundle-Version: 1.0.4.qualifier
+Bundle-Activator: org.jboss.tools.sourcecontainer.SourceContainerActivator
+Require-Bundle: org.eclipse.ui,
+ org.eclipse.core.runtime,
+ org.eclipse.debug.core,
+ org.eclipse.debug.ui,
+ org.eclipse.jdt.core,
+ org.eclipse.m2e.core,
+ org.jboss.tools.maven.core
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Bundle-ActivationPolicy: lazy
+Bundle-Vendor: %Bundle-Vendor
+Bundle-Localization: plugin

@@ -44,14 +44,14 @@ public class ArquillianZipEntry extends PlatformObject {
 		Assert.isLegal(file.exists());
 		StringBuffer buf = new StringBuffer();
 		buf.append(file.getParentFile().getName());
-		buf.append("(");
-		int index = file.getName().indexOf(".");
+		buf.append("("); //$NON-NLS-1$
+		int index = file.getName().indexOf("."); //$NON-NLS-1$
 		if (index < 0) {
 			buf.append(file.getName());
 		} else {
 			buf.append(file.getName().substring(index + 1));
 		}
-		buf.append(")");
+		buf.append(")"); //$NON-NLS-1$
 		this.name = buf.toString();
 		this.root = true;
 		ZipFile zipFile = null;
@@ -66,7 +66,7 @@ public class ArquillianZipEntry extends PlatformObject {
 			zipFile.close();
 			Collection<ArquillianZipEntry> allEntries = map.values();
 			for(ArquillianZipEntry entry:allEntries) {
-				String[] names = entry.getName().split("/");
+				String[] names = entry.getName().split("/"); //$NON-NLS-1$
 				if (names == null) {
 					continue;
 				}
@@ -77,7 +77,7 @@ public class ArquillianZipEntry extends PlatformObject {
 					StringBuffer sb = new StringBuffer();
 					for (int i = 0; i < names.length - 1; i++) {
 						sb.append(names[i]);
-						sb.append("/");
+						sb.append("/"); //$NON-NLS-1$
 					}
 					ArquillianZipEntry p = map.get(sb.toString());
 					if (p != null) {

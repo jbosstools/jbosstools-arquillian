@@ -60,20 +60,11 @@ public class ArquillianFilter extends ViewerFilter {
 		if (element instanceof ICompilationUnit) {
 			return ArquillianSearchEngine.isArquillianJUnitTest((ICompilationUnit) element, true, false);
 		}
-//		if (element instanceof IType) {
-//			return ArquillianSearchEngine.isArquillianJUnitTest((IType) element, true, false);
-//		}
-//		if (element instanceof IMethod) {
-//			boolean isArquillianJUnitTest = ArquillianSearchEngine.isArquillianJUnitTest((IMethod) element, true, false);
-//			if (isArquillianJUnitTest) {
-//				return ArquillianSearchEngine.isDeploymentMethod((IMethod) element);
-//			}
-//		}
 		return false;
 	}
 
 	private boolean hasDeplyments(IJavaElement javaProject) {
-		Set result = new HashSet<IJavaElement>();
+		Set<IJavaElement> result = new HashSet<IJavaElement>();
 		try {
 			ArquillianSearchEngine.findTestsInContainer(javaProject, result , null, true, false, false);
 			return result.size() > 0;

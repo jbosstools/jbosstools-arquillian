@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+
+	<extension
+         point="org.eclipse.debug.core.sourceContainerTypes">
+      <sourceContainerType
+            name="JBoss Java Project Source Container"
+            class="org.jboss.tools.sourcecontainer.internal.containers.JBossJavaProjectSourceContainerType"
+            id="org.jboss.tools.sourcecontainer.containerType"
+            description="JBoss Java Project Source Container">
+      </sourceContainerType>
+    </extension>
+    
+    <extension
+         point="org.eclipse.debug.ui.sourceContainerPresentations">
+      <sourceContainerPresentation
+            browserClass="org.jboss.tools.sourcecontainer.internal.containers.browsers.JBossSourceContainerBrowser"
+            containerTypeID="org.jboss.tools.sourcecontainer.containerType"
+            icon="$nl$/icons/jboss.gif"
+            id="org.jboss.tools.sourcecontainer.containerPresentation">
+      </sourceContainerPresentation>
+   </extension>
+    
+</plugin>

@@ -13,9 +13,7 @@ package org.jboss.tools.arquillian.ui.internal.commands;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
 import org.eclipse.core.resources.IProject;
-import org.eclipse.core.resources.IProjectDescription;
 import org.eclipse.core.runtime.CoreException;
-import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.preference.PreferenceDialog;
@@ -29,7 +27,6 @@ import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Link;
 import org.eclipse.swt.widgets.Shell;
-import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.dialogs.PreferencesUtil;
 import org.jboss.tools.arquillian.core.internal.natures.ArquillianNature;
 import org.jboss.tools.arquillian.core.internal.util.ArquillianUtility;
@@ -88,7 +85,6 @@ public class AddArquillianCommandHandler extends ArquillianAbstractHandler {
 
 				@Override
 				public void widgetSelected(SelectionEvent e) {
-					Shell shell = AddArquillianCommandHandler.this.getShell();
 					PreferenceDialog preferenceDialog = PreferencesUtil.createPreferenceDialogOn(getShell(), ArquillianPreferencePage.ID, null, null);
 					preferenceDialog.open();
 				}

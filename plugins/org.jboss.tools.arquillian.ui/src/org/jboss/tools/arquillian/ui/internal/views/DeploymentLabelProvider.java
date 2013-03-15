@@ -54,7 +54,7 @@ public class DeploymentLabelProvider implements IStyledLabelProvider, ILabelProv
 			if (fullName == null) {
 				return null;
 			}
-			String[] names = fullName.split("/");
+			String[] names = fullName.split("/"); //$NON-NLS-1$
 			if (names.length > 0) {
 				return names[names.length - 1];
 			}
@@ -73,7 +73,7 @@ public class DeploymentLabelProvider implements IStyledLabelProvider, ILabelProv
 		if (element instanceof ArquillianZipEntry) {
 			ArquillianZipEntry entry = (ArquillianZipEntry) element;
 			if (entry.isRoot()) {
-				ImageDescriptor descriptor = ArquillianUIActivator.imageDescriptorFromPlugin(ArquillianUIActivator.PLUGIN_ID, "icons/jar_obj.gif");
+				ImageDescriptor descriptor = ArquillianUIActivator.imageDescriptorFromPlugin(ArquillianUIActivator.PLUGIN_ID, "icons/jar_obj.gif"); //$NON-NLS-1$
 				image = ArquillianUIActivator.getImage(descriptor);
 			} else {
 				if (entry.isDirectory()) {
