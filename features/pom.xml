@@ -15,6 +15,5 @@
 	<modules>
 		<module>org.jboss.tools.arquillian.feature</module>
 		<module>org.jboss.tools.arquillian.test.feature</module>
-		<module>org.jboss.tools.sourcecontainer.feature</module>
 	</modules>
 </project>

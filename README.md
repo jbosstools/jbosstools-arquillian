@@ -67,13 +67,13 @@ See http://screencast.com/t/P3mnJy8UV
 
 See http://screencast.com/t/HDAPlRjWsD
 
-9) Adding default VM arguments to Arquillian/Junit/TestNG launch configurations
+9) Adding default VM arguments to Arquillian/JUnit/TestNG launch configurations
 
 See http://screencast.com/t/Lrh0AA2hD55
 
 10) JBoss Java Project Source Container
 
-See https://community.jboss.org/en/tools/blog/2013/03/15/debugging-arquillian-tests--jboss-java-project-source-container
+Moved to the Source Lookup plugin. See https://issues.jboss.org/browse/JBIDE-13799
 
 TODO:
 - the new Arquillian TestNG Test Case wizard

@@ -6,17 +6,9 @@
    <feature url="features/org.jboss.tools.arquillian.feature_0.0.0.jar" id="org.jboss.tools.arquillian.feature" version="0.0.0">
       <category name="JBoss Tools arquillian Nightly Build Update Site"/>
    </feature>
-   <feature url="features/org.jboss.tools.sourcecontainer.feature_0.0.0.jar" id="org.jboss.tools.sourcecontainer.feature" version="0.0.0">
-      <category name="JBoss Tools arquillian Nightly Build Update Site"/>
-   </feature>
-   
    <feature url="features/org.jboss.tools.arquillian.feature.source_0.0.0.jar" id="org.jboss.tools.arquillian.feature.source" version="0.0.0">
       <category name="JBoss Tools arquillian Nightly Build Update Site"/>
    </feature>
-   <feature url="features/org.jboss.tools.sourcecontainer.feature.source_0.0.0.jar" id="org.jboss.tools.sourcecontainer.feature.source" version="0.0.0">
-      <category name="JBoss Tools arquillian Nightly Build Update Site"/>
-   </feature>
-   
    <category-def name="JBoss Tools arquillian Nightly Build Update Site" label="JBoss Tools arquillian Nightly Build Update Site">
       <description>
          JBoss Tools arquillian Nightly Build Update Site: contains all features in this build.
