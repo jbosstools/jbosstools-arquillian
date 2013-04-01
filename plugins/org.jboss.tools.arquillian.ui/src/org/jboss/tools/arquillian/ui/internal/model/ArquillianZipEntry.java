@@ -1,4 +1,3 @@
-
 /*************************************************************************************
  * Copyright (c) 2008-2012 Red Hat, Inc. and others.
  * All rights reserved. This program and the accompanying materials 

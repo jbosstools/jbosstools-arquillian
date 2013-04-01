@@ -1,3 +1,13 @@
+/*************************************************************************************
+ * Copyright (c) 2008-2012 Red Hat, Inc. and others.
+ * All rights reserved. This program and the accompanying materials 
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
+ * 
+ * Contributors:
+ *     JBoss by Red Hat - Initial implementation.
+ ************************************************************************************/
 package org.jboss.tools.arquillian.ui.internal.dialogs;
 
 import java.util.ArrayList;
@@ -33,6 +43,11 @@ import org.eclipse.ui.dialogs.FilteredItemsSelectionDialog;
 import org.jboss.tools.arquillian.ui.ArquillianUIActivator;
 import org.jboss.tools.arquillian.ui.internal.wizards.TypeLabelProvider;
 
+/**
+ * 
+ * @author snjeza
+ *
+ */
 public class ArquillianTypesSelectionDialog extends
 		FilteredItemsSelectionDialog {
 

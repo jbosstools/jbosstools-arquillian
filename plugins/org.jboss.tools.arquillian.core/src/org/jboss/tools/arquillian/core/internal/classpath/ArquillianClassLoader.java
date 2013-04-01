@@ -1,4 +1,3 @@
-package org.jboss.tools.arquillian.core.internal.classpath;
 /*************************************************************************************
  * Copyright (c) 2008-2012 Red Hat, Inc. and others.
  * All rights reserved. This program and the accompanying materials 
@@ -9,6 +8,7 @@ package org.jboss.tools.arquillian.core.internal.classpath;
  * Contributors:
  *     JBoss by Red Hat - Initial implementation.
  ************************************************************************************/
+package org.jboss.tools.arquillian.core.internal.classpath;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
