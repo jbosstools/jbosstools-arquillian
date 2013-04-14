@@ -42,21 +42,21 @@ public class ArquillianCoreTest extends AbstractArquillianTest {
 	public static void init() throws Exception {
 		importMavenProject("projects/testProject.zip", TEST_PROJECT_NAME);
 		JobUtils.waitForIdle(1000);
+		IProject project = getProject(TEST_PROJECT_NAME);
+		ArquillianUtility.addArquillianNature(project);
+		JobUtils.waitForIdle();
 	}
 
 	@Test
 	public void testAddArquillianSupport() throws CoreException {
 		IProject project = getProject(TEST_PROJECT_NAME);
 		assertTrue("The '" + TEST_PROJECT_NAME + "' project isn't open.", project.isOpen());
-		assertFalse("The '" + TEST_PROJECT_NAME + "' project already has the Arquillian nature.", project.hasNature(ArquillianNature.ARQUILLIAN_NATURE_ID));
-		ArquillianUtility.addArquillianNature(project);
-		JobUtils.waitForIdle();
 		assertTrue("The '" + TEST_PROJECT_NAME + "' project hasn't the Arquillian nature.", project.hasNature(ArquillianNature.ARQUILLIAN_NATURE_ID));
 	}
 	
 	@Test
 	public void testArquillianValidatorSettings() {
-		assertTrue("The Arquillian validator isn'tt enabled.", ArquillianUtility.isValidatorEnabled(getProject(TEST_PROJECT_NAME)));
+		assertTrue("The Arquillian validator isn't enabled.", ArquillianUtility.isValidatorEnabled(getProject(TEST_PROJECT_NAME)));
 	}
 	
 	@Test

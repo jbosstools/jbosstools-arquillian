@@ -91,6 +91,7 @@ import org.osgi.framework.Bundle;
  */
 public class ArquillianSearchEngine {
 
+	private static final String VALUE = "value"; //$NON-NLS-1$
 	public static final String ARQUILLIAN_JUNIT_ARQUILLIAN = "org.jboss.arquillian.junit.Arquillian"; //$NON-NLS-1$
 	public static final String CONTAINER_DEPLOYABLE_CONTAINER = "org.jboss.arquillian.container.spi.client.container.DeployableContainer"; //$NON-NLS-1$
 
@@ -226,9 +227,6 @@ public class ArquillianSearchEngine {
 
 	private static boolean isArquillianJUnitTest(IType type, boolean checkDeployment, boolean checkTest) throws JavaModelException {
 		if (isAccessibleClass(type)) {
-			if (hasSuiteMethod(type)) {
-				return true;
-			}
 			ITypeBinding binding = getTypeBinding(type);
 			if (binding != null) {
 				return isTest(binding, checkDeployment, checkTest);
@@ -516,7 +514,7 @@ public class ArquillianSearchEngine {
 				IMemberValuePairBinding[] pairs = annotations[i].getAllMemberValuePairs();
 				if (pairs != null) {
 					for (IMemberValuePairBinding pair : pairs) {
-						if ("value".equals(pair.getName())) {
+						if (VALUE.equals(pair.getName())) {
 							Object object = pair.getValue();
 							if (object instanceof ITypeBinding) {
 								ITypeBinding value = (ITypeBinding) object;
@@ -527,7 +525,6 @@ public class ArquillianSearchEngine {
 						}
 					}
 				}
-				return true;
 			}
 		}
 		return  false;
