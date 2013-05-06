@@ -423,6 +423,9 @@ public class ArquillianUIUtil {
 			if (javaProject == null) {
 				return properties;
 			}
+			if (!ArquillianSearchEngine.hasArquillianType(javaProject)) {
+				return properties;
+			}
 			String arguments = configuration.getAttribute(IJavaLaunchConfigurationConstants.ATTR_VM_ARGUMENTS, ""); //$NON-NLS-1$
 			String args = VariablesPlugin.getDefault().getStringVariableManager().performStringSubstitution(arguments);
 			Properties vmProperties = getVMProperties(args);

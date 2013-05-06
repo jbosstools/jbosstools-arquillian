@@ -112,9 +112,9 @@ public class ArquillianSearchEngine {
 			return fName;
 		}
 	
-		public boolean annotatesTypeOrSuperTypes(ITypeBinding type) {
+		public boolean annotatesTypeOrSuperTypes(ITypeBinding type, String value) {
 			while (type != null) {
-				if (annotates(type.getAnnotations(), fName)) {
+				if (annotates(type.getAnnotations(), fName, value)) {
 					return true;
 				}
 				type= type.getSuperclass();
@@ -127,7 +127,21 @@ public class ArquillianSearchEngine {
 				IMethodBinding[] declaredMethods= type.getDeclaredMethods();
 				for (int i= 0; i < declaredMethods.length; i++) {
 					IMethodBinding curr= declaredMethods[i];
-					if (annotates(curr.getAnnotations(), fName)) {
+					if (annotates(curr.getAnnotations(), fName, null)) {
+						return true;
+					}
+				}
+				type= type.getSuperclass();
+			}
+			return false;
+		}
+		
+		public boolean annotatesAtLeastOneMethod(ITypeBinding type, String value) {
+			while (type != null) {
+				IMethodBinding[] declaredMethods= type.getDeclaredMethods();
+				for (int i= 0; i < declaredMethods.length; i++) {
+					IMethodBinding curr= declaredMethods[i];
+					if (annotates(curr.getAnnotations(), fName, value)) {
 						return true;
 					}
 				}
@@ -270,7 +284,7 @@ public class ArquillianSearchEngine {
 		if (Modifier.isAbstract(binding.getModifiers()))
 			return false;
 	
-		if (Annotation.RUN_WITH.annotatesTypeOrSuperTypes(binding)) {
+		if (Annotation.RUN_WITH.annotatesTypeOrSuperTypes(binding, ARQUILLIAN_JUNIT_ARQUILLIAN)) {
 			if (checkDeployment && !Annotation.DEPLOYMENT.annotatesAtLeastOneMethod(binding)) {
 				return false;
 			}
@@ -455,7 +469,7 @@ public class ArquillianSearchEngine {
 			return false;
 		}
 		
-		if (!Annotation.RUN_WITH.annotatesTypeOrSuperTypes(binding)) {
+		if (!Annotation.RUN_WITH.annotatesTypeOrSuperTypes(binding, ARQUILLIAN_JUNIT_ARQUILLIAN)) {
 			return false;
 		}
 		
@@ -507,10 +521,13 @@ public class ArquillianSearchEngine {
 		}
 	}
 	
-	public static boolean annotates(IAnnotationBinding[] annotations, String fName) {
+	public static boolean annotates(IAnnotationBinding[] annotations, String fName, String val) {
 		for (int i= 0; i < annotations.length; i++) {
 			ITypeBinding annotationType= annotations[i].getAnnotationType();
 			if (annotationType != null && (annotationType.getQualifiedName().equals(fName))) {
+				if (val == null) {
+					return true;
+				}
 				IMemberValuePairBinding[] pairs = annotations[i].getAllMemberValuePairs();
 				if (pairs != null) {
 					for (IMemberValuePairBinding pair : pairs) {
@@ -518,7 +535,7 @@ public class ArquillianSearchEngine {
 							Object object = pair.getValue();
 							if (object instanceof ITypeBinding) {
 								ITypeBinding value = (ITypeBinding) object;
-								if (ARQUILLIAN_JUNIT_ARQUILLIAN.equals(value.getQualifiedName())) {
+								if (val.equals(value.getQualifiedName())) {
 									return true;
 								}
 							}
@@ -757,7 +774,7 @@ public class ArquillianSearchEngine {
 	}
 	
 	public static boolean isDeploymentMethod(IMethodBinding methodBinding) {
-		if (annotates(methodBinding.getAnnotations(), ArquillianUtility.ORG_JBOSS_ARQUILLIAN_CONTAINER_TEST_API_DEPLOYMENT)) {
+		if (annotates(methodBinding.getAnnotations(), ArquillianUtility.ORG_JBOSS_ARQUILLIAN_CONTAINER_TEST_API_DEPLOYMENT, null)) {
 			int modifiers = methodBinding.getModifiers();
 			if ( (modifiers & Modifier.PUBLIC) != 0 &&
 					(modifiers & Modifier.STATIC) != 0 &&

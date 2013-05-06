@@ -595,7 +595,7 @@ public class ArquillianTab extends AbstractLaunchConfigurationTab {
 
 	@Override
 	public void initializeFrom(ILaunchConfiguration configuration) {
-		if (properties == null) {
+		if (propertiesViewer != null) {
 			properties = ArquillianUIUtil
 					.getArquillianProperties(configuration);
 			propertiesViewer.setInput(properties);

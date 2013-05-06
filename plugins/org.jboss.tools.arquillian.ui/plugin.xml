@@ -264,6 +264,7 @@
       </hyperlinkDetector>
    </extension>
    
+   <!--
    <extension
          point="org.eclipse.debug.ui.launchConfigurationTypeImages">
       <launchConfigurationTypeImage
@@ -272,6 +273,7 @@
             id="org.jboss.tools.arquillian.launchimage">
       </launchConfigurationTypeImage>
    </extension>
+   
    <extension
          point="org.eclipse.debug.ui.launchConfigurationTabGroups">
       <launchConfigurationTabGroup
@@ -290,6 +292,17 @@
          </launchMode>
       </launchConfigurationTabGroup>
    </extension>
+   -->
+   <extension point="org.eclipse.debug.ui.launchConfigurationTabs">
+    <tab
+      class="org.jboss.tools.arquillian.ui.internal.launcher.ArquillianTab"
+      group="org.eclipse.jdt.junit.launchConfigurationTabGroup.junit"
+      id="org.jboss.tools.arquillian.ui.internal.launcher.arquillianTab"
+      name="Arquillian">
+      <placement after="org.eclipse.jdt.junit.JUnitLaunchConfigurationTab">
+      </placement>
+    </tab>
+  </extension>
    
    <extension
          point="org.eclipse.debug.ui.launchShortcuts">
@@ -315,7 +328,7 @@
             </enablement>
          </contextualLaunch>
          <configurationType
-               id="org.jboss.tools.arquillian.core.launchconfig">
+               id="org.eclipse.jdt.junit.launchconfig">
          </configurationType>
          <description
                description="%DebugLaunchShortcut.description"
