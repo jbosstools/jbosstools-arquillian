@@ -80,4 +80,3 @@ TODO:
 - Content Assist
 CA will offer the user available resources/classes that can be added to the deployment method.
 
-Update Site: http://snjeza.github.com/arquillian-eclipse
