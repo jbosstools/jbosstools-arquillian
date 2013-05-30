@@ -36,7 +36,7 @@ import org.osgi.framework.Bundle;
 public class AbstractArquillianTest {
 
 	protected static void importMavenProject(String zipEntry, String projectName) throws Exception {
-		File zipFile = createFile(zipEntry);
+		File zipFile = createFile(zipEntry, projectName);
 		zipFile.deleteOnExit();
 		ProjectExample projectExample = new ProjectExample();
 		projectExample.setImportType("maven");
@@ -49,11 +49,11 @@ public class AbstractArquillianTest {
 		new ImportMavenProject().importProject(projectExample, zipFile, new HashMap<String, Object>(), Platform.getLocation());
 	}
 
-	public static File createFile(String entryName) throws IOException,
+	public static File createFile(String entryName, String projectName) throws IOException,
 			FileNotFoundException {
 		Bundle bundle = Platform.getBundle(ArquillianTestActivator.PLUGIN_ID);
-		URL url = bundle.getEntry("projects/testProject.zip");
-		File outputFile = File.createTempFile("tempProject", ".zip");
+		URL url = bundle.getEntry(entryName);
+		File outputFile = File.createTempFile(projectName, ".zip");
 		InputStream in = null;
 		OutputStream out = null;
 
