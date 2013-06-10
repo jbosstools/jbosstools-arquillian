@@ -547,11 +547,7 @@ public class ArquillianSearchEngine {
 		return  false;
 	}
 	
-	public static List<File> getDeploymentArchives(IType type) {
-		return getDeploymentArchives(type, false);
-	}
-
-	private static List<File> getDeploymentArchives(IType type, boolean force) {
+	public static List<File> getDeploymentArchives(IType type, boolean create) {
 		List<File> archives = new ArrayList<File>();
 		if (type == null || !hasDeploymentMethod(type)) {
 			return archives;
@@ -569,11 +565,6 @@ public class ArquillianSearchEngine {
 		if (cu != null) {
 			IResource resource = cu.getResource();
 			if (resource != null) {
-//				try {
-//		            resource.deleteMarkers(ArquillianConstants.MARKER_RESOURCE_ID, false, IResource.DEPTH_INFINITE);
-//		        } catch (CoreException e) {
-//		            ArquillianCoreActivator.log(e);
-//		        }
 				IProject project = resource.getProject();
 				if (project != null) {
 					projectName = project.getName();
@@ -587,9 +578,9 @@ public class ArquillianSearchEngine {
 			return archives;
 		}
 		IPath location = stateLocation.append(projectName);
-		location = location.append("arquillianDeploymentArchives");
+		location = location.append("arquillianDeploymentArchives"); //$NON-NLS-1$
 		String fqn = type.getFullyQualifiedName();
-		fqn = fqn.replace(".", "/");
+		fqn = fqn.replace(".", "/");  //$NON-NLS-1$//$NON-NLS-2$
 		location = location.append(fqn);
 		try {
 			List<IMethodBinding> deploymentMethods = getDeploymentMethods(type);
@@ -597,14 +588,7 @@ public class ArquillianSearchEngine {
 				String name = deploymentMethod.getName();
 				IPath methodLocation = location.append(name);
 				File file = methodLocation.toFile();
-				if (file.exists()) {
-					if (force) {
-						if (!ArquillianUtility.deleteFile(file)) {
-							ArquillianCoreActivator.log("Cannot delete " + file.getAbsolutePath());
-						}
-					}
-				}
-				if (!file.exists()) {
+				if (!file.exists() && create) {
 					createArchive(javaProject, type, deploymentMethod, file);
 				}
 				if (file.isDirectory()) {
