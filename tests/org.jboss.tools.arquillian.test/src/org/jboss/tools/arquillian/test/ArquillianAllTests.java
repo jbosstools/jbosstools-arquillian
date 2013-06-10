@@ -16,6 +16,7 @@ import org.junit.runners.Suite;
 
 @Suite.SuiteClasses({
 	ArquillianCoreTest.class,
+	ArquillianValidatorTest.class,
 })
 
 @RunWith(Suite.class)
