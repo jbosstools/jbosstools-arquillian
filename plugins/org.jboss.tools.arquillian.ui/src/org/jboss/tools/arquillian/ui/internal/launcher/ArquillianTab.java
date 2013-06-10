@@ -111,6 +111,7 @@ public class ArquillianTab extends AbstractLaunchConfigurationTab {
 	private ILaunchConfiguration configuration;
 	private Button selectProfilesButton;
 	private Button addProfilesButton;
+	private Image image;
 	
 	private IResourceChangeListener resourceChangeListener = new IResourceChangeListener() {
 
@@ -182,6 +183,7 @@ public class ArquillianTab extends AbstractLaunchConfigurationTab {
 	private Button testButton;
 	
 	public ArquillianTab() {
+		image = ArquillianUIActivator.imageDescriptorFromPlugin(ArquillianUIActivator.PLUGIN_ID, "icons/arquillian_icon16.png").createImage(); //$NON-NLS-1$
 		ResourcesPlugin.getWorkspace().addResourceChangeListener(
 				resourceChangeListener, IResourceChangeEvent.POST_BUILD);
 	}
@@ -659,14 +661,14 @@ public class ArquillianTab extends AbstractLaunchConfigurationTab {
 	
 	public Image getCheckOnImage() {
 		if (checkboxOn == null) {
-			checkboxOn = ArquillianUIActivator.imageDescriptorFromPlugin(ArquillianUIActivator.PLUGIN_ID, "/icons/xpl/complete_tsk.gif").createImage();
+			checkboxOn = ArquillianUIActivator.imageDescriptorFromPlugin(ArquillianUIActivator.PLUGIN_ID, "/icons/xpl/complete_tsk.gif").createImage(); //$NON-NLS-1$
 		}
 		return checkboxOn;
 	}
 	
 	public Image getCheckOffImage() {
 		if (checkboxOff == null) {
-			checkboxOff = ArquillianUIActivator.imageDescriptorFromPlugin(ArquillianUIActivator.PLUGIN_ID, "/icons/xpl/incomplete_tsk.gif").createImage();
+			checkboxOff = ArquillianUIActivator.imageDescriptorFromPlugin(ArquillianUIActivator.PLUGIN_ID, "/icons/xpl/incomplete_tsk.gif").createImage(); //$NON-NLS-1$
 		}
 		return checkboxOff;
 	}
@@ -681,6 +683,10 @@ public class ArquillianTab extends AbstractLaunchConfigurationTab {
 		if (checkboxOff != null) {
 			checkboxOff.dispose();
 			checkboxOff = null;
+		}
+		if (image != null) {
+			image.dispose();
+			image = null;
 		}
 		if (resourceChangeListener != null) {
 			ResourcesPlugin.getWorkspace().removeResourceChangeListener(resourceChangeListener);
@@ -750,7 +756,7 @@ public class ArquillianTab extends AbstractLaunchConfigurationTab {
 				ArquillianProperty properties = (ArquillianProperty) element;
 				if (columnIndex == 0) {
 					String name = properties.getName();
-					int index = name.lastIndexOf(".");
+					int index = name.lastIndexOf("."); //$NON-NLS-1$
 					if (index > 0) {
 						name = name.substring(index+1);
 					}
@@ -842,7 +848,7 @@ public class ArquillianTab extends AbstractLaunchConfigurationTab {
 				if( rt != null ) {
 					return rt.getLocation().toOSString();
 				}
-				return "";
+				return ""; //$NON-NLS-1$
 			
 			case 3:
 				String mode = server.getMode();
@@ -951,7 +957,7 @@ public class ArquillianTab extends AbstractLaunchConfigurationTab {
 				}
 				property.setChanged(true);
 				property.setDefaultValue(false);
-				property.setSource("arquillian.properties");
+				property.setSource("arquillian.properties"); //$NON-NLS-1$
 				ISelection selection = getViewer().getSelection();
 				getViewer().setSelection(null);
 				getViewer().setSelection(selection);
@@ -966,6 +972,11 @@ public class ArquillianTab extends AbstractLaunchConfigurationTab {
 
 		}
 
+	}
+
+	@Override
+	public Image getImage() {
+		return image;
 	}
 	
 }
