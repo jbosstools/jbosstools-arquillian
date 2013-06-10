@@ -491,6 +491,7 @@ public class ArquillianNameEnvironment implements INameEnvironment, SuffixConsta
         			return true;
         		}
         	}
+        	return true;
         }
         return false;
 	}
