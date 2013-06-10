@@ -256,4 +256,9 @@ public class ArquillianCoreActivator implements BundleActivator {
 		return preferenceStore;
 	}
 
+	public IPath getStateLocation() {
+		Bundle bundle = Platform.getBundle(PLUGIN_ID);
+		return InternalPlatform.getDefault().getStateLocation(bundle, true);
+	}
+
 }
