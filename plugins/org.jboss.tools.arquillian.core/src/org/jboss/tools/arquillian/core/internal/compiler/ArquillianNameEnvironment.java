@@ -408,7 +408,7 @@ public class ArquillianNameEnvironment implements INameEnvironment, SuffixConsta
         boolean ret = false;
         List<File> archives = null;
         if (type != null) {
-        	archives = ArquillianSearchEngine.getDeploymentArchives(type);
+        	archives = ArquillianSearchEngine.getDeploymentArchives(type, true);
         	if (archives != null) {
         		ret = true;
         	}

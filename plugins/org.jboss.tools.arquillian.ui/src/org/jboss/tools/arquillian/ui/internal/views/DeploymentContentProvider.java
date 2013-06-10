@@ -19,6 +19,7 @@ import org.eclipse.jdt.core.IType;
 import org.eclipse.jface.viewers.ITreeContentProvider;
 import org.eclipse.jface.viewers.Viewer;
 import org.jboss.tools.arquillian.core.internal.util.ArquillianSearchEngine;
+import org.jboss.tools.arquillian.core.internal.util.ArquillianUtility;
 import org.jboss.tools.arquillian.ui.internal.model.ArquillianZipEntry;
 
 /**
@@ -52,7 +53,9 @@ public class DeploymentContentProvider implements ITreeContentProvider {
 				if (type == null) {
 					return null;
 				}
-				List<File> archives = ArquillianSearchEngine.getDeploymentArchives(type);
+				//boolean create = !ArquillianUtility.isValidatorEnabled(cu.getJavaProject().getProject());
+				boolean create = false;
+				List<File> archives = ArquillianSearchEngine.getDeploymentArchives(type, create);
 				if (archives == null || archives.size() <= 0) {
 					return null;
 				}
