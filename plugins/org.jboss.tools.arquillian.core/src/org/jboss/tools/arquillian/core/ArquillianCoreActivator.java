@@ -240,12 +240,17 @@ public class ArquillianCoreActivator implements BundleActivator {
 	}
 
 	public static File getLoaderDirectory(IProject project) {
+		File base = getLoaderBase();
+		String name = project.getName();
+		return new File(base, name);
+	}
+
+	public static File getLoaderBase() {
 		IWorkspaceRoot workspaceRoot = ResourcesPlugin.getWorkspace().getRoot();
 		IPath rootPath = workspaceRoot.getLocation();
 		File rootFile = rootPath.toFile();
 		File base = new File(rootFile, ARQUILLIAN_CLASSLOADER);
-		String name = project.getName();
-		return new File(base, name);
+		return base;
 	}
 	
 	public IPreferenceStore getPreferenceStore() {

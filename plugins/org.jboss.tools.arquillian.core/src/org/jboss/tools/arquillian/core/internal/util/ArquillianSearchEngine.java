@@ -78,10 +78,11 @@ import org.eclipse.jdt.internal.junit.launcher.ITestKind;
 import org.eclipse.jdt.internal.junit.util.CoreTestSearchEngine;
 import org.eclipse.jface.operation.IRunnableContext;
 import org.eclipse.jface.operation.IRunnableWithProgress;
-import org.eclipse.jst.j2ee.internal.common.operations.JavaModelUtil;
 import org.jboss.tools.arquillian.core.ArquillianCoreActivator;
 import org.jboss.tools.arquillian.core.internal.ArquillianConstants;
 import org.jboss.tools.arquillian.core.internal.compiler.SourceFile;
+import org.jboss.tools.arquillian.core.internal.util.xpl.ArquillianSecurityException;
+import org.jboss.tools.arquillian.core.internal.util.xpl.ArquillianSecurityManager;
 import org.osgi.framework.Bundle;
 
 /**
@@ -589,7 +590,15 @@ public class ArquillianSearchEngine {
 				IPath methodLocation = location.append(name);
 				File file = methodLocation.toFile();
 				if (!file.exists() && create) {
-					createArchive(javaProject, type, deploymentMethod, file);
+					SecurityManager orig = System.getSecurityManager();
+					try {
+						System.setSecurityManager(new ArquillianSecurityManager(orig, Thread.currentThread()));
+						createArchive(javaProject, type, deploymentMethod, file);
+					} catch (ArquillianSecurityException e) {
+						ArquillianCoreActivator.log(e);
+					} finally {
+						System.setSecurityManager(orig);
+					}
 				}
 				if (file.isDirectory()) {
 					File[] files = file.listFiles(new FileFilter() {
@@ -597,7 +606,7 @@ public class ArquillianSearchEngine {
 						@Override
 						public boolean accept(File pathname) {
 							return pathname.isFile()
-									&& pathname.getName().startsWith("archive");
+									&& pathname.getName().startsWith("archive"); //$NON-NLS-1$
 						}
 					});
 					if (files != null && files.length > 0 && files[0].isFile()) {
