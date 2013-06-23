@@ -193,7 +193,7 @@ public class NewArquillianJUnitTestCaseDeploymentPage extends WizardPage {
 		// FIXME 
 		methodNameText.setText("createDeployment");
 		archiveTypeCombo.select(0);
-		archiveNameText.setText("test");
+		archiveNameText.setText("");
 		beansXmlButton.setSelection(true);
 		
 		methodNameText.addModifyListener(new ModifyListener() {
