@@ -13,8 +13,14 @@ package org.jboss.tools.arquillian.ui.internal.wizards;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.maven.model.Model;
+import org.apache.maven.project.MavenProject;
+import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.IProject;
+import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
@@ -54,6 +60,8 @@ import org.eclipse.jface.window.Window;
 import org.eclipse.jface.wizard.IWizard;
 import org.eclipse.jface.wizard.IWizardPage;
 import org.eclipse.jface.wizard.WizardPage;
+import org.eclipse.m2e.core.MavenPlugin;
+import org.eclipse.m2e.core.internal.IMavenConstants;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
@@ -85,9 +93,16 @@ public class NewArquillianJUnitTestCaseDeploymentPage extends WizardPage {
 
 	private static final int WEB_INF_RESOURCE_COLUMN_WIDTH = 120;
 	private static final int HEIGHT_HINT = 150;
-	public static final String ORG_JBOSS_TOOLS_ARQUILLIAN_UI_DEPLOYMENT_PAGE = "org.jboss.tools.arquillian.ui.deploymentPage";
+	public static final String ORG_JBOSS_TOOLS_ARQUILLIAN_UI_DEPLOYMENT_PAGE = "org.jboss.tools.arquillian.ui.deploymentPage"; //$NON-NLS-1$
 
-	public static String[] archiveTypes = { "jar", "war", "ear" };
+	private static final String JAR = "jar"; //$NON-NLS-1$
+	private static final String WAR = "war"; //$NON-NLS-1$
+	private static final String EAR = "ear"; //$NON-NLS-1$
+	private static final int JAR_INDEX = 0;
+	private static final int WAR_INDEX = 1;
+	private static final int EAR_INDEX = 2;
+	
+	private static String[] archiveTypes = { JAR, WAR, EAR };
 	private Text methodNameText;
 	private Combo archiveTypeCombo;
 	private Button beansXmlButton;
@@ -114,7 +129,7 @@ public class NewArquillianJUnitTestCaseDeploymentPage extends WizardPage {
 	}
 	
 	public NewArquillianJUnitTestCaseDeploymentPage(IJavaElement javaElement) {
-		super(ORG_JBOSS_TOOLS_ARQUILLIAN_UI_DEPLOYMENT_PAGE); //$NON-NLS-1$
+		super(ORG_JBOSS_TOOLS_ARQUILLIAN_UI_DEPLOYMENT_PAGE);
 		
 		setTitle("Create Arquillian Deployment Method");
 		setDescription("Create Arquillian Deployment Method");
@@ -191,9 +206,31 @@ public class NewArquillianJUnitTestCaseDeploymentPage extends WizardPage {
 		beansXmlButton.setText("Add an empty beans.xml file");
 		
 		// FIXME 
-		methodNameText.setText("createDeployment");
-		archiveTypeCombo.select(0);
-		archiveNameText.setText("");
+		methodNameText.setText("createDeployment"); //$NON-NLS-1$
+		archiveTypeCombo.select(JAR_INDEX);
+		IJavaProject javaProject = getJavaProject();
+		if (javaProject != null && javaProject.isOpen()) {
+			IProject project = javaProject.getProject();
+			IFile pomFile = project.getFile(IMavenConstants.POM_FILE_NAME);
+			if (pomFile != null && pomFile.exists()) {
+				try {
+					MavenProject mavenProject = MavenPlugin.getMaven().readProject(
+						pomFile.getLocation().toFile(), new NullProgressMonitor());
+					Model model = mavenProject.getModel();
+					String packaging = model.getPackaging();
+					if (WAR.equals(packaging)) {
+						archiveTypeCombo.select(WAR_INDEX);
+					}
+					if (EAR.equals(packaging)) {
+						archiveTypeCombo.select(EAR_INDEX);
+					}
+				} catch (CoreException e1) {
+					ArquillianUIActivator.log(e1);
+				}
+			}
+			
+		}
+		archiveNameText.setText(""); //$NON-NLS-1$
 		beansXmlButton.setSelection(true);
 		
 		methodNameText.addModifyListener(new ModifyListener() {
@@ -273,7 +310,7 @@ public class NewArquillianJUnitTestCaseDeploymentPage extends WizardPage {
 			insertionPointCombo.select(0);
 			if (javaElement != null) {
 				String text = methodNameText.getText();
-				IJavaProject javaProject = getJavaProject();
+				javaProject = getJavaProject();
 				IJavaElement context = null;
 				if (javaProject != null) {
 					context = javaProject;
@@ -731,12 +768,10 @@ public class NewArquillianJUnitTestCaseDeploymentPage extends WizardPage {
 	}
 
 	public boolean isAddComments() {
-		// TODO Auto-generated method stub
 		return false;
 	}
 
 	public boolean isForce() {
-		// TODO Auto-generated method stub
 		return false;
 	}
 
