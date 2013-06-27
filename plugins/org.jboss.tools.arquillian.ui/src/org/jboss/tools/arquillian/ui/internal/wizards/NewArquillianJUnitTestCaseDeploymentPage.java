@@ -83,26 +83,29 @@ import org.eclipse.swt.widgets.Text;
 import org.jboss.tools.arquillian.ui.ArquillianUIActivator;
 import org.jboss.tools.arquillian.ui.internal.dialogs.ArquillianResourcesSelectionDialog;
 import org.jboss.tools.arquillian.ui.internal.dialogs.ArquillianTypesSelectionDialog;
+import org.jboss.tools.arquillian.ui.internal.utils.IDeploymentDescriptor;
 
 /**
  * 
  * @author snjeza
  *
  */
-public class NewArquillianJUnitTestCaseDeploymentPage extends WizardPage {
+public class NewArquillianJUnitTestCaseDeploymentPage extends WizardPage implements IDeploymentDescriptor {
 
 	private static final int WEB_INF_RESOURCE_COLUMN_WIDTH = 120;
 	private static final int HEIGHT_HINT = 150;
 	public static final String ORG_JBOSS_TOOLS_ARQUILLIAN_UI_DEPLOYMENT_PAGE = "org.jboss.tools.arquillian.ui.deploymentPage"; //$NON-NLS-1$
 
-	private static final String JAR = "jar"; //$NON-NLS-1$
-	private static final String WAR = "war"; //$NON-NLS-1$
-	private static final String EAR = "ear"; //$NON-NLS-1$
 	private static final int JAR_INDEX = 0;
 	private static final int WAR_INDEX = 1;
 	private static final int EAR_INDEX = 2;
+	private static final int RAR_INDEX = 3;
 	
-	private static String[] archiveTypes = { JAR, WAR, EAR };
+	private static String[] archiveTypes = { 
+		ArquillianUIActivator.JAR, 
+		ArquillianUIActivator.WAR, 
+		ArquillianUIActivator.EAR, 
+		ArquillianUIActivator.RAR };
 	private Text methodNameText;
 	private Combo archiveTypeCombo;
 	private Button beansXmlButton;
@@ -218,11 +221,14 @@ public class NewArquillianJUnitTestCaseDeploymentPage extends WizardPage {
 						pomFile.getLocation().toFile(), new NullProgressMonitor());
 					Model model = mavenProject.getModel();
 					String packaging = model.getPackaging();
-					if (WAR.equals(packaging)) {
+					if (ArquillianUIActivator.WAR.equals(packaging)) {
 						archiveTypeCombo.select(WAR_INDEX);
 					}
-					if (EAR.equals(packaging)) {
+					if (ArquillianUIActivator.EAR.equals(packaging)) {
 						archiveTypeCombo.select(EAR_INDEX);
+					}
+					if (ArquillianUIActivator.RAR.equals(packaging)) {
+						archiveTypeCombo.select(RAR_INDEX);
 					}
 				} catch (CoreException e1) {
 					ArquillianUIActivator.log(e1);
