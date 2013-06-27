@@ -616,14 +616,20 @@ public class ArquillianUtility {
 				createElementWithText(configuration, MAVEN_COMPILER_SOURCE_NODE,
 						MAVEN_COMPILER_SOURCE_LEVEL);
 			} else {
-				setText(source, MAVEN_COMPILER_SOURCE_LEVEL);
+				String originalValue = source.getTextContent();
+				if (originalValue.compareTo(MAVEN_COMPILER_SOURCE_LEVEL) < 0){
+					setText(source, MAVEN_COMPILER_SOURCE_LEVEL);					
+				}
 			}
 			Element target = findChild(configuration, MAVEN_COMPILER_TARGET_NODE);
 			if (target == null) {
 				createElementWithText(configuration, MAVEN_COMPILER_TARGET_NODE,
 						MAVEN_COMPILER_TARGET_LEVEL);
 			} else {
-				setText(target, MAVEN_COMPILER_TARGET_LEVEL);
+				String originalValue = target.getTextContent();
+				if (originalValue.compareTo(MAVEN_COMPILER_TARGET_LEVEL) < 0){
+				   setText(target, MAVEN_COMPILER_TARGET_LEVEL);
+				}
 			}
 			format(configuration);
 		}
