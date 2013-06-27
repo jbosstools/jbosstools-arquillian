@@ -173,33 +173,22 @@ public class ArquillianUIUtil {
 		return null;
 	}
 
-//	public static boolean isArquillianJUnitTestCase(IType type) {
-//		if (type == null) {
-//			return false;
-//		}
-//		IAnnotation annotation = type.getAnnotation("RunWith");
-//		if (annotation != null && annotation.exists()) {
-//			IMemberValuePair[] pairs = null;
-//			try {
-//				pairs = annotation.getMemberValuePairs();
-//			} catch (JavaModelException e) {
-//				ArquillianUIActivator.log(e);
-//			}
-//			if (pairs != null) {
-//				for (IMemberValuePair pair : pairs) {
-//					if ("value".equals(pair.getMemberName())
-//							&& "Arquillian".equals(pair.getValue())) {
-//						return true;
-//					}
-//				}
-//			}
-//		}
-//		return false;
-//	}
-
+	/**
+	 * Creates a deployment method
+	 * 
+	 * @param icu
+	 * @param type
+	 * @param imports
+	 * @param isAddComments
+	 * @param delimiter
+	 * @param deploymentDescriptor
+	 * @param sibling
+	 * @param force
+	 * @throws CoreException
+	 */
 	public static void createDeploymentMethod(ICompilationUnit icu, IType type,
 			ImportsManager imports, boolean isAddComments, String delimiter,
-			NewArquillianJUnitTestCaseDeploymentPage deploymentPage,
+			IDeploymentDescriptor deploymentDescriptor,
 			IJavaElement sibling, boolean force) throws CoreException {
 		String content = null;
 		ImportRewrite importsRewrite = null;
@@ -219,7 +208,7 @@ public class ArquillianUIUtil {
 		StringBuffer buffer = new StringBuffer();
 		if (settings.createComments) {
 			String retTypeSig = Signature.createTypeSignature(
-					ORG_JBOSS_SHRINKWRAP_API_ARCHIVE, true); //$NON-NLS-1$
+					ORG_JBOSS_SHRINKWRAP_API_ARCHIVE, true); 
 			String comment = CodeGeneration.getMethodComment(
 					type.getCompilationUnit(), type.getElementName(),
 					methodName, new String[0], new String[0], retTypeSig, null,
@@ -230,7 +219,7 @@ public class ArquillianUIUtil {
 		}
 
 		String archiveType = ArquillianUIActivator.JAR;
-		String archiveName = "test";
+		String archiveName = ""; //$NON-NLS-1$
 		String deploymentName = null;
 		String deploymentOrder = null;
 		boolean addBeansXml = true;
@@ -238,15 +227,15 @@ public class ArquillianUIUtil {
 
 		List<String> resources = new ArrayList<String>();
 		List<String> webInfResources = new ArrayList<String>();
-		if (deploymentPage != null) {
-			methodName = deploymentPage.getMethodName();
-			archiveType = deploymentPage.getArchiveType();
-			archiveName = deploymentPage.getArchiveName();
-			addBeansXml = deploymentPage.addBeansXml();
-			deploymentName = deploymentPage.getDeploymentName();
-			deploymentOrder = deploymentPage.getDeploymentOrder();
-			types = deploymentPage.getTypes();
-			ProjectResource[] allResources = deploymentPage.getResources();
+		if (deploymentDescriptor != null) {
+			methodName = deploymentDescriptor.getMethodName();
+			archiveType = deploymentDescriptor.getArchiveType();
+			archiveName = deploymentDescriptor.getArchiveName();
+			addBeansXml = deploymentDescriptor.addBeansXml();
+			deploymentName = deploymentDescriptor.getDeploymentName();
+			deploymentOrder = deploymentDescriptor.getDeploymentOrder();
+			types = deploymentDescriptor.getTypes();
+			ProjectResource[] allResources = deploymentDescriptor.getResources();
 			for (ProjectResource resource : allResources) {
 				if (ArquillianUIActivator.WAR.equals(archiveType)
 						&& resource.isDeployAsWebInfResource()) {
@@ -260,62 +249,67 @@ public class ArquillianUIUtil {
 		buffer.append(annotation);
 		if ((deploymentName != null && !deploymentName.isEmpty())
 				|| (deploymentOrder != null && !deploymentOrder.isEmpty())) {
-			buffer.append("(");
+			buffer.append("("); //$NON-NLS-1$
 			if ((deploymentName != null && !deploymentName.isEmpty())) {
-				buffer.append("name = \"");
+				buffer.append("name = \""); //$NON-NLS-1$
 				buffer.append(deploymentName);
-				buffer.append("\"");
+				buffer.append("\""); //$NON-NLS-1$
 				if (deploymentOrder != null && !deploymentOrder.isEmpty()) {
-					buffer.append(" , ");
+					buffer.append(" , "); //$NON-NLS-1$
 				}
 			}
 			if (deploymentOrder != null && !deploymentOrder.isEmpty()) {
-				buffer.append("order = ");
+				buffer.append("order = "); //$NON-NLS-1$
 				buffer.append(deploymentOrder);
 			}
 
-			buffer.append(")");
+			buffer.append(")"); //$NON-NLS-1$
 		}
 		buffer.append(delimiter);
 
 		buffer.append("public static Archive<?> "); //$NON-NLS-1$
 
 		buffer.append(methodName);
-		buffer.append("()");
-		buffer.append(" {").append(delimiter);
+		buffer.append("()"); //$NON-NLS-1$
+		buffer.append(" {").append(delimiter); //$NON-NLS-1$
 		if (ArquillianUIActivator.JAR.equals(archiveType)) {
 			addImport(imports, importsRewrite,
 					ArquillianUtility.ORG_JBOSS_SHRINKWRAP_API_SPEC_JAVA_ARCHIVE);
-			buffer.append("JavaArchive archive = ShrinkWrap.create(JavaArchive.class");
+			buffer.append("JavaArchive archive = ShrinkWrap.create(JavaArchive.class"); //$NON-NLS-1$
 		}
 		if (ArquillianUIActivator.WAR.equals(archiveType)) {
 			addImport(imports, importsRewrite,
 					ArquillianUtility.ORG_JBOSS_SHRINKWRAP_API_SPEC_WEB_ARCHIVE);
-			buffer.append("WebArchive archive = ShrinkWrap.create(WebArchive.class");
+			buffer.append("WebArchive archive = ShrinkWrap.create(WebArchive.class"); //$NON-NLS-1$
 		}
 		if (ArquillianUIActivator.EAR.equals(archiveType)) {
 			addImport(imports, importsRewrite,
-					"org.jboss.shrinkwrap.api.spec.EnterpriseArchive");
-			buffer.append("EnterpriseArchive archive = ShrinkWrap.create(EnterpriseArchive.class");
+					"org.jboss.shrinkwrap.api.spec.EnterpriseArchive"); //$NON-NLS-1$
+			buffer.append("EnterpriseArchive archive = ShrinkWrap.create(EnterpriseArchive.class"); //$NON-NLS-1$
+		}
+		if (ArquillianUIActivator.RAR.equals(archiveType)) {
+			addImport(imports, importsRewrite,
+					"org.jboss.shrinkwrap.api.spec.ResourceAdapterArchive"); //$NON-NLS-1$
+			buffer.append("ResourceAdapterArchive archive = ShrinkWrap.create(ResourceAdapterArchive.class"); //$NON-NLS-1$
 		}
 		if (archiveName != null && !archiveName.isEmpty()) {
 			if (archiveName.indexOf(PERIOD) == -1) {
 				archiveName = archiveName + PERIOD + archiveType;
 			}
-			buffer.append(", ");
-			buffer.append("\"");
+			buffer.append(", "); //$NON-NLS-1$
+			buffer.append("\""); //$NON-NLS-1$
 			buffer.append(archiveName);
-			buffer.append("\"");
+			buffer.append("\""); //$NON-NLS-1$
 		}
-		buffer.append(")");
+		buffer.append(")"); //$NON-NLS-1$
 
 		if (types != null && types.length > 0) {
 			buffer.append(delimiter);
-			buffer.append(".addClasses( ");
+			buffer.append(".addClasses( "); //$NON-NLS-1$
 			boolean first = true;
 			for (IType t : types) {
 				if (!first) {
-					buffer.append(" , ");
+					buffer.append(" , "); //$NON-NLS-1$
 				} else {
 					first = false;
 				}
@@ -328,39 +322,39 @@ public class ArquillianUIUtil {
 					addImport(imports, importsRewrite, typeName);
 				}
 				buffer.append(className);
-				buffer.append(".class");
+				buffer.append(".class"); //$NON-NLS-1$
 			}
-			buffer.append(" )");
+			buffer.append(" )"); //$NON-NLS-1$
 		}
 
 		for (String resource : resources) {
 			buffer.append(delimiter);
-			buffer.append(".addAsResource( ");
-			buffer.append("\"");
+			buffer.append(".addAsResource( "); //$NON-NLS-1$
+			buffer.append("\""); //$NON-NLS-1$
 			buffer.append(resource);
-			buffer.append("\"");
-			buffer.append(" )");
+			buffer.append("\""); //$NON-NLS-1$
+			buffer.append(" )"); //$NON-NLS-1$
 		}
 		for (String resource : webInfResources) {
 			buffer.append(delimiter);
-			buffer.append(".addAsWebInfResource( ");
-			buffer.append("\"");
+			buffer.append(".addAsWebInfResource( "); //$NON-NLS-1$
+			buffer.append("\""); //$NON-NLS-1$
 			buffer.append(resource);
-			buffer.append("\"");
-			buffer.append(" )");
+			buffer.append("\""); //$NON-NLS-1$
+			buffer.append(" )"); //$NON-NLS-1$
 		}
 
 		if (addBeansXml) {
 			addImport(imports, importsRewrite,
-					"org.jboss.shrinkwrap.api.asset.EmptyAsset");
+					"org.jboss.shrinkwrap.api.asset.EmptyAsset"); //$NON-NLS-1$
 			buffer.append(delimiter);
-			buffer.append(".addAsManifestResource(EmptyAsset.INSTANCE, \"beans.xml\")");
+			buffer.append(".addAsManifestResource(EmptyAsset.INSTANCE, \"beans.xml\")"); //$NON-NLS-1$
 		}
 
-		buffer.append(";").append(delimiter);
-		buffer.append("// System.out.println(archive.toString(true));").append(
+		buffer.append(";").append(delimiter); //$NON-NLS-1$
+		buffer.append("// System.out.println(archive.toString(true));").append( //$NON-NLS-1$
 				delimiter);
-		buffer.append("return archive;").append(delimiter);
+		buffer.append("return archive;").append(delimiter); //$NON-NLS-1$
 		buffer.append("}"); //$NON-NLS-1$
 		buffer.append(delimiter);
 		content = buffer.toString();

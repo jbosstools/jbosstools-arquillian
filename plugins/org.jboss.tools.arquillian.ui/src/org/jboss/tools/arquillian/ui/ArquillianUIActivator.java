@@ -32,6 +32,7 @@ public class ArquillianUIActivator extends AbstractUIPlugin {
 	public static final String JAR = "jar"; //$NON-NLS-1$
 	public static final String WAR = "war"; //$NON-NLS-1$
 	public static final String EAR = "ear"; //$NON-NLS-1$
+	public static final String RAR = "rar"; //$NON-NLS-1$
 
 	// The shared instance
 	private static ArquillianUIActivator plugin;
