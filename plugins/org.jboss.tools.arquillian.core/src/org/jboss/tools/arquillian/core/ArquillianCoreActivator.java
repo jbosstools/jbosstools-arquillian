@@ -39,6 +39,7 @@ import org.eclipse.jdt.core.IJavaElementDelta;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jface.preference.IPreferenceStore;
+import org.eclipse.osgi.service.datalocation.Location;
 import org.eclipse.ui.preferences.ScopedPreferenceStore;
 import org.jboss.tools.arquillian.core.internal.ArquillianConstants;
 import org.jboss.tools.arquillian.core.internal.classpath.ArquillianClassLoader;
@@ -51,7 +52,7 @@ import org.osgi.framework.BundleContext;
 
 public class ArquillianCoreActivator implements BundleActivator {
 
-	private static final String ARQUILLIAN_CLASSLOADER = "arquillianClassLoader";
+	private static final String ARQUILLIAN_CLASSLOADER = "arquillianClassLoader"; //$NON-NLS-1$
 
 	// The plug-in ID
 	public static final String PLUGIN_ID = "org.jboss.tools.arquillian.core"; //$NON-NLS-1$
@@ -246,9 +247,8 @@ public class ArquillianCoreActivator implements BundleActivator {
 	}
 
 	public static File getLoaderBase() {
-		IWorkspaceRoot workspaceRoot = ResourcesPlugin.getWorkspace().getRoot();
-		IPath rootPath = workspaceRoot.getLocation();
-		File rootFile = rootPath.toFile();
+		IPath stateLocation = getDefault().getStateLocation();
+		File rootFile = stateLocation.toFile();
 		File base = new File(rootFile, ARQUILLIAN_CLASSLOADER);
 		return base;
 	}
