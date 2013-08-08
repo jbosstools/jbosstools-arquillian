@@ -10,24 +10,17 @@
  ************************************************************************************/
 package org.jboss.tools.arquillian.test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
-import java.util.List;
+import java.io.InputStream;
 
 import org.codehaus.plexus.util.IOUtil;
 import org.eclipse.core.resources.IProject;
-import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.NullProgressMonitor;
-import org.eclipse.jdt.core.IJavaProject;
-import org.eclipse.jdt.core.JavaCore;
-import org.eclipse.jdt.core.JavaModelException;
-import org.jboss.tools.arquillian.core.internal.ArquillianConstants;
-import org.jboss.tools.arquillian.core.internal.natures.ArquillianNature;
-import org.jboss.tools.arquillian.core.internal.util.ArquillianSearchEngine;
 import org.jboss.tools.arquillian.core.internal.util.ArquillianUtility;
 import org.jboss.tools.test.util.JobUtils;
 import org.junit.AfterClass;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
@@ -37,9 +30,11 @@ import org.junit.Test;
  */
 public class CheckArquillianModificationsTest extends AbstractArquillianTest {
 
+	private static final String PROJECT_NAME = "JBIDE-15030";
+
 	@Test
 	public void testAddArquillianSupportKeepsCompilerSettings() throws Exception {
-		String projectName = "JBIDE-15030";
+		String projectName = PROJECT_NAME;
 		IProject project = getProject(projectName);
 		if (project !=null){
 			project.delete(true, new NullProgressMonitor());
@@ -54,14 +49,27 @@ public class CheckArquillianModificationsTest extends AbstractArquillianTest {
 		
 		//If test run w/ Java 6, project will have errors, 
 		//so just check pom.xml contents directly
-		String pomContent = IOUtil.toString(project.getFile("pom.xml").getContents());
-		assertTrue("pom.xml doesn't contain expected compiler source (1.7)\n"+pomContent, pomContent.contains("<source>1.7</source>"));
-		assertTrue("pom.xml doesn't contain expected compiler target (1.7)\n"+pomContent, pomContent.contains("<target>1.7</target>"));
+		InputStream is = null;
+		try {
+			is = project.getFile("pom.xml").getContents();
+			String pomContent = IOUtil.toString(is);
+			assertTrue("pom.xml doesn't contain expected compiler source (1.7)\n"+pomContent, pomContent.contains("<source>1.7</source>"));
+			assertTrue("pom.xml doesn't contain expected compiler target (1.7)\n"+pomContent, pomContent.contains("<target>1.7</target>"));
+		} finally {
+			if (is != null) {
+				try {
+					is.close();
+				} catch (Exception e) {
+					// ignore
+				}
+			}
+		}
 	}
 	
 	@AfterClass
 	public static void dispose() throws Exception {
 		JobUtils.waitForIdle();
+		getProject(PROJECT_NAME).delete(true, true, null);
 	}
 
 }
