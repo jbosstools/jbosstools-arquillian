@@ -66,7 +66,7 @@ public class ArquillianResourceHyperlinkDetector extends
 		if (javaElement == null )
 			return null;
 
-		if (!ArquillianSearchEngine.isArquillianJUnitTest(javaElement.findPrimaryType(), false, false)) {
+		if (!ArquillianSearchEngine.isArquillianJUnitTest(javaElement.findPrimaryType(), false, false, false)) {
 			return null;
 		}
 		CompilationUnit ast= SharedASTProvider.getAST(javaElement, SharedASTProvider.WAIT_NO, null);

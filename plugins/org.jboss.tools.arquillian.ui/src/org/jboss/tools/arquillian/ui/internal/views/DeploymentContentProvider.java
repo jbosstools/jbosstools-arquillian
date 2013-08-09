@@ -48,7 +48,7 @@ public class DeploymentContentProvider implements ITreeContentProvider {
 	public Object[] getChildren(Object parentElement) {
 		if (parentElement instanceof ICompilationUnit) {
 			ICompilationUnit cu = (ICompilationUnit) parentElement;
-			if (ArquillianSearchEngine.isArquillianJUnitTest(cu, true, false)) {
+			if (ArquillianSearchEngine.isArquillianJUnitTest(cu, true, false, false)) {
 				IType type = cu.findPrimaryType();
 				if (type == null) {
 					return null;
