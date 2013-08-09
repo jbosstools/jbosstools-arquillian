@@ -58,7 +58,7 @@ public class ArquillianFilter extends ViewerFilter {
 			return hasDeplyments((IPackageFragment) element);
 		}
 		if (element instanceof ICompilationUnit) {
-			return ArquillianSearchEngine.isArquillianJUnitTest((ICompilationUnit) element, true, false);
+			return ArquillianSearchEngine.isArquillianJUnitTest((ICompilationUnit) element, true, false, false);
 		}
 		return false;
 	}
