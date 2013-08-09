@@ -183,8 +183,28 @@ public class ArquillianSearchEngine {
 		}
 	}
 
-
+	/**
+	 * Returns whether a Java element is an Arquillian JUnit test
+	 * 
+	 * @param element the Java element
+	 * @param checkDeployment check if there is a deployment method
+	 * @param checkTest check if there is a test method
+	 * @return true if a Java element is an Arquillian JUnit test
+	 */
 	public static boolean isArquillianJUnitTest(IJavaElement element, boolean checkDeployment, boolean checkTest) {
+		return isArquillianJUnitTest(element, checkDeployment, checkTest, true);
+	}
+	
+	/**
+	 * Returns whether a Java element is an Arquillian JUnit test
+	 * 
+	 * @param element the Java element
+	 * @param checkDeployment check if there is a deployment method
+	 * @param checkTest check if there is a test method
+	 * @param checkAbstract check an abstract class
+	 * @return true if a Java element is an Arquillian JUnit test
+	 */
+	public static boolean isArquillianJUnitTest(IJavaElement element, boolean checkDeployment, boolean checkTest, boolean checkAbstract) {
 		try {
 			IType testType= null;
 			if (element instanceof ICompilationUnit) {
@@ -197,7 +217,7 @@ public class ArquillianSearchEngine {
 				testType= ((IMember) element).getDeclaringType();
 			}
 			if (testType != null && testType.exists()) {
-				return isArquillianJUnitTest(testType, checkDeployment, checkTest);
+				return isArquillianJUnitTest(testType, checkDeployment, checkTest, checkAbstract);
 			}
 		} catch (CoreException e) {
 			// ignore, return false
@@ -240,11 +260,11 @@ public class ArquillianSearchEngine {
 		return true;
 	}
 
-	private static boolean isArquillianJUnitTest(IType type, boolean checkDeployment, boolean checkTest) throws JavaModelException {
+	private static boolean isArquillianJUnitTest(IType type, boolean checkDeployment, boolean checkTest, boolean checkAbstract) throws JavaModelException {
 		if (isAccessibleClass(type)) {
 			ITypeBinding binding = getTypeBinding(type);
 			if (binding != null) {
-				return isTest(binding, checkDeployment, checkTest);
+				return isTest(binding, checkDeployment, checkTest, checkAbstract);
 			}
 		}
 		return false;
@@ -281,8 +301,8 @@ public class ArquillianSearchEngine {
 		return range != null && range.getOffset() != -1;
 	}
 
-	static boolean isTest(ITypeBinding binding, boolean checkDeployment, boolean checkTest) {
-		if (Modifier.isAbstract(binding.getModifiers()))
+	static boolean isTest(ITypeBinding binding, boolean checkDeployment, boolean checkTest, boolean checkAbstract) {
+		if (checkAbstract && Modifier.isAbstract(binding.getModifiers()))
 			return false;
 	
 		if (Annotation.RUN_WITH.annotatesTypeOrSuperTypes(binding, ARQUILLIAN_JUNIT_ARQUILLIAN)) {
@@ -379,7 +399,7 @@ public class ArquillianSearchEngine {
 		}
 
 		if (element instanceof IType) {
-			if (isArquillianJUnitTest((IType) element, checkDeployment, checkTest)) {
+			if (isArquillianJUnitTest((IType) element, checkDeployment, checkTest, true)) {
 				result.add(element);
 				return;
 			}
@@ -414,7 +434,7 @@ public class ArquillianSearchEngine {
 				IType curr= (IType) iterator.next();
 				if (isAccessibleClass(curr) && !Flags.isAbstract(curr.getFlags()) && region.contains(curr)) {
 					ITypeBinding binding = getTypeBinding(curr);
-					if (binding != null && isTest(binding, true, true)) {
+					if (binding != null && isTest(binding, true, true, true)) {
 						result.add(curr);
 					}
 				}

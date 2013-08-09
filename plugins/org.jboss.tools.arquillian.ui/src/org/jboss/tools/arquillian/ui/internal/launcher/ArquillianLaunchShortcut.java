@@ -221,7 +221,7 @@ public class ArquillianLaunchShortcut extends JUnitLaunchShortcut {
 							break;
 						case IJavaElement.CLASS_FILE:
 							type = ((IClassFile) element).getType();
-							if (ArquillianSearchEngine.isArquillianJUnitTest(type, true, true)) {
+							if (ArquillianSearchEngine.isArquillianJUnitTest(type, true, true, false)) {
 								elementToLaunch= type;
 							}
 							break;
