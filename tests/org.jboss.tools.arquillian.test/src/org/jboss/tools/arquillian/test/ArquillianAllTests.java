@@ -19,7 +19,8 @@ import org.junit.runners.Suite;
 	ArquillianValidatorTest.class,
 	CheckArquillianModificationsTest.class,
 	CreateDeploymentMethodTest.class,
-	GenerateDeploymentMethodTest.class
+	GenerateDeploymentMethodTest.class,
+	DeployableContainerTest.class
 })
 
 @RunWith(Suite.class)
