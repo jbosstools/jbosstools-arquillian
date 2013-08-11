@@ -13,6 +13,8 @@ package org.jboss.tools.arquillian.core.internal.util;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -22,30 +24,37 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import org.codehaus.plexus.util.IOUtil;
 import org.eclipse.core.internal.runtime.InternalPlatform;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IResourceProxy;
+import org.eclipse.core.resources.IWorkspaceRoot;
+import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.NullProgressMonitor;
+import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.SubProgressMonitor;
 import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.IClassFile;
+import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
+import org.eclipse.jdt.core.IJavaModel;
 import org.eclipse.jdt.core.IJavaModelMarker;
 import org.eclipse.jdt.core.IJavaModelStatusConstants;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IMember;
 import org.eclipse.jdt.core.IMethod;
+import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.IRegion;
 import org.eclipse.jdt.core.ISourceRange;
 import org.eclipse.jdt.core.IType;
@@ -317,7 +326,7 @@ public class ArquillianSearchEngine {
 		return isTestImplementor(binding);
 	}
 
-	public static boolean isTestImplementor(ITypeBinding type) {
+	private static boolean isImplementor(ITypeBinding type, String interfaceName) {
 		ITypeBinding superType= type.getSuperclass();
 		if (superType != null && isTestImplementor(superType)) {
 			return true;
@@ -325,13 +334,32 @@ public class ArquillianSearchEngine {
 		ITypeBinding[] interfaces= type.getInterfaces();
 		for (int i= 0; i < interfaces.length; i++) {
 			ITypeBinding curr= interfaces[i];
-			if (ArquillianUtility.TEST_INTERFACE_NAME.equals(curr.getQualifiedName()) || isTestImplementor(curr)) {
+			if (interfaceName.equals(curr.getQualifiedName()) || isTestImplementor(curr)) {
 				return true;
 			}
 		}
 		return false;
 	}
+	
+	public static boolean isTestImplementor(ITypeBinding type) {
+		return isImplementor(type, ArquillianUtility.TEST_INTERFACE_NAME);
+	}
 
+	/**
+	 * Validates a deployable container.</br>
+	 * The validation works in the following way:
+	 * <ul>
+	 * <li>scan a classpath</li>
+     * <li>if there is no implementation of the DeployableContainer interface, it reports an error</li>
+     * <li>if there is exactly one implementation of this interface, nothing reported (the Arquillian environment is valid)</li>
+     * <li>if there is more than one implementation of this interface, we would check if there is the META-INF/services/org.jboss.arquillian.core.spi.LoadableExtension resource on the classpath as well as if there is a class defined in this resource.</li>
+     * </ul>
+     * If both exist, nothing is reported.
+     * Otherwise, Arquillian Eclipse reports an error.
+     * 
+	 * @param javaProject the Java Project
+	 * @return true if a project contains a valid deployable container 
+	 */
 	public static IStatus validateDeployableContainer(IJavaProject javaProject) {
 		try {
 			IType type = javaProject.findType(CONTAINER_DEPLOYABLE_CONTAINER);
@@ -351,14 +379,74 @@ public class ArquillianSearchEngine {
             		count++;
             	}
             }
-            if (count != 1) {
+            if (count == 0) {
             	return new Status(IStatus.ERROR, ArquillianCoreActivator.PLUGIN_ID, 1 ,  
             			"Arquillian tests require exactly one implementation of DeploymentContainer on the build path. Do you want to configure it?", null);
             }
+            if (count == 1) {
+            	return Status.OK_STATUS;
+            }
+            
+            IFile file = getFile(javaProject, "META-INF/services/org.jboss.arquillian.core.spi.LoadableExtension");
+			if (file != null) {
+				InputStream is = null;
+				try {
+					is = file.getContents();
+					if (is != null) {
+						String content = IOUtil.toString(is);
+						if (content != null && !content.isEmpty()) {
+							content = content.trim();
+							IType loadableExtension = javaProject
+									.findType(content);
+							if (loadableExtension != null
+									&& loadableExtension.exists()) {
+								ITypeBinding binding = getTypeBinding(loadableExtension);
+								if (isImplementor(binding, "org.jboss.arquillian.core.spi.LoadableExtension")) {
+									return Status.OK_STATUS;
+								}
+							}
+						}
+					}
+				} catch (Exception e) {
+					ArquillianCoreActivator.log(e);
+				} finally {
+					if (is != null) {
+						try {
+							is.close();
+						} catch (IOException e) {
+							// ignore
+						}
+					}
+				}
+			}
 		} catch (JavaModelException e) {
 			return new Status(IStatus.ERROR, ArquillianCoreActivator.PLUGIN_ID, e.getLocalizedMessage(), e);
 		}
-		return Status.OK_STATUS;
+		return new Status(IStatus.ERROR, ArquillianCoreActivator.PLUGIN_ID, 1 ,  
+    			"Arquillian tests require exactly one implementation of DeploymentContainer on the build path. Do you want to configure it?", null);
+	}
+	
+	private static IFile getFile(IJavaProject javaProject, String fileName) throws JavaModelException {
+		IClasspathEntry[] rawClasspath = javaProject.getRawClasspath();
+		for (IClasspathEntry entry : rawClasspath) {
+			if (entry.getEntryKind() == IClasspathEntry.CPE_SOURCE) {
+				IPackageFragmentRoot[] roots = javaProject
+						.findPackageFragmentRoots(entry);
+				if (roots == null) {
+					continue;
+				}
+				for (IPackageFragmentRoot root : roots) {
+					IPath path = root.getPath();
+					path = path.append(fileName);
+					IWorkspaceRoot wsRoot = ResourcesPlugin.getWorkspace().getRoot();
+					IFile file = wsRoot.getFile(path);
+					if (file != null && file.exists()) {
+						return file;
+					}			
+				}
+			}
+		}
+		return null;
 	}
 
 	public static boolean isNonAbstractClass(IType type) throws JavaModelException {
