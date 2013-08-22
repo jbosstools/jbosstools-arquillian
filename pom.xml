@@ -11,6 +11,9 @@
 	<version>1.0.4-SNAPSHOT</version>
 	<name>arquillian.all</name>	
 	<packaging>pom</packaging>
+	<properties>
+		<tycho.scmUrl>scm:git:https://github.com/jbosstools/jbosstools-arquillian.git</tycho.scmUrl>
+	</properties>
 	<modules>
 		<module>features</module>
 		<module>plugins</module>
