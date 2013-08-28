@@ -183,7 +183,7 @@ public class ArquillianClassLoader extends ClassLoader implements
 					path = type.getPath();
 
 				// needs to be compiled before we can load it
-				if ("class".equalsIgnoreCase(path.getFileExtension())) {
+				if ("class".equalsIgnoreCase(path.getFileExtension())) { //$NON-NLS-1$
 					IFile file = null;
 
 					if (resource != null && resource.getType() == IResource.FILE)
@@ -193,13 +193,13 @@ public class ArquillianClassLoader extends ClassLoader implements
 
 					if (file != null && file.isAccessible()) {
 						byte[] bytes = loadBytes(file);
+						definePackage(className);
 						return defineClass(className, bytes, 0, bytes.length);
 					}
 				}
 				// Look up the class file based on the output location of the java project
 				else if ("java".equalsIgnoreCase(path.getFileExtension()) && resource != null) { //$NON-NLS-1$
 					if (resource.getProject() != null) {
-						IJavaProject jProject = JavaCore.create(resource.getProject());
 						String outputClass = StringUtils.replace(type.getFullyQualifiedName(), ".", "/").concat(".class"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 						for (IPath outputLocation : outputLocations) {
 							IPath classPath = outputLocation
@@ -208,15 +208,17 @@ public class ArquillianClassLoader extends ClassLoader implements
 									.getRoot().getFile(classPath);
 							if (file != null && file.isAccessible()) {
 								byte[] bytes = loadBytes(file);
+								definePackage(className);
 								return defineClass(className, bytes, 0,
 										bytes.length);
 							}
 						}
 					}
 				}
-				else if ("jar".equalsIgnoreCase(path.getFileExtension())) {
+				else if ("jar".equalsIgnoreCase(path.getFileExtension())) { //$NON-NLS-1$
 					String expectedFileName = StringUtils.replace(className, ".", "/").concat(".class"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 					byte[] bytes = getCachedInputStream(path.toOSString(), expectedFileName);
+					definePackage(className);
 					return defineClass(className, bytes, 0, bytes.length);
 				}
 			}
@@ -225,6 +227,17 @@ public class ArquillianClassLoader extends ClassLoader implements
 			ArquillianCoreActivator.log(e);
 		}
 		return super.findClass(className);
+	}
+
+	private void definePackage(String className) {
+		int i = className.lastIndexOf('.');
+		if (i != -1) {
+		    String pkgName = className.substring(0, i);
+		    Package pkg = getPackage(pkgName);
+			if (pkg == null) {
+				definePackage(pkgName, null, null, null, null, null, null, null);
+			}
+		}
 	}
 
 	private byte[] getCachedInputStream(String jarFilename, String entryName) {
