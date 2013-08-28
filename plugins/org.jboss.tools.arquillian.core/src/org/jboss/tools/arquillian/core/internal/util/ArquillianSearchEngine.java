@@ -101,6 +101,8 @@ import org.osgi.framework.Bundle;
  */
 public class ArquillianSearchEngine {
 
+	private static final String ARCHIVE_WAR = "archive.war"; //$NON-NLS-1$
+	private static final String ARCHIVE_JAR = "archive.jar"; //$NON-NLS-1$
 	private static final String VALUE = "value"; //$NON-NLS-1$
 	public static final String ARQUILLIAN_JUNIT_ARQUILLIAN = "org.jboss.arquillian.junit.Arquillian"; //$NON-NLS-1$
 	public static final String CONTAINER_DEPLOYABLE_CONTAINER = "org.jboss.arquillian.container.spi.client.container.DeployableContainer"; //$NON-NLS-1$
@@ -744,23 +746,21 @@ public class ArquillianSearchEngine {
 			Object archiveObject = method.invoke(object, new Object[0]);
 			Class<?> archiveClass = archiveObject.getClass();
 			
-			//archive.as(ZipExporter.class).exportTo(
-			//	    new File("/home/alr/Desktop/myPackage.jar"), true);
-			Class<?> exporterClass = Class.forName("org.jboss.shrinkwrap.api.exporter.ZipExporter", true, loader);
-			Method asMethod = archiveClass.getMethod("as", new Class[] { Class.class });
+			Class<?> exporterClass = Class.forName("org.jboss.shrinkwrap.api.exporter.ZipExporter", true, loader); //$NON-NLS-1$
+			Method asMethod = archiveClass.getMethod("as", new Class[] { Class.class }); //$NON-NLS-1$
 			Object asObject = asMethod.invoke(archiveObject, new Object[] {exporterClass});
 			Class<?> asClass = asObject.getClass();
-			Method exportToMethod = asClass.getMethod("exportTo", new Class[] {File.class, boolean.class });
+			Method exportToMethod = asClass.getMethod("exportTo", new Class[] {File.class, boolean.class }); //$NON-NLS-1$
 			Class<?> jarClass = Class.forName(ArquillianUtility.ORG_JBOSS_SHRINKWRAP_API_SPEC_JAVA_ARCHIVE, true, loader);
 			if (jarClass.isAssignableFrom(archiveClass)) {
-				File jarFile = new File(file, "archive.jar");
+				File jarFile = new File(file, ARCHIVE_JAR);
 				file.mkdirs();
 				exportToMethod.invoke(asObject, new Object[] {jarFile, Boolean.TRUE});
 				return jarFile;
 			}
 			Class<?> warClass = Class.forName(ArquillianUtility.ORG_JBOSS_SHRINKWRAP_API_SPEC_WEB_ARCHIVE, true, loader);
 			if (warClass.isAssignableFrom(archiveClass)) {
-				File warFile = new File(file, "archive.war");
+				File warFile = new File(file, ARCHIVE_WAR);
 				
 				file.mkdirs();
 				exportToMethod.invoke(asObject, new Object[] {warFile, Boolean.TRUE});
