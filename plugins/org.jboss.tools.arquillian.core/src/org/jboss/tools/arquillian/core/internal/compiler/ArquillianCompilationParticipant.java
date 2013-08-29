@@ -77,6 +77,7 @@ public class ArquillianCompilationParticipant extends CompilationParticipant imp
     	try {
 			project.getProject().deleteMarkers(ArquillianConstants.MARKER_CLASS_ID, false, IResource.DEPTH_INFINITE);
 			project.getProject().deleteMarkers(ArquillianConstants.MARKER_RESOURCE_ID, false, IResource.DEPTH_INFINITE);
+			project.getProject().deleteMarkers(ArquillianConstants.MARKER_MISSING_DEPLOYMENT_METHOD_ID, false, IResource.DEPTH_INFINITE);
 		} catch (CoreException e) {
 			ArquillianCoreActivator.log(e);
 		}
@@ -123,7 +124,7 @@ public class ArquillianCompilationParticipant extends CompilationParticipant imp
         	if (!JavaCore.IGNORE.equals(preference) && !ArquillianSearchEngine.hasDeploymentMethod(sourceFile, project)) {
         		try {
         			Integer severity = ArquillianUtility.getSeverity(preference);
-        			storeProblem(sourceFile, "Arquillian test requires at least one method annotated with @Deployment", severity);
+        			storeProblem(sourceFile, "Arquillian test requires at least one method annotated with @Deployment", severity, ArquillianConstants.MARKER_MISSING_DEPLOYMENT_METHOD_ID);
 				} catch (CoreException e) {
 					ArquillianCoreActivator.log(e);
 				}
@@ -152,13 +153,18 @@ public class ArquillianCompilationParticipant extends CompilationParticipant imp
         
     }
     
-	private void storeProblem(SourceFile sourceFile, String message, Integer severity)
+    private void storeProblem(SourceFile sourceFile, String message, Integer severity)
+			throws CoreException {
+    	storeProblem(sourceFile, message, severity, ArquillianConstants.MARKER_CLASS_ID);
+    }
+    
+    private void storeProblem(SourceFile sourceFile, String message, Integer severity, String type)
 			throws CoreException {
 		if (severity == null) {
 			return;
 		}
 		IMarker marker = sourceFile.resource
-				.createMarker(ArquillianConstants.MARKER_CLASS_ID);
+				.createMarker(type);
 		String[] attributeNames = ArquillianConstants.ARQUILLIAN_PROBLEM_MARKER_ATTRIBUTE_NAMES;
 		String[] allNames = attributeNames;
 

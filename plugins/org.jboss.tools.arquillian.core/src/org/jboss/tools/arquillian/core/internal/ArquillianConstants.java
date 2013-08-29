@@ -56,6 +56,8 @@ public class ArquillianConstants {
 	
 	public static final String MARKER_RESOURCE_ID = "org.jboss.tools.arquillian.core.problem.resource";  //$NON-NLS-1$
 
+	public static final String MARKER_MISSING_DEPLOYMENT_METHOD_ID = "org.jboss.tools.arquillian.core.problem.missingDeploymentMethod";  //$NON-NLS-1$
+
     public final static String[] ARQUILLIAN_PROBLEM_MARKER_ATTRIBUTE_NAMES = {
     	IMarker.MESSAGE,
     	IMarker.SEVERITY,
