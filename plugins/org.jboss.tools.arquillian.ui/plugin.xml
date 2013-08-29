@@ -429,4 +429,10 @@
       </page>
    </extension>
    
+   <extension point="org.eclipse.ui.ide.markerResolution">
+  		<markerResolutionGenerator
+     		class="org.jboss.tools.arquillian.ui.internal.markers.GenerateDeploymentResolutionGenerator"
+     		markerType="org.jboss.tools.arquillian.core.problem.missingDeploymentMethod"/>
+	</extension>
+   
 </plugin>

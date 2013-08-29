@@ -60,6 +60,15 @@
     </extension>
    
   <extension 
+  		id="org.jboss.tools.arquillian.core.problem.missingDeploymentMethod"
+  		point="org.eclipse.core.resources.markers"
+  		name="Arquillian Missing Deployment Method Problem">
+	<super type="org.eclipse.core.resources.problemmarker"/>
+	<super type="org.eclipse.core.resources.textmarker"/>
+	<persistent value="true"/>
+  </extension>
+  
+  <extension 
   		id="org.jboss.tools.arquillian.core.problem.class"
   		point="org.eclipse.core.resources.markers"
   		name="Arquillian Class Problem">

@@ -20,18 +20,13 @@ import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.ProjectScope;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.preferences.IEclipsePreferences;
-import org.eclipse.jdt.core.ICompilationUnit;
-import org.eclipse.jdt.core.IJavaElement;
-import org.eclipse.jdt.core.IJavaProject;
-import org.eclipse.jdt.core.IType;
-import org.eclipse.jdt.core.JavaCore;
+import org.eclipse.ui.IMarkerResolution;
+import org.eclipse.ui.IMarkerResolutionGenerator2;
 import org.jboss.tools.arquillian.core.ArquillianCoreActivator;
 import org.jboss.tools.arquillian.core.internal.ArquillianConstants;
 import org.jboss.tools.arquillian.core.internal.util.ArquillianUtility;
-import org.jboss.tools.arquillian.ui.ArquillianUIActivator;
-import org.jboss.tools.arquillian.ui.internal.utils.ArquillianUIUtil;
-import org.jboss.tools.arquillian.ui.internal.utils.IDeploymentDescriptor;
-import org.jboss.tools.arquillian.ui.internal.wizards.ProjectResource;
+import org.jboss.tools.arquillian.ui.internal.markers.GenerateDeploymentMethodMarkerResolution;
+import org.jboss.tools.arquillian.ui.internal.markers.GenerateDeploymentResolutionGenerator;
 import org.jboss.tools.test.util.JobUtils;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -43,7 +38,7 @@ import org.junit.Test;
  * 
  */
 @SuppressWarnings("restriction")
-public class CreateDeploymentMethodTest extends AbstractArquillianTest {
+public class GenerateDeploymenMethodMarkerResolutionTest extends AbstractArquillianTest {
 
 	private static final String TEST_PROJECT_NAME = "test";
 
@@ -63,7 +58,7 @@ public class CreateDeploymentMethodTest extends AbstractArquillianTest {
 	}
 
 	@Test
-	public void testCreateDeploymentMethod() throws CoreException {
+	public void testMarkerResolution() throws CoreException {
 		IProject proj = getProject(TEST_PROJECT_NAME);
 		
 		IResource resource = proj.findMember("/src/test/java/org/jboss/tools/arquillian/test/DeploymentTest.java");
@@ -72,77 +67,19 @@ public class CreateDeploymentMethodTest extends AbstractArquillianTest {
 		IMarker[] projectMarkers = resource.findMarkers(
 				ArquillianConstants.MARKER_MISSING_DEPLOYMENT_METHOD_ID, true, IResource.DEPTH_INFINITE);
 		assertTrue("Arquillian marker isn't created", projectMarkers.length == 1);
-		
-		IJavaProject project = JavaCore.create(proj);
-		assertNotNull(project);
-		assertTrue(project.isOpen());
-		
-		ICompilationUnit icu = JavaCore.createCompilationUnitFrom((IFile) resource).getWorkingCopy(null);
-		assertNotNull(icu);
-		
-		IType type = icu.getTypes()[0];
-		DeploymentDescriptor descriptor = new DeploymentDescriptor();
-		String delimiter = type.getPackageFragment().findRecommendedLineSeparator();
-		IJavaElement position = type.getChildren()[0];
-		ArquillianUIUtil.createDeploymentMethod(icu, type, null, 
-				false, delimiter,
-				descriptor, 
-				position, false);
-		JobUtils.waitForIdle(1000);
-		projectMarkers = resource.findMarkers(
-				ArquillianConstants.MARKER_CLASS_ID, true, IResource.DEPTH_INFINITE);
-		assertTrue("Deployment method isn't created", projectMarkers.length == 0);		
+		IMarker marker = projectMarkers[0];
+		IMarkerResolutionGenerator2 markerGenerator = new GenerateDeploymentResolutionGenerator();
+		assertTrue(markerGenerator.hasResolutions(marker));
+		IMarkerResolution[] resolutions = markerGenerator.getResolutions(marker);
+		assertTrue("There isn't a quick fix", resolutions.length == 1);
+		IMarkerResolution resolution = resolutions[0];
+		assertTrue("Invalid quick fix", resolution instanceof GenerateDeploymentMethodMarkerResolution);
 	}
 	
-		
 	@AfterClass
 	public static void dispose() throws Exception {
 		JobUtils.waitForIdle(1000);
 		getProject(TEST_PROJECT_NAME).delete(true, true, null);
-	}
-	
-	public static class DeploymentDescriptor implements IDeploymentDescriptor {
-
-		@Override
-		public boolean addBeansXml() {
-			return false;
-		}
-
-		@Override
-		public String getArchiveName() {
-			return null;
-		}
-
-		@Override
-		public String getArchiveType() {
-			return ArquillianUIActivator.RAR;
-		}
-
-		@Override
-		public String getDeploymentName() {
-			return null;
-		}
-
-		@Override
-		public String getDeploymentOrder() {
-			return null;
-		}
-
-		@Override
-		public String getMethodName() {
-			return "createDeployment";
-		}
-
-		@Override
-		public ProjectResource[] getResources() {
-			return new ProjectResource[0];
-		}
-
-		@Override
-		public IType[] getTypes() {
-			return new IType[0];
-		}
-		
 	}
 
 }
