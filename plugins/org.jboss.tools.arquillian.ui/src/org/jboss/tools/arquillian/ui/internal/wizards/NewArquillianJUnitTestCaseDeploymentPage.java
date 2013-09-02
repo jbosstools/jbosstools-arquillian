@@ -238,6 +238,7 @@ public class NewArquillianJUnitTestCaseDeploymentPage extends WizardPage impleme
 		}
 		archiveNameText.setText(""); //$NON-NLS-1$
 		beansXmlButton.setSelection(true);
+		beansXmlButton.setEnabled(archiveTypeCombo.getSelectionIndex() != EAR_INDEX);
 		
 		methodNameText.addModifyListener(new ModifyListener() {
 			
@@ -271,6 +272,7 @@ public class NewArquillianJUnitTestCaseDeploymentPage extends WizardPage impleme
 
 			@Override
 			public void widgetSelected(SelectionEvent e) {
+				beansXmlButton.setEnabled(archiveTypeCombo.getSelectionIndex() != EAR_INDEX);
 				refreshResourceViewer();
 			}
 		

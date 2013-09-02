@@ -349,11 +349,15 @@ public class ArquillianUIUtil {
 			buffer.append(" )"); //$NON-NLS-1$
 		}
 
-		if (addBeansXml) {
+		if (addBeansXml && !ArquillianUIActivator.EAR.equals(archiveType)) {
 			addImport(imports, importsRewrite,
 					"org.jboss.shrinkwrap.api.asset.EmptyAsset"); //$NON-NLS-1$
 			buffer.append(delimiter);
-			buffer.append(".addAsManifestResource(EmptyAsset.INSTANCE, \"beans.xml\")"); //$NON-NLS-1$
+			if (ArquillianUIActivator.WAR.equals(archiveType)) {
+				buffer.append(".addAsWebInfResource(EmptyAsset.INSTANCE, \"beans.xml\")"); //$NON-NLS-1$
+			} else {
+				buffer.append(".addAsManifestResource(EmptyAsset.INSTANCE, \"beans.xml\")"); //$NON-NLS-1$
+			}
 		}
 
 		buffer.append(";").append(delimiter); //$NON-NLS-1$
