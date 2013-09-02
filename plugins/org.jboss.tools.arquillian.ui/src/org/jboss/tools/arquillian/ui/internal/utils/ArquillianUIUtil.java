@@ -33,8 +33,10 @@ import org.apache.maven.project.MavenProject;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IAdaptable;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.NullProgressMonitor;
@@ -67,6 +69,7 @@ import org.eclipse.jdt.internal.ui.javaeditor.CompilationUnitEditor;
 import org.eclipse.jdt.launching.IJavaLaunchConfigurationConstants;
 import org.eclipse.jdt.ui.CodeGeneration;
 import org.eclipse.jdt.ui.wizards.NewTypeWizardPage.ImportsManager;
+import org.eclipse.jface.text.ITextSelection;
 import org.eclipse.jface.viewers.CheckboxTableViewer;
 import org.eclipse.jface.viewers.ColumnLabelProvider;
 import org.eclipse.jface.viewers.ColumnLayoutData;
@@ -75,7 +78,9 @@ import org.eclipse.jface.viewers.ColumnViewerEditorActivationEvent;
 import org.eclipse.jface.viewers.ColumnViewerEditorActivationStrategy;
 import org.eclipse.jface.viewers.ColumnWeightData;
 import org.eclipse.jface.viewers.FocusCellOwnerDrawHighlighter;
+import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredContentProvider;
+import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.TableLayout;
 import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.jface.viewers.TableViewerEditor;
@@ -1006,4 +1011,26 @@ public class ArquillianUIUtil {
 				| ColumnViewerEditor.TABBING_VERTICAL | ColumnViewerEditor.KEYBOARD_ACTIVATION);
 	}
 
+	public static IProject getSelectedProject(ISelection selection) {
+		IProject selected = null;
+		if (selection instanceof IStructuredSelection) {
+			Object object = ((IStructuredSelection)selection).getFirstElement();
+			if (object instanceof IResource) {
+				selected = ((IResource)object).getProject();
+			} else if (object instanceof IAdaptable){
+				IResource resource = (IResource) ((IAdaptable)object).getAdapter(IResource.class);
+				if (resource != null) {
+					selected = resource.getProject();
+				}
+			}
+		}
+		if (selection instanceof ITextSelection) {
+			ICompilationUnit cu = ArquillianUIUtil.getActiveCompilationUnit();
+			if (cu != null) {
+				selected = cu.getJavaProject().getProject();
+			}
+		}
+
+		return selected;
+	}
 }

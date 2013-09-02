@@ -10,6 +10,7 @@
  ************************************************************************************/
 package org.jboss.tools.arquillian.ui.internal.views;
 
+import java.awt.print.Book;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -22,12 +23,17 @@ import org.eclipse.core.resources.IResourceDeltaVisitor;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.jface.viewers.ISelection;
+import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.ui.ISelectionListener;
+import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.navigator.CommonNavigator;
 import org.eclipse.ui.navigator.CommonViewer;
 import org.jboss.tools.arquillian.core.ArquillianCoreActivator;
+import org.jboss.tools.arquillian.ui.internal.utils.ArquillianUIUtil;
 
 /**
  * 
@@ -36,7 +42,11 @@ import org.jboss.tools.arquillian.core.ArquillianCoreActivator;
  */
 public class ArquillianView extends CommonNavigator {
 
+	public static final String ID = "org.jboss.tools.arquillian.ui.views.arquillianView"; //$NON-NLS-1$
+	
 	private IResourceChangeListener resourceChangeListener;
+	
+	private ISelectionListener selectionListener;
 
 	public ArquillianView() {
 		super();
@@ -49,6 +59,10 @@ public class ArquillianView extends CommonNavigator {
 					resourceChangeListener);
 			resourceChangeListener = null;
 		}
+		if (selectionListener != null) {
+			getSite().getPage().removeSelectionListener(selectionListener);
+			selectionListener = null;
+		}
 		super.dispose();
 	}
 
@@ -56,6 +70,19 @@ public class ArquillianView extends CommonNavigator {
 	protected CommonViewer createCommonViewer(Composite aParent) {
 		
 		CommonViewer commonViewer = super.createCommonViewer(aParent);
+		selectionListener = new ISelectionListener() {
+			public void selectionChanged(IWorkbenchPart part, ISelection selection) {
+				if (ArquillianUIUtil.getSelectedProject(selection) == null) {
+					return;
+				}
+				if (getCommonViewer() != null
+						&& getCommonViewer().getControl() != null
+						&& !getCommonViewer().getControl().isDisposed()) {
+					getCommonViewer().refresh();
+				}
+			}
+		};
+		getSite().getPage().addSelectionListener(selectionListener);
 		resourceChangeListener = new IResourceChangeListener() {
 
 			@Override
