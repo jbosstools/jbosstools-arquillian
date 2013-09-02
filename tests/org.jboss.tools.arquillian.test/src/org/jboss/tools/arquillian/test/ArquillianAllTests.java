@@ -22,7 +22,8 @@ import org.junit.runners.Suite;
 	GenerateDeploymentMethodTest.class,
 	DeployableContainerTest.class,
 	ArquillianClassloaderTest.class,
-	GenerateDeploymenMethodMarkerResolutionTest.class
+	GenerateDeploymenMethodMarkerResolutionTest.class,
+	ArquillianFilterTest.class
 })
 
 @RunWith(Suite.class)

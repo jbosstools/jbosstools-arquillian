@@ -24,6 +24,7 @@ import java.util.List;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.Platform;
 import org.jboss.tools.project.examples.model.ProjectExample;
 import org.osgi.framework.Bundle;
@@ -36,6 +37,10 @@ import org.osgi.framework.Bundle;
 public class AbstractArquillianTest {
 
 	protected static void importMavenProject(String zipEntry, String projectName) throws Exception {
+		importMavenProject(zipEntry, projectName, Platform.getLocation());
+	}
+	
+	protected static void importMavenProject(String zipEntry, String projectName, IPath location) throws Exception {
 		File zipFile = createFile(zipEntry, projectName);
 		zipFile.deleteOnExit();
 		ProjectExample projectExample = new ProjectExample();
@@ -46,7 +51,7 @@ public class AbstractArquillianTest {
 		includedProjects.add(projectName);
 		projectExample.setIncludedProjects(includedProjects);
 		
-		new ImportMavenProject().importProject(projectExample, zipFile, new HashMap<String, Object>(), Platform.getLocation());
+		new ImportMavenProject().importProject(projectExample, zipFile, new HashMap<String, Object>(), location);
 	}
 
 	public static File createFile(String entryName, String projectName) throws IOException,

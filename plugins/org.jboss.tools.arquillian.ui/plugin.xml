@@ -377,6 +377,12 @@
             id="org.jboss.tools.arquillian.ui.filters.projectFilter"
             name="Arquillian Filter">
       </commonFilter>
+      <commonFilter
+            activeByDefault="true"
+            class="org.jboss.tools.arquillian.ui.internal.filters.ActiveProjectFilter"
+            id="org.jboss.tools.arquillian.ui.filters.activeProjectFilter"
+            name="Arquillian Active Project Filter">
+      </commonFilter>
    </extension>
    
    <extension
