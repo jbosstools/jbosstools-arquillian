@@ -1,0 +1,46 @@
+[
+	{
+		"type":"Local"
+	},
+	{
+		"type":"Servlet 2.5",
+        "configurations":[
+            {
+                "type":"java.lang.String",
+                "name":"host"
+            },
+            {
+                "type":"java.lang.Integer",
+                "name":"port"
+            },
+            {
+                "type":"java.lang.String",
+                "name":"contextRoot"
+            }
+        ],
+		"group_id":"org.jboss.arquillian.protocol",
+		"artifact_id":"arquillian-protocol-servlet"
+	},
+	{
+		"type":"Servlet 3.0",
+        "configurations":[
+            {
+                "type":"java.lang.String",
+                "name":"host"
+            },
+            {
+                "type":"java.lang.Integer",
+                "name":"port"
+            },
+            {
+                "type":"java.lang.String",
+                "name":"contextRoot"
+            }
+        ],
+		"group_id":"org.jboss.arquillian.protocol",
+		"artifact_id":"arquillian-protocol-servlet"
+	},
+	{
+		"type":"jmx-as7"
+	}
+]
