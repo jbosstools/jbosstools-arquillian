@@ -4,11 +4,11 @@
 	<parent>
 		<groupId>org.jboss.tools</groupId>
 		<artifactId>parent</artifactId>
-		<version>4.1.0.Final-SNAPSHOT</version>
+		<version>4.1.1.Alpha1-SNAPSHOT</version>
 	</parent>
 	<groupId>org.jboss.tools</groupId>
 	<artifactId>arquillian</artifactId>
-	<version>1.0.4-SNAPSHOT</version>
+	<version>1.0.5-SNAPSHOT</version>
 	<name>arquillian.all</name>	
 	<packaging>pom</packaging>
 	<modules>
