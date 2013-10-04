@@ -26,7 +26,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -44,11 +43,7 @@ import org.apache.maven.model.Parent;
 import org.apache.maven.model.Plugin;
 import org.apache.maven.model.Profile;
 import org.apache.maven.project.MavenProject;
-import org.apache.maven.repository.internal.MavenRepositorySystemSession;
 import org.apache.maven.settings.Settings;
-import org.codehaus.plexus.DefaultPlexusContainer;
-import org.codehaus.plexus.PlexusContainerException;
-import org.codehaus.plexus.component.repository.exception.ComponentLookupException;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.IProject;
@@ -105,17 +100,10 @@ import org.jboss.tools.arquillian.core.internal.ArquillianConstants;
 import org.jboss.tools.arquillian.core.internal.container.ContainerParser;
 import org.jboss.tools.arquillian.core.internal.container.ProfileGenerator;
 import org.jboss.tools.arquillian.core.internal.natures.ArquillianNature;
+import org.jboss.tools.maven.core.IArtifactResolutionService;
 import org.jboss.tools.maven.core.MavenCoreActivator;
 import org.jboss.tools.maven.profiles.core.MavenProfilesCoreActivator;
 import org.jboss.tools.maven.profiles.core.profiles.ProfileStatus;
-import org.sonatype.aether.RepositorySystem;
-import org.sonatype.aether.repository.LocalRepository;
-import org.sonatype.aether.repository.RemoteRepository;
-import org.sonatype.aether.resolution.VersionRangeRequest;
-import org.sonatype.aether.resolution.VersionRangeResolutionException;
-import org.sonatype.aether.resolution.VersionRangeResult;
-import org.sonatype.aether.util.artifact.DefaultArtifact;
-import org.sonatype.aether.version.Version;
 import org.w3c.dom.Element;
 
 /**
@@ -777,70 +765,34 @@ public class ArquillianUtility {
 		return null;
 	}
 
-	public static VersionRangeResult getVersionRangeResult(String coords)
-			throws ComponentLookupException, PlexusContainerException,
-			CoreException, VersionRangeResolutionException {
-		RepositorySystem system = new DefaultPlexusContainer()
-				.lookup(RepositorySystem.class);
-
-		MavenRepositorySystemSession session = new MavenRepositorySystemSession();
-		IMaven maven = MavenPlugin.getMaven();
-		String localRepoHome = maven.getLocalRepositoryPath();
-		LocalRepository localRepo = new LocalRepository(localRepoHome);
-		session.setLocalRepositoryManager(system
-				.newLocalRepositoryManager(localRepo));
-
-		VersionRangeRequest rangeRequest = new VersionRangeRequest();
-		rangeRequest.setArtifact(new DefaultArtifact(coords));
-
-		List<ArtifactRepository> repos = new ArrayList<ArtifactRepository>();
-		repos.addAll(maven.getArtifactRepositories(false));
-
-		for (ArtifactRepository repo : repos) {
-			RemoteRepository remoteRepo = new RemoteRepository(repo.getId(),
-					"default", repo.getUrl()); //$NON-NLS-1$
-			rangeRequest.addRepository(remoteRepo);
-		}
-		return system.resolveVersionRange(session, rangeRequest);
-	}
 	
 	public static String[] getVersions(String coords, String[] defaultVersions) {
-		VersionRangeResult result;
+		List<String> versions = null;
 		try {
-			result = getVersionRangeResult(coords);
-		} catch (Exception e) {
+			
+			IArtifactResolutionService artifactResolutionService = MavenCoreActivator.getDefault().getArtifactResolutionService();
+			List<ArtifactRepository> artifactRepositories = MavenPlugin.getMaven().getArtifactRepositories();
+			versions = artifactResolutionService.getAvailableReleasedVersions(coords, artifactRepositories, new NullProgressMonitor());
+		} catch(CoreException e) {
 			ArquillianCoreActivator.log(e);
-			return defaultVersions;
-		} 
-		List<Version> versions = result.getVersions();
-		if (versions == null || versions.size() <= 0) {
+		}
+		if (versions == null || versions.isEmpty()) {
 			return defaultVersions;
 		}
-		String[] versionStrings = new String[versions.size()];
-		int i = 0;
-		for (Version version : versions) {
-			versionStrings[i++] = version.toString();
-		}
-		return versionStrings;
+		String[] versionsArray = new String[versions.size()];  
+		versions.toArray(versionsArray);
+		return versionsArray;
 	}
 	
 	public static String getHighestVersion(String coords) {
-		VersionRangeResult result;
 		try {
-			result = getVersionRangeResult(coords);
-		} catch (Exception e) {
+			IArtifactResolutionService artifactResolutionService = MavenCoreActivator.getDefault().getArtifactResolutionService();
+			List<ArtifactRepository> artifactRepositories = MavenPlugin.getMaven().getArtifactRepositories();
+			return artifactResolutionService.getLatestReleasedVersion(coords, artifactRepositories, new NullProgressMonitor());
+		} catch(CoreException e) {
 			ArquillianCoreActivator.log(e);
-			return null;
-		} 
-		List<Version> versions = result.getVersions();
-		for (Iterator<Version> iterator = versions.iterator(); iterator.hasNext();) {
-			Version version = (Version) iterator.next();
-			if (version.toString().endsWith("-SNAPSHOT")) { //$NON-NLS-1$
-				iterator.remove();
-			}
 		}
-		Version version = result.getHighestVersion();
-		return version.toString();
+		return null;
 	}
 	
 	public static List<String> getProfilesFromPreferences(String preference) {
