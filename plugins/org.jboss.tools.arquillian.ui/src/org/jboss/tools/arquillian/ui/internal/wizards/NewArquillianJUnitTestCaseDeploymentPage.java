@@ -201,7 +201,13 @@ public class NewArquillianJUnitTestCaseDeploymentPage extends WizardPage impleme
 		archiveNameText = new Text(composite, SWT.BORDER);
 		archiveNameText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		
-		
+		archiveNameText.addModifyListener(new ModifyListener() {
+			
+			@Override
+			public void modifyText(ModifyEvent e) {
+				validate();
+			}
+		});
 		// beans.xml
 		beansXmlButton  = new Button(composite, SWT.CHECK);
 		gd = new GridData();
@@ -244,26 +250,7 @@ public class NewArquillianJUnitTestCaseDeploymentPage extends WizardPage impleme
 			
 			@Override
 			public void modifyText(ModifyEvent e) {
-				String text = methodNameText.getText();
-				setErrorMessage(null);
-				if (text.isEmpty()) {
-					setErrorMessage("The deployment method name is required.");
-					return;
-				}
-				IJavaElement context = null;
-				if (javaElement != null) {
-					context = javaElement;
-				}
-				IJavaProject javaProject = getJavaProject();
-				if (javaProject != null) {
-					context = javaProject;
-				}
-				if (context != null) {
-					IStatus status = validateMethodName(text, context);
-					if (!status.isOK()) {
-						setErrorMessage(status.getMessage());
-					}
-				}
+				validate();
 			}
 		});
 		
@@ -274,6 +261,7 @@ public class NewArquillianJUnitTestCaseDeploymentPage extends WizardPage impleme
 			public void widgetSelected(SelectionEvent e) {
 				beansXmlButton.setEnabled(archiveTypeCombo.getSelectionIndex() != EAR_INDEX);
 				refreshResourceViewer();
+				validate();
 			}
 		
 		});
@@ -331,6 +319,24 @@ public class NewArquillianJUnitTestCaseDeploymentPage extends WizardPage impleme
 		}
 	}
 	
+	private void validate() {
+		setMessage(null);
+		validateMethodName();
+		if (getErrorMessage() == null) {
+			validateArchiveName();
+		}
+		setPageComplete(getErrorMessage() == null);
+	}
+	protected void validateArchiveName() {
+		String archiveName = archiveNameText.getText();
+		if (!archiveName.isEmpty()) {
+			String extension = "." + archiveTypeCombo.getText(); //$NON-NLS-1$
+			if (!archiveName.endsWith(extension)) {
+				setErrorMessage("Invalid archive name");
+			}
+		}
+	}
+
 	public IJavaElement getElementPosition() {
 		return insertPositions.get(insertionPointCombo.getSelectionIndex());
 	}
@@ -781,6 +787,29 @@ public class NewArquillianJUnitTestCaseDeploymentPage extends WizardPage impleme
 
 	public boolean isForce() {
 		return false;
+	}
+
+	private void validateMethodName() {
+		String text = methodNameText.getText();
+		setErrorMessage(null);
+		if (text.isEmpty()) {
+			setErrorMessage("The deployment method name is required.");
+			return;
+		}
+		IJavaElement context = null;
+		if (javaElement != null) {
+			context = javaElement;
+		}
+		IJavaProject javaProject = getJavaProject();
+		if (javaProject != null) {
+			context = javaProject;
+		}
+		if (context != null) {
+			IStatus status = validateMethodName(text, context);
+			if (!status.isOK()) {
+				setErrorMessage(status.getMessage());
+			}
+		}
 	}
 
 }
