@@ -48,7 +48,7 @@ public class ArquillianConstants {
 
 	public static final String ARQUILLIAN_VERSION = "arquillianVersion"; //$NON-NLS-1$
 
-	public static final String ARQUILLIAN_VERSION_DEFAULT = "1.0.3.Final"; //$NON-NLS-1$
+	public static final String ARQUILLIAN_VERSION_DEFAULT = "1.1.1.Final"; //$NON-NLS-1$
 	
 	public static final String MARKER_CLASS_NAME = "markerClassName"; //$NON-NLS-1$
 
@@ -57,6 +57,8 @@ public class ArquillianConstants {
 	public static final String MARKER_RESOURCE_ID = "org.jboss.tools.arquillian.core.problem.resource";  //$NON-NLS-1$
 
 	public static final String MARKER_MISSING_DEPLOYMENT_METHOD_ID = "org.jboss.tools.arquillian.core.problem.missingDeploymentMethod";  //$NON-NLS-1$
+
+	public static final String MARKER_INVALID_ARCHIVE_NAME_ID = "org.jboss.tools.arquillian.core.problem.invalidArchiveName";  //$NON-NLS-1$
 
     public final static String[] ARQUILLIAN_PROBLEM_MARKER_ATTRIBUTE_NAMES = {
     	IMarker.MESSAGE,
@@ -74,6 +76,8 @@ public class ArquillianConstants {
 	public static final Object SOURCE_ID ="Arquillian"; //$NON-NLS-1$
 	
 	public static final String MISSING_DEPLOYMENT_METHOD = ArquillianCoreActivator.PLUGIN_ID + ".missingDeploymentMethod"; //$NON-NLS-1$
+	
+	public static final String INVALID_ARCHIVE_NAME = ArquillianCoreActivator.PLUGIN_ID + ".invalidArchiveName"; //$NON-NLS-1$
 	
 	public static final String MISSING_TEST_METHOD = ArquillianCoreActivator.PLUGIN_ID + ".missingTestMethod"; //$NON-NLS-1$
 	

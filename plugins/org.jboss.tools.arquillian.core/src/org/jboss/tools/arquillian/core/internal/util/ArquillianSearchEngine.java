@@ -612,8 +612,7 @@ public class ArquillianSearchEngine {
 			return false;
 		}
 		try {
-			ITypeBinding binding = getTypeBinding(type);
-			return Annotation.DEPLOYMENT.annotatesAtLeastOneMethod(binding);
+			return getDeploymentMethods(type).size() > 0;
 		} catch (JavaModelException e) {
 			ArquillianCoreActivator.log(e);
 			return false;
@@ -856,7 +855,7 @@ public class ArquillianSearchEngine {
 		marker.setAttributes(allNames, allValues);
 	}
 
-	private static List<IMethodBinding> getDeploymentMethods(IType type) throws JavaModelException {
+	public static List<IMethodBinding> getDeploymentMethods(IType type) throws JavaModelException {
 		List<IMethodBinding> methodBindings = new ArrayList<IMethodBinding>();
 		if (type == null) {
 			return methodBindings;
@@ -881,9 +880,23 @@ public class ArquillianSearchEngine {
 					(modifiers & Modifier.STATIC) != 0 &&
 					methodBinding.getParameterTypes().length == 0) {
 				ITypeBinding returnType = methodBinding.getReturnType();
-				if ("org.jboss.shrinkwrap.api.Archive".equals(returnType.getBinaryName())) {
+				if (isArchiveType(returnType)) {
 					return true;
 				}
+			}
+		}
+		return false;
+	}
+
+	private static boolean isArchiveType(ITypeBinding returnType) {
+		if ("org.jboss.shrinkwrap.api.Archive".equals(returnType
+				.getBinaryName())) {
+			return true;
+		}
+		ITypeBinding[] interfaces = returnType.getInterfaces();
+		for (ITypeBinding t:interfaces) {
+			if (isArchiveType(t)) {
+				return true;
 			}
 		}
 		return false;
