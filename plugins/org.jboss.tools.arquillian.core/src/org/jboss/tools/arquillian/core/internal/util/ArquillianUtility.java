@@ -149,7 +149,9 @@ public class ArquillianUtility {
 
 	public static final String ORG_JBOSS_SHRINKWRAP_API_SPEC_WEB_ARCHIVE = "org.jboss.shrinkwrap.api.spec.WebArchive"; //$NON-NLS-1$
 	public static final String ORG_JBOSS_SHRINKWRAP_API_SPEC_JAVA_ARCHIVE = "org.jboss.shrinkwrap.api.spec.JavaArchive"; //$NON-NLS-1$
-	
+	public static final String ORG_JBOSS_SHRINKWRAP_API_SPEC_ENTERPRISE_ARCHIVE = "org.jboss.shrinkwrap.api.spec.EnterpriseArchive"; //$NON-NLS-1$
+	public static final String ORG_JBOSS_SHRINKWRAP_API_SPEC_RESOURCEADAPTER_ARCHIVE = "org.jboss.shrinkwrap.api.spec.ResourceAdapterArchive"; //$NON-NLS-1$
+		
 	public static String getDependencyVersion(MavenProject mavenProject,
 			String gid, String aid) {
 		List<Artifact> artifacts = getArtifacts(mavenProject);
@@ -743,6 +745,11 @@ public class ArquillianUtility {
 	
 	public static boolean validateDeploymentMethod(IProject project) {
 		String preference = getPreference(ArquillianConstants.MISSING_DEPLOYMENT_METHOD, project);
+		return !JavaCore.IGNORE.equals(preference);
+	}
+	
+	public static boolean validateArchiveName(IProject project) {
+		String preference = getPreference(ArquillianConstants.INVALID_ARCHIVE_NAME, project);
 		return !JavaCore.IGNORE.equals(preference);
 	}
 	

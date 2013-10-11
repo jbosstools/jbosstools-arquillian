@@ -31,6 +31,7 @@ public class ArquillianPreferencesInitializer extends
 		preferences.putBoolean(ArquillianConstants.ENABLE_ARQUILLIAN_VALIDATOR, true);
 		preferences.putBoolean(ArquillianConstants.TEST_ARQUILLIAN_CONTAINER, true);
 		preferences.put(ArquillianConstants.MISSING_DEPLOYMENT_METHOD, JavaCore.WARNING);
+		preferences.put(ArquillianConstants.INVALID_ARCHIVE_NAME, JavaCore.WARNING);
 		preferences.put(ArquillianConstants.MISSING_TEST_METHOD, JavaCore.WARNING);
 		preferences.put(ArquillianConstants.TYPE_IS_NOT_INCLUDED_IN_ANY_DEPLOYMENT, JavaCore.WARNING);
 		preferences.put(ArquillianConstants.IMPORT_IS_NOT_INCLUDED_IN_ANY_DEPLOYMENT, JavaCore.WARNING);

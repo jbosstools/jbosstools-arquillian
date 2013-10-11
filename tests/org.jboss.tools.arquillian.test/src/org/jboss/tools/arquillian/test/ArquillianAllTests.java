@@ -23,7 +23,8 @@ import org.junit.runners.Suite;
 	DeployableContainerTest.class,
 	ArquillianClassloaderTest.class,
 	GenerateDeploymenMethodMarkerResolutionTest.class,
-	ArquillianFilterTest.class
+	ArquillianFilterTest.class,
+	ValidateArchiveNameTest.class
 })
 
 @RunWith(Suite.class)

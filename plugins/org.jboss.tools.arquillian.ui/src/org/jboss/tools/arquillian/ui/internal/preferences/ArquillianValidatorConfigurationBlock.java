@@ -42,6 +42,8 @@ public class ArquillianValidatorConfigurationBlock extends OptionsConfigurationB
 	private static final String SETTINGS_SECTION_NAME= "ArquillianValidatorConfigurationBlock";  //$NON-NLS-1$
 
 	private static final Key MISSING_DEPLOYMENT_METHOD = getKey(ArquillianCoreActivator.PLUGIN_ID, ArquillianConstants.MISSING_DEPLOYMENT_METHOD);
+	private static final Key INVALID_ARCHIVE_NAME = getKey(ArquillianCoreActivator.PLUGIN_ID, ArquillianConstants.INVALID_ARCHIVE_NAME);
+	
 	private static final Key MISSING_TEST_METHOD = getKey(ArquillianCoreActivator.PLUGIN_ID, ArquillianConstants.MISSING_TEST_METHOD);
 	private static final Key TYPE_IS_NOT_INCLUDED_IN_ANY_DEPLOYMENT = getKey(ArquillianCoreActivator.PLUGIN_ID, ArquillianConstants.TYPE_IS_NOT_INCLUDED_IN_ANY_DEPLOYMENT);
 	private static final Key IMPORT_IS_NOT_INCLUDED_IN_ANY_DEPLOYMENT = getKey(ArquillianCoreActivator.PLUGIN_ID, ArquillianConstants.IMPORT_IS_NOT_INCLUDED_IN_ANY_DEPLOYMENT);
@@ -70,6 +72,7 @@ public class ArquillianValidatorConfigurationBlock extends OptionsConfigurationB
 	public static Key[] getKeys() {
 		return new Key[] {
 				MISSING_DEPLOYMENT_METHOD,
+				INVALID_ARCHIVE_NAME,
 				MISSING_TEST_METHOD,
 				TYPE_IS_NOT_INCLUDED_IN_ANY_DEPLOYMENT,
 				IMPORT_IS_NOT_INCLUDED_IN_ANY_DEPLOYMENT,
@@ -183,6 +186,9 @@ public class ArquillianValidatorConfigurationBlock extends OptionsConfigurationB
 		label = "Deployment archive cannot be created";
 		fFilteredPrefTree.addComboBox(inner, label, DEPLOYMENT_ARCHIVE_CANNOT_BE_CREATED, errorWarningIgnore, errorWarningIgnoreLabels, defaultIndent, section);
 		
+		label = "Invalid archive name";
+		fFilteredPrefTree.addComboBox(inner, label, INVALID_ARCHIVE_NAME, errorWarningIgnore, errorWarningIgnoreLabels, defaultIndent, section);
+		
 		IDialogSettings settingsSection= ArquillianUIActivator.getDefault().getDialogSettings().getSection(SETTINGS_SECTION_NAME);
 		restoreSectionExpansionStates(settingsSection);
 
@@ -240,6 +246,7 @@ public class ArquillianValidatorConfigurationBlock extends OptionsConfigurationB
 	private void setEnableStates() {
 		boolean enabled = enableValidation.getSelection();
 		setComboEnabled(MISSING_DEPLOYMENT_METHOD, enabled);
+		setComboEnabled(INVALID_ARCHIVE_NAME, enabled);
 		setComboEnabled(MISSING_TEST_METHOD, enabled);
 		setComboEnabled(TYPE_IS_NOT_INCLUDED_IN_ANY_DEPLOYMENT, enabled);
 		setComboEnabled(IMPORT_IS_NOT_INCLUDED_IN_ANY_DEPLOYMENT, enabled);

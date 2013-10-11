@@ -28,8 +28,8 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.NullProgressMonitor;
-import org.eclipse.core.runtime.Platform;
 import org.eclipse.jdt.core.ICompilationUnit;
+import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaModelStatusConstants;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IMember;
@@ -43,6 +43,18 @@ import org.eclipse.jdt.core.compiler.CharOperation;
 import org.eclipse.jdt.core.compiler.CompilationParticipant;
 import org.eclipse.jdt.core.compiler.IProblem;
 import org.eclipse.jdt.core.compiler.ReconcileContext;
+import org.eclipse.jdt.core.dom.AST;
+import org.eclipse.jdt.core.dom.ASTParser;
+import org.eclipse.jdt.core.dom.ASTVisitor;
+import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.Expression;
+import org.eclipse.jdt.core.dom.IMethodBinding;
+import org.eclipse.jdt.core.dom.ITypeBinding;
+import org.eclipse.jdt.core.dom.MethodDeclaration;
+import org.eclipse.jdt.core.dom.MethodInvocation;
+import org.eclipse.jdt.core.dom.QualifiedName;
+import org.eclipse.jdt.core.dom.SimpleName;
+import org.eclipse.jdt.core.dom.StringLiteral;
 import org.eclipse.jdt.internal.compiler.CompilationResult;
 import org.eclipse.jdt.internal.compiler.Compiler;
 import org.eclipse.jdt.internal.compiler.DefaultErrorHandlingPolicies;
@@ -78,6 +90,7 @@ public class ArquillianCompilationParticipant extends CompilationParticipant imp
 			project.getProject().deleteMarkers(ArquillianConstants.MARKER_CLASS_ID, false, IResource.DEPTH_INFINITE);
 			project.getProject().deleteMarkers(ArquillianConstants.MARKER_RESOURCE_ID, false, IResource.DEPTH_INFINITE);
 			project.getProject().deleteMarkers(ArquillianConstants.MARKER_MISSING_DEPLOYMENT_METHOD_ID, false, IResource.DEPTH_INFINITE);
+			project.getProject().deleteMarkers(ArquillianConstants.MARKER_INVALID_ARCHIVE_NAME_ID, false, IResource.DEPTH_INFINITE);
 		} catch (CoreException e) {
 			ArquillianCoreActivator.log(e);
 		}
@@ -120,7 +133,6 @@ public class ArquillianCompilationParticipant extends CompilationParticipant imp
         	
         	boolean remove = false;
         	String preference = ArquillianUtility.getPreference(ArquillianConstants.MISSING_DEPLOYMENT_METHOD, project.getProject());
-    		
         	if (!JavaCore.IGNORE.equals(preference) && !ArquillianSearchEngine.hasDeploymentMethod(sourceFile, project)) {
         		try {
         			Integer severity = ArquillianUtility.getSeverity(preference);
@@ -130,6 +142,7 @@ public class ArquillianCompilationParticipant extends CompilationParticipant imp
 				}
         		remove = true;
         	}
+        	
         	preference = ArquillianUtility.getPreference(ArquillianConstants.MISSING_TEST_METHOD, project.getProject());
         	if (!JavaCore.IGNORE.equals(preference) && !ArquillianSearchEngine.hasTestMethod(sourceFile, project)) {
         		try {
@@ -144,6 +157,16 @@ public class ArquillianCompilationParticipant extends CompilationParticipant imp
         		iterator.remove();
         	}
         	
+        	preference = ArquillianUtility.getPreference(ArquillianConstants.INVALID_ARCHIVE_NAME, project.getProject());
+        	if (!JavaCore.IGNORE.equals(preference)) {
+        		try {
+        			Integer severity = ArquillianUtility.getSeverity(preference);
+        			validateArchiveName(sourceFile, project, severity);
+				} catch (CoreException e) {
+					ArquillianCoreActivator.log(e);
+				}
+        		remove = true;
+        	}
         }
         for (SourceFile sourceFile:sourceFiles) {
         	if (nameEnvironment.setEnvironment(sourceFile, project)) {
@@ -153,15 +176,125 @@ public class ArquillianCompilationParticipant extends CompilationParticipant imp
         
     }
     
+    private void validateArchiveName(final SourceFile sourceFile, IJavaProject project, final Integer severity) throws CoreException {
+    	IFile file = sourceFile.resource;
+		IJavaElement element = JavaCore.create(file);
+		if (!(element instanceof ICompilationUnit)) {
+			return ;
+		}
+		ICompilationUnit cu = (ICompilationUnit) element;
+		ASTParser parser= ASTParser.newParser(AST.JLS4);
+		parser.setSource(cu);
+		parser.setResolveBindings(true);
+		parser.setKind(ASTParser.K_COMPILATION_UNIT);
+		final CompilationUnit root = (CompilationUnit) parser.createAST(null);
+		final List<MethodDeclaration> deploymentMethods = new ArrayList<MethodDeclaration>();
+		root.accept(new ASTVisitor() {
+
+			@Override
+			public boolean visit(MethodDeclaration node) {
+				IMethodBinding binding = node.resolveBinding();
+				if (ArquillianSearchEngine.isDeploymentMethod(binding)) {
+					deploymentMethods.add(node);
+				}
+				return false;
+			}
+		
+		});
+		for (MethodDeclaration methodDeclaration:deploymentMethods) {
+			methodDeclaration.accept(new ASTVisitor() {
+
+				@Override
+				public boolean visit(MethodInvocation node) {
+					boolean isCreateMethod = false;
+					StringLiteral archiveName = null;
+					if (node.getName() != null && "create".equals(node.getName().getIdentifier()) ) { //$NON-NLS-1$
+						List arguments = node.arguments();
+						if (arguments.size() == 2) {
+							Object o = arguments.get(1);
+							if (o instanceof StringLiteral) {
+								archiveName = (StringLiteral) o;
+							}
+						}
+						Expression expression = node.getExpression();
+						if (expression instanceof SimpleName) {
+							if ("ShrinkWrap".equals(((SimpleName)expression).getIdentifier()) ) { //$NON-NLS-1$
+								isCreateMethod = true;
+							}
+						}
+						if (expression instanceof QualifiedName) {
+							if ("org.jboss.shrinkwrap.api.ShrinkWrap".equals(((QualifiedName)expression).getName().getIdentifier()) ) { //$NON-NLS-1$
+								isCreateMethod = true;
+							}
+						}
+					}
+					if (isCreateMethod && archiveName != null) {
+						IMethodBinding binding = node.resolveMethodBinding();
+						ITypeBinding[] types = binding.getParameterTypes();
+						if (types.length == 2) {
+							ITypeBinding archiveType = types[0];
+							if (archiveType.isClass()) {
+								String extension = null;
+								ITypeBinding[] typeArguments = archiveType.getTypeArguments();
+								if (typeArguments.length == 1) {
+									ITypeBinding typeArgument = typeArguments[0];
+									if (ArquillianUtility.ORG_JBOSS_SHRINKWRAP_API_SPEC_WEB_ARCHIVE.equals(typeArgument.getBinaryName())) {
+										extension = ".war"; //$NON-NLS-1$
+									}
+									if (ArquillianUtility.ORG_JBOSS_SHRINKWRAP_API_SPEC_JAVA_ARCHIVE.equals(typeArgument.getBinaryName())) {
+										extension = ".jar"; //$NON-NLS-1$
+									}
+									if (ArquillianUtility.ORG_JBOSS_SHRINKWRAP_API_SPEC_ENTERPRISE_ARCHIVE.equals(typeArgument.getBinaryName())) {
+										extension = ".ear"; //$NON-NLS-1$
+									}
+									if (ArquillianUtility.ORG_JBOSS_SHRINKWRAP_API_SPEC_RESOURCEADAPTER_ARCHIVE.equals(typeArgument.getBinaryName())) {
+										extension = ".rar"; //$NON-NLS-1$
+									}
+								}
+								String value = archiveName.getLiteralValue();
+								if (extension != null && value != null && !value.endsWith(extension)) {
+									try {
+										IMarker marker = storeProblem(sourceFile, "Archive name is invalid. A name with the " + extension + " extension is expected.", severity, ArquillianConstants.MARKER_INVALID_ARCHIVE_NAME_ID);
+										if (marker != null) {
+											int start = archiveName
+													.getStartPosition();
+											int end = start + archiveName.getLength();
+											int lineNumber = root
+													.getLineNumber(start);
+											marker.setAttribute(
+													IMarker.CHAR_START, start);
+											marker.setAttribute(
+													IMarker.CHAR_END, end);
+											marker.setAttribute(
+													IMarker.LINE_NUMBER,
+													lineNumber);
+										}
+									} catch (CoreException e) {
+										ArquillianCoreActivator.log(e);
+									}
+								}
+							}
+							
+						}
+						
+					}
+					return true;
+				}
+				
+			});
+		}
+		
+	}
+    
     private void storeProblem(SourceFile sourceFile, String message, Integer severity)
 			throws CoreException {
     	storeProblem(sourceFile, message, severity, ArquillianConstants.MARKER_CLASS_ID);
     }
     
-    private void storeProblem(SourceFile sourceFile, String message, Integer severity, String type)
+    private IMarker storeProblem(SourceFile sourceFile, String message, Integer severity, String type)
 			throws CoreException {
 		if (severity == null) {
-			return;
+			return null;
 		}
 		IMarker marker = sourceFile.resource
 				.createMarker(type);
@@ -211,7 +344,7 @@ public class ArquillianCompilationParticipant extends CompilationParticipant imp
 		}
 
 		marker.setAttributes(allNames, allValues);
-
+		return marker;
 	}
 
 	private void compile(SourceFile[] units) {
