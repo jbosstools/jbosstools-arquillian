@@ -252,7 +252,7 @@ public class ArquillianCompilationParticipant extends CompilationParticipant imp
 									}
 								}
 								String value = archiveName.getLiteralValue();
-								if (extension != null && value != null && !value.endsWith(extension)) {
+								if (extension != null && value != null && (!value.endsWith(extension) || value.trim().length() <= 4) ) {
 									try {
 										IMarker marker = storeProblem(sourceFile, "Archive name is invalid. A name with the " + extension + " extension is expected.", severity, ArquillianConstants.MARKER_INVALID_ARCHIVE_NAME_ID);
 										if (marker != null) {
@@ -262,12 +262,14 @@ public class ArquillianCompilationParticipant extends CompilationParticipant imp
 											int lineNumber = root
 													.getLineNumber(start);
 											marker.setAttribute(
-													IMarker.CHAR_START, start);
+													IMarker.CHAR_START, start+1);
 											marker.setAttribute(
-													IMarker.CHAR_END, end);
+													IMarker.CHAR_END, end-1);
 											marker.setAttribute(
 													IMarker.LINE_NUMBER,
 													lineNumber);
+											marker.setAttribute(ArquillianConstants.OLD_ARCHIVE_NAME, value);
+											marker.setAttribute(ArquillianConstants.ARCHIVE_EXTENSION, extension);
 										}
 									} catch (CoreException e) {
 										ArquillianCoreActivator.log(e);
