@@ -112,5 +112,9 @@ public class ArquillianConstants {
 	public static final String JUNIT_LAUNCHCONFIG_TYPE_ID = "org.eclipse.jdt.junit.launchconfig"; //$NON-NLS-1$
 
 	public static final String TESTNG_LAUNCHCONFIG_TYPE_ID = "org.testng.eclipse.launchconfig"; //$NON-NLS-1$
+
+	public static final String OLD_ARCHIVE_NAME = "oldArchiveName"; //$NON-NLS-1$
+
+	public static final String ARCHIVE_EXTENSION = "archiveExtension"; //$NON-NLS-1$
 	
 }

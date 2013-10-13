@@ -436,9 +436,15 @@
    </extension>
    
    <extension point="org.eclipse.ui.ide.markerResolution">
-  		<markerResolutionGenerator
-     		class="org.jboss.tools.arquillian.ui.internal.markers.GenerateDeploymentResolutionGenerator"
-     		markerType="org.jboss.tools.arquillian.core.problem.missingDeploymentMethod"/>
-	</extension>
+  	  <markerResolutionGenerator
+     	class="org.jboss.tools.arquillian.ui.internal.markers.GenerateDeploymentResolutionGenerator"
+     	markerType="org.jboss.tools.arquillian.core.problem.missingDeploymentMethod"/>
+   </extension>
+   
+   <extension point="org.eclipse.ui.ide.markerResolution">
+  	  <markerResolutionGenerator
+     	class="org.jboss.tools.arquillian.ui.internal.markers.FixArchiveNameResolutionGenerator"
+     	markerType="org.jboss.tools.arquillian.core.problem.invalidArchiveName"/>
+   </extension>
    
 </plugin>

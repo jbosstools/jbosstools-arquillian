@@ -26,7 +26,7 @@ import org.jboss.tools.arquillian.core.internal.ArquillianConstants;
  * @author snjeza
  *
  */
-public class GenerateDeploymentResolutionGenerator implements
+public class FixArchiveNameResolutionGenerator implements
 		IMarkerResolutionGenerator2 {
 
 	/* (non-Javadoc)
@@ -41,7 +41,7 @@ public class GenerateDeploymentResolutionGenerator implements
 		IJavaElement element = JavaCore.create(resource);
 		if (element != null ) {
 			return new IMarkerResolution[] {
-				new GenerateDeploymentMethodMarkerResolution(element)	
+				new FixArchiveNameMarkerResolution(marker)	
 			};
 		}
 		
@@ -54,7 +54,7 @@ public class GenerateDeploymentResolutionGenerator implements
 	@Override
 	public boolean hasResolutions(IMarker marker) {
 		try {
-			return ArquillianConstants.MARKER_MISSING_DEPLOYMENT_METHOD_ID.equals(marker.getType());
+			return ArquillianConstants.MARKER_INVALID_ARCHIVE_NAME_ID.equals(marker.getType());
 		} catch (CoreException e) {
 			return false;
 		}
