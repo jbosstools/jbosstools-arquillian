@@ -45,7 +45,6 @@ import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
-import org.eclipse.osgi.framework.adaptor.BundleClassLoader;
 import org.eclipse.wst.sse.core.utils.StringUtils;
 import org.jboss.tools.arquillian.core.ArquillianCoreActivator;
 import org.jboss.tools.arquillian.core.internal.util.ArquillianUtility;
@@ -129,10 +128,8 @@ public class ArquillianClassLoader extends ClassLoader implements
 					&& tmp != this) {
 				if (checkClassLoader(tmp))
 					result.add(tmp);
-				// stop at the framework classloader or the first bundle
-				// classloader
-				if (tmp == finderClassLoader
-						|| tmp instanceof BundleClassLoader)
+				// stop at the framework classloader 
+				if (tmp == finderClassLoader)
 					break;
 			}
 		}
