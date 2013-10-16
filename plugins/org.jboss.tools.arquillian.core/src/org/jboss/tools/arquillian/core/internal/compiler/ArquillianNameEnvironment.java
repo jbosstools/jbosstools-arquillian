@@ -558,4 +558,21 @@ public class ArquillianNameEnvironment implements INameEnvironment, SuffixConsta
 		}
 	}
 	
+	public String[] getSourceClasspath() {
+		String[] sources = new String[sourceLocations.length];
+		int i = 0;
+		for (ClasspathLocation location:sourceLocations) {
+			sources[i++] = location.getPath();
+		}
+		return sources;
+	}
+	
+	public String[] getBinaryClasspath() {
+		String[] binaries = new String[binaryLocations.length];
+		int i = 0;
+		for (ClasspathLocation location:binaryLocations) {
+			binaries[i++] = location.getPath();
+		}
+		return binaries;
+	}
 }

@@ -53,6 +53,8 @@ public abstract class ClasspathLocation {
 			String qualifiedPackageName, String qualifiedBinaryFileName);
 
 	public abstract IPath getProjectRelativePath();
+	
+	public abstract String getPath();
 
 	public boolean isOutputFolder() {
 		return false;
