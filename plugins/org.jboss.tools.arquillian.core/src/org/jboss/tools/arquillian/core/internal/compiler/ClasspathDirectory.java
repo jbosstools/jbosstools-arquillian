@@ -11,11 +11,13 @@
  *******************************************************************************/
 package org.jboss.tools.arquillian.core.internal.compiler;
 
+import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 
+import org.eclipse.core.filesystem.EFS;
 import org.eclipse.core.resources.*;
 import org.eclipse.core.runtime.*;
-
 import org.eclipse.jdt.internal.compiler.classfmt.ClassFileReader;
 import org.eclipse.jdt.internal.compiler.classfmt.ClassFormatException;
 import org.eclipse.jdt.internal.compiler.env.AccessRuleSet;
@@ -23,6 +25,7 @@ import org.eclipse.jdt.internal.compiler.env.NameEnvironmentAnswer;
 import org.eclipse.jdt.internal.compiler.util.SimpleLookupTable;
 import org.eclipse.jdt.internal.compiler.util.SuffixConstants;
 import org.eclipse.jdt.internal.core.util.Util;
+import org.jboss.tools.arquillian.core.ArquillianCoreActivator;
 
 public class ClasspathDirectory extends ClasspathLocation {
 
@@ -148,6 +151,24 @@ public String toString() {
 
 public String debugPathString() {
     return this.binaryFolder.getFullPath().toString();
+}
+
+@Override
+public String getPath() {
+	URI uri;
+	if(binaryFolder.isLinked()){
+	   uri = binaryFolder.getRawLocationURI();
+	} else {
+		uri = binaryFolder.getLocationURI();
+	}
+	File javaFile;
+	try {
+		javaFile = EFS.getStore(uri).toLocalFile(0, new NullProgressMonitor());
+	} catch (CoreException e) {
+		ArquillianCoreActivator.log(e);
+		return binaryFolder.getRawLocation().toFile().getAbsolutePath();
+	}
+	return javaFile.getAbsolutePath();
 }
 
 

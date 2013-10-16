@@ -16,6 +16,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Scanner;
 
 import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IFile;
@@ -48,6 +49,7 @@ import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.Expression;
+import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
@@ -75,7 +77,9 @@ import org.jboss.tools.arquillian.core.internal.util.ArquillianUtility;
 
 public class ArquillianCompilationParticipant extends CompilationParticipant implements ICompilerRequestor {
 
-    private ArquillianNameEnvironment nameEnvironment;
+    private static final String JAVA_LANG_OBJECT = "java.lang.Object"; //$NON-NLS-1$
+	private static final String UNRESOLVED_TYPE = "Unresolved type"; //$NON-NLS-1$
+	private ArquillianNameEnvironment nameEnvironment;
     private ClasspathMultiDirectory[] sourceLocations;
     private BuildNotifier notifier;
     private List problemSourceFiles;
@@ -86,16 +90,9 @@ public class ArquillianCompilationParticipant extends CompilationParticipant imp
     	if (ArquillianCoreActivator.getDefault() == null) {
     		return;
     	}
-    	try {
-			project.getProject().deleteMarkers(ArquillianConstants.MARKER_CLASS_ID, false, IResource.DEPTH_INFINITE);
-			project.getProject().deleteMarkers(ArquillianConstants.MARKER_RESOURCE_ID, false, IResource.DEPTH_INFINITE);
-			project.getProject().deleteMarkers(ArquillianConstants.MARKER_MISSING_DEPLOYMENT_METHOD_ID, false, IResource.DEPTH_INFINITE);
-			project.getProject().deleteMarkers(ArquillianConstants.MARKER_INVALID_ARCHIVE_NAME_ID, false, IResource.DEPTH_INFINITE);
-		} catch (CoreException e) {
-			ArquillianCoreActivator.log(e);
-		}
     	if (!ArquillianUtility.isValidatorEnabled(project.getProject())) {
-            return;
+    		deleteAllMarkers(project.getProject());
+    		return;
     	}
         try {
             IMarker[] markers = project.getProject().findMarkers(IMarker.PROBLEM, true,
@@ -109,11 +106,12 @@ public class ArquillianCompilationParticipant extends CompilationParticipant imp
         } catch (CoreException e1) {
             // ignore
         }
-        List<SourceFile> sourceFiles = new ArrayList(33);
-        this.problemSourceFiles = new ArrayList(3);
+        List<SourceFile> sourceFiles = new ArrayList<SourceFile>();
+        this.problemSourceFiles = new ArrayList();
         this.notifier = new BuildNotifier(new NullProgressMonitor(), project.getProject());
         this.notifier.begin();
-        compiler = newCompiler(project);
+        //compiler = newCompiler(project);
+        nameEnvironment = new ArquillianNameEnvironment(project);
         this.notifier.updateProgressDelta(0.05f);
 
         this.notifier.subTask(Messages.build_analyzingSources);
@@ -130,7 +128,8 @@ public class ArquillianCompilationParticipant extends CompilationParticipant imp
         Iterator<SourceFile> iterator = sourceFiles.iterator();
         while (iterator.hasNext()) {
         	SourceFile sourceFile = iterator.next();
-        	
+        	deleteAllMarkers(sourceFile.resource);
+
         	boolean remove = false;
         	String preference = ArquillianUtility.getPreference(ArquillianConstants.MISSING_DEPLOYMENT_METHOD, project.getProject());
         	if (!JavaCore.IGNORE.equals(preference) && !ArquillianSearchEngine.hasDeploymentMethod(sourceFile, project)) {
@@ -153,43 +152,150 @@ public class ArquillianCompilationParticipant extends CompilationParticipant imp
 				}
         		remove = true;
         	} 
+        	
         	if (remove) {
         		iterator.remove();
         	}
+        }
+        final String typePreference = ArquillianUtility.getPreference(ArquillianConstants.TYPE_IS_NOT_INCLUDED_IN_ANY_DEPLOYMENT, project.getProject());
+    	
+        for (final SourceFile sourceFile:sourceFiles) {
+        	CompilationUnit rootAst = null;
+        	if (nameEnvironment.setEnvironment(sourceFile, project)) {
+        		//compile(new SourceFile[] { sourceFile });
+        		rootAst = getAST(sourceFile);
+        		if (rootAst == null) {
+        			return;
+        		}
+        		final CompilationUnit root = rootAst;
+        		IProblem[] problems = rootAst.getProblems();
+        		
+        		IFile resource = sourceFile.resource;
+                try {
+                    //resource.deleteMarkers(ArquillianConstants.MARKER_CLASS_ID, false, IResource.DEPTH_INFINITE);
+                    for (IProblem problem : problems) {
+                        storeProblem(problem, resource);
+                    }
+                } catch (CoreException e) {
+                    ArquillianCoreActivator.log(e);
+                }
+        		
+				if (!JavaCore.IGNORE.equals(typePreference)) {
+					rootAst.accept(new ASTVisitor() {
+						
+						@Override
+						public boolean visit(FieldDeclaration fieldDeclaration) {
+							ITypeBinding binding = fieldDeclaration.getType().resolveBinding();
+							if (binding != null) {
+								ITypeBinding superclass = binding.getSuperclass();
+								binding.getDeclaredFields();
+								while (superclass != null && !root.getAST().resolveWellKnownType(JAVA_LANG_OBJECT).equals(superclass)) {
+									superclass.getDeclaredFields();
+									superclass = superclass.getSuperclass();
+								}
+								superclass = binding.getSuperclass();
+								StringBuilder builder = new StringBuilder();
+								builder.append(binding.toString());
+								while (superclass != null && !root.getAST().resolveWellKnownType(JAVA_LANG_OBJECT).equals(superclass)) {
+									builder.append("\n"); //$NON-NLS-1$
+									builder.append(superclass.toString());
+									superclass = superclass.getSuperclass();
+								}
+								String source = builder.toString();
+								Scanner scanner = null;
+								try {
+									scanner = new Scanner(source);
+									while (scanner.hasNextLine()) {
+										String line = scanner.nextLine();
+										if (line.contains(UNRESOLVED_TYPE)) {
+											int index = line.indexOf(UNRESOLVED_TYPE) + UNRESOLVED_TYPE.length();
+											String str = line.substring(index);
+											String[] elements = str.trim().split(" "); //$NON-NLS-1$
+											if (elements.length >= 1) {
+												String type = elements[0];
+												String message = "The type " + type
+														+ " is not included in any deployment. "
+														+ "It is indirectly referenced from required .class files";
+												final Integer severity = ArquillianUtility.getSeverity(typePreference);
+												IMarker marker = storeProblem(sourceFile, message, severity, ArquillianConstants.MARKER_CLASS_ID);
+												if (marker != null) {
+													int start = fieldDeclaration.getStartPosition();
+													int end = start + fieldDeclaration.getLength();
+													int lineNumber = root.getLineNumber(start);
+													marker.setAttribute(IMarker.CHAR_START, start + 1);
+													marker.setAttribute(IMarker.CHAR_END, end - 1);
+													marker.setAttribute(IMarker.LINE_NUMBER, lineNumber);
+													marker.setAttribute(ArquillianConstants.MARKER_CLASS_NAME, type);
+													
+												}
+											}
+										}
+									}
+								} catch (CoreException e) {
+									ArquillianCoreActivator.log(e);
+								} finally {
+									if(scanner != null) {
+										scanner.close();
+									}
+								}
+							}
+							return false;
+						}
+
+					});
+				}
+        	}
         	
-        	preference = ArquillianUtility.getPreference(ArquillianConstants.INVALID_ARCHIVE_NAME, project.getProject());
+        	String preference = ArquillianUtility.getPreference(ArquillianConstants.INVALID_ARCHIVE_NAME, project.getProject());
         	if (!JavaCore.IGNORE.equals(preference)) {
         		try {
         			Integer severity = ArquillianUtility.getSeverity(preference);
-        			validateArchiveName(sourceFile, project, severity);
+        			validateArchiveName(rootAst, sourceFile, project, severity);
 				} catch (CoreException e) {
 					ArquillianCoreActivator.log(e);
 				}
-        		remove = true;
-        	}
-        }
-        for (SourceFile sourceFile:sourceFiles) {
-        	if (nameEnvironment.setEnvironment(sourceFile, project)) {
-        		compile(new SourceFile[] { sourceFile });
         	}
         }
         
     }
-    
-    private void validateArchiveName(final SourceFile sourceFile, IJavaProject project, final Integer severity) throws CoreException {
-    	IFile file = sourceFile.resource;
+
+	private void deleteAllMarkers(IResource resource) {
+		try {
+			resource.deleteMarkers(ArquillianConstants.MARKER_CLASS_ID, false, IResource.DEPTH_INFINITE);
+			resource.deleteMarkers(ArquillianConstants.MARKER_RESOURCE_ID, false, IResource.DEPTH_INFINITE);
+			resource.deleteMarkers(ArquillianConstants.MARKER_MISSING_DEPLOYMENT_METHOD_ID, false, IResource.DEPTH_INFINITE);
+			resource.deleteMarkers(ArquillianConstants.MARKER_INVALID_ARCHIVE_NAME_ID, false, IResource.DEPTH_INFINITE);
+		} catch (CoreException e) {
+			ArquillianCoreActivator.log(e);
+		}
+	}
+
+	private CompilationUnit getAST(final SourceFile sourceFile) {
+		CompilationUnit rootAst;
+		IFile file = sourceFile.resource;
 		IJavaElement element = JavaCore.create(file);
 		if (!(element instanceof ICompilationUnit)) {
-			return ;
+			return null;
 		}
 		ICompilationUnit cu = (ICompilationUnit) element;
 		ASTParser parser= ASTParser.newParser(AST.JLS4);
 		parser.setSource(cu);
 		parser.setResolveBindings(true);
 		parser.setKind(ASTParser.K_COMPILATION_UNIT);
-		final CompilationUnit root = (CompilationUnit) parser.createAST(null);
+		parser.setProject(null);
+		
+		parser.setEnvironment(nameEnvironment.getBinaryClasspath(), new String[] {}, null, true);
+		rootAst = (CompilationUnit) parser.createAST(null);
+		return rootAst;
+	}
+    
+    private void validateArchiveName(CompilationUnit rootAst, final SourceFile sourceFile, IJavaProject project, final Integer severity) throws CoreException {
+		if (rootAst == null) {
+			rootAst = getAST(sourceFile);
+		}
 		final List<MethodDeclaration> deploymentMethods = new ArrayList<MethodDeclaration>();
-		root.accept(new ASTVisitor() {
+		final CompilationUnit root = rootAst;
+		rootAst.accept(new ASTVisitor() {
 
 			@Override
 			public boolean visit(MethodDeclaration node) {
@@ -259,15 +365,10 @@ public class ArquillianCompilationParticipant extends CompilationParticipant imp
 											int start = archiveName
 													.getStartPosition();
 											int end = start + archiveName.getLength();
-											int lineNumber = root
-													.getLineNumber(start);
-											marker.setAttribute(
-													IMarker.CHAR_START, start+1);
-											marker.setAttribute(
-													IMarker.CHAR_END, end-1);
-											marker.setAttribute(
-													IMarker.LINE_NUMBER,
-													lineNumber);
+											int lineNumber = root.getLineNumber(start);
+											marker.setAttribute(IMarker.CHAR_START, start+1);
+											marker.setAttribute(IMarker.CHAR_END, end-1);
+											marker.setAttribute(IMarker.LINE_NUMBER, lineNumber);
 											marker.setAttribute(ArquillianConstants.OLD_ARCHIVE_NAME, value);
 											marker.setAttribute(ArquillianConstants.ARCHIVE_EXTENSION, extension);
 										}
@@ -535,7 +636,7 @@ public class ArquillianCompilationParticipant extends CompilationParticipant imp
         }
     }
 
-    private void storeProblem(CategorizedProblem problem, IFile resource)
+    private void storeProblem(IProblem problem, IFile resource)
             throws CoreException {
     	if ((problem.getID() & IProblem.TypeRelated) == 0 && (problem.getID() & IProblem.ImportRelated) == 0) {
     		// ignore
@@ -558,8 +659,14 @@ public class ArquillianCompilationParticipant extends CompilationParticipant imp
         int standardLength = attributeNames.length;
         String[] allNames = attributeNames;
         int managedLength = 1;
-        String[] extraAttributeNames = problem.getExtraMarkerAttributeNames();
-        int extraLength = extraAttributeNames == null ? 0 : extraAttributeNames.length;
+        int extraLength = 0;
+        String[] extraAttributeNames;
+        if (problem instanceof CategorizedProblem) {
+        	extraAttributeNames = ((CategorizedProblem)problem).getExtraMarkerAttributeNames();
+        	extraLength = extraAttributeNames == null ? 0 : extraAttributeNames.length;
+        } else {
+        	extraAttributeNames = new String[0];
+        }
         if (managedLength > 0 || extraLength > 0) {
             allNames = new String[standardLength + managedLength + extraLength + 1];
             System.arraycopy(attributeNames, 0, allNames, 0, standardLength);
@@ -578,16 +685,16 @@ public class ArquillianCompilationParticipant extends CompilationParticipant imp
     	Integer severity = null;
     	if (arguments != null && arguments.length > 0) {
 			if (id == IProblem.IsClassPathCorrect) {
-				// Pb(324) The type org.jboss.tools.examples.service.MemberRegistration cannot be resolved. It is indirectly referenced from required .class files
-				message = "Arquillian: The " + arguments[0] + " type is not  included in any deployment. It is indirectly referenced from required .class files";
+				// Pb(324) The type a.b.C cannot be resolved. It is indirectly referenced from required .class files
+				message = "Arquillian: The " + arguments[0] + " type is not included in any deployment. It is indirectly referenced from required .class files";
 				severity = ArquillianUtility.getSeverity(typePreference);
 			} else if (id == IProblem.UndefinedType) {
-				// Pb(2) MemberRegistration cannot be resolved to a type
-				message = "Arquillian: The " + arguments[0] + " type is not  included in any deployment.";
+				// Pb(2) XXX cannot be resolved to a type
+				message = "Arquillian: The " + arguments[0] + " type is not included in any deployment.";
 				severity = ArquillianUtility.getSeverity(typePreference);
 			} else if (id == IProblem.ImportNotFound) {
-				// Pb(390) The import org.jboss.tools.examples.service.MemberRegistration cannot be resolved
-				message = "Arquillian: The " + arguments[0] + " import is not  included in any deployment.";
+				// Pb(390) The import a.b.C cannot be resolved
+				message = "Arquillian: The " + arguments[0] + " import is not included in any deployment.";
 				severity = ArquillianUtility.getSeverity(importPreference);
 			}
 			allValues[allNames.length-1] = arguments[0];
@@ -604,13 +711,18 @@ public class ArquillianCompilationParticipant extends CompilationParticipant imp
         allValues[index++] = new Integer(end > 0 ? end + 1 : end); // end
         allValues[index++] = new Integer(problem.getSourceLineNumber()); // line
         allValues[index++] = Util.getProblemArgumentsForMarker(problem.getArguments()); // arguments
-        allValues[index++] = new Integer(problem.getCategoryID()); // category ID
+        if (problem instanceof CategorizedProblem) {
+        	allValues[index++] = new Integer(((CategorizedProblem)problem).getCategoryID()); // category ID
+        } else {
+        	allValues[index++] = new Integer(0); // CAT_UNSPECIFIED
+        }
 
         allValues[index++] = ArquillianConstants.SOURCE_ID;
         
         // optional extra attributes
-        if (extraLength > 0)
-            System.arraycopy(problem.getExtraMarkerAttributeValues(), 0, allValues, index, extraLength);
+        if (extraLength > 0 && problem instanceof CategorizedProblem) {
+            System.arraycopy(((CategorizedProblem)problem).getExtraMarkerAttributeValues(), 0, allValues, index, extraLength);
+        }
 
         marker.setAttributes(allNames, allValues);
     }

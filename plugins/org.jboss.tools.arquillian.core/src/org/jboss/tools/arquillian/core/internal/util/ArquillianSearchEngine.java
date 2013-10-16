@@ -772,7 +772,7 @@ public class ArquillianSearchEngine {
 			Throwable cause = e.getCause();
 			int i = 0;
 			while (cause != null && i++ < 5) {
-				message = cause.getLocalizedMessage();
+				message = cause.getClass().getName() + ": " + cause.getLocalizedMessage(); //$NON-NLS-1$
 				cause = cause.getCause();
 			}
 			ArquillianCoreActivator.log(message);
@@ -874,6 +874,9 @@ public class ArquillianSearchEngine {
 	}
 	
 	public static boolean isDeploymentMethod(IMethodBinding methodBinding) {
+		if (methodBinding == null) {
+			return false;
+		}
 		if (annotates(methodBinding.getAnnotations(), ArquillianUtility.ORG_JBOSS_ARQUILLIAN_CONTAINER_TEST_API_DEPLOYMENT, null)) {
 			int modifiers = methodBinding.getModifiers();
 			if ( (modifiers & Modifier.PUBLIC) != 0 &&
