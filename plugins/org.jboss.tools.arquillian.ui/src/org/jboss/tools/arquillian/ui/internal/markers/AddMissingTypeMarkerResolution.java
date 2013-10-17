@@ -18,8 +18,8 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.IMarkerResolution;
 import org.eclipse.ui.PlatformUI;
 import org.jboss.tools.arquillian.ui.ArquillianUIActivator;
-import org.jboss.tools.arquillian.ui.internal.refactoring.FixArchiveNameRefactoring;
-import org.jboss.tools.arquillian.ui.internal.refactoring.FixArchiveNameWizard;
+import org.jboss.tools.arquillian.ui.internal.refactoring.AddMissingTypeRefactoring;
+import org.jboss.tools.arquillian.ui.internal.refactoring.AddMissingTypeWizard;
 
 /**
  * @see IMarkerResolution
@@ -27,10 +27,13 @@ import org.jboss.tools.arquillian.ui.internal.refactoring.FixArchiveNameWizard;
  * @author Snjeza
  *
  */
-public class FixArchiveNameMarkerResolution implements
+public class AddMissingTypeMarkerResolution implements
 		IMarkerResolution {
 	
-	public FixArchiveNameMarkerResolution() {
+	private String name;
+
+	public AddMissingTypeMarkerResolution(String name) {
+		this.name = name;
 	}
 
 	/* (non-Javadoc)
@@ -38,7 +41,7 @@ public class FixArchiveNameMarkerResolution implements
 	 */
 	@Override
 	public String getLabel() {
-		return "Fix Archive Name";
+		return name;
 	}
 
 	/* (non-Javadoc)
@@ -46,8 +49,8 @@ public class FixArchiveNameMarkerResolution implements
 	 */
 	@Override
 	public void run(IMarker marker) {
-		FixArchiveNameRefactoring refactoring = new FixArchiveNameRefactoring(marker);
-		RefactoringWizard wizard = new FixArchiveNameWizard(refactoring);
+		AddMissingTypeRefactoring refactoring = new AddMissingTypeRefactoring(marker);
+		RefactoringWizard wizard = new AddMissingTypeWizard(refactoring);
 		RefactoringWizardOpenOperation operation = new RefactoringWizardOpenOperation(wizard);
 		try {
 			operation.run(RefactoringUtil.getShell(), ""); //$NON-NLS-1$

@@ -19,12 +19,18 @@ import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
+import org.eclipse.core.resources.IncrementalProjectBuilder;
 import org.eclipse.core.resources.ProjectScope;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.preferences.IEclipsePreferences;
+import org.eclipse.ltk.core.refactoring.Change;
+import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 import org.jboss.tools.arquillian.core.ArquillianCoreActivator;
 import org.jboss.tools.arquillian.core.internal.ArquillianConstants;
 import org.jboss.tools.arquillian.core.internal.util.ArquillianUtility;
+import org.jboss.tools.arquillian.ui.internal.refactoring.AddMissingTypeRefactoring;
+import org.jboss.tools.arquillian.ui.internal.refactoring.FixArchiveNameRefactoring;
 import org.jboss.tools.test.util.JobUtils;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -63,11 +69,21 @@ public class DependentClassesTest extends AbstractArquillianTest {
 				ArquillianConstants.MARKER_CLASS_ID, true, IResource.DEPTH_INFINITE);
 		assertTrue("Arquillian markers aren't created", projectMarkers.length > 0);
 		
-		resource = project.findMember("/src/test/java/org/arquillian/eclipse/DependentClassValidTest.java");
-		assertNotNull(resource);
-		assertTrue(resource instanceof IFile);
-		projectMarkers = resource.findMarkers(ArquillianConstants.MARKER_CLASS_ID, true, IResource.DEPTH_INFINITE);
-		assertTrue("An invalid marker is created.", projectMarkers.length == 0);
+		for (IMarker marker:projectMarkers) {
+			AddMissingTypeRefactoring refactoring = new AddMissingTypeRefactoring(marker);
+			RefactoringStatus status = refactoring.checkInitialConditions(new NullProgressMonitor());
+			assertTrue(status.isOK());
+			Change change = refactoring.createChange(new NullProgressMonitor());
+			change.initializeValidationData(new NullProgressMonitor());
+			change.perform(new NullProgressMonitor());
+		}
+		
+		project.build(IncrementalProjectBuilder.FULL_BUILD, null);
+		JobUtils.waitForIdle(1000);
+		
+		projectMarkers = resource.findMarkers(
+				ArquillianConstants.MARKER_CLASS_ID, true, IResource.DEPTH_INFINITE);
+		assertTrue("An invalid marker is created.", projectMarkers.length == 0);		
 	}
 
 	@AfterClass

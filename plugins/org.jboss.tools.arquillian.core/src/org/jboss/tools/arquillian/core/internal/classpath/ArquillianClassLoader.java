@@ -418,9 +418,12 @@ public class ArquillianClassLoader extends ClassLoader implements
 				return result;
 			// go to the next class loader
 		}
-		URL result = sourceLoader.getResource(name);
-		if (result != null)
-			return result;
+		URL result;
+		if (sourceLoader != null) {
+			result = sourceLoader.getResource(name);
+			if (result != null)
+				return result;
+		}
 		
 		result = findURL(name);
 		if (result != null)
@@ -438,9 +441,11 @@ public class ArquillianClassLoader extends ClassLoader implements
 				return result;
 			// go to the next class loader
 		}
-		result = sourceLoader.getResources(name);
-		if (result != null)
-			return result;
+		if (sourceLoader != null) {
+			result = sourceLoader.getResources(name);
+			if (result != null)
+				return result;
+		}
 		// FIXME find all resources
 		URL resultURL = findURL(name);
 		if (resultURL != null) {

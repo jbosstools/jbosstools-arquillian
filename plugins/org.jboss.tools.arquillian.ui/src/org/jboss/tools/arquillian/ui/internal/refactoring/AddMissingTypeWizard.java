@@ -8,7 +8,7 @@
  * Contributors:
  *     JBoss by Red Hat - Initial implementation.
  ************************************************************************************/
-package org.jboss.tools.arquillian.ui.internal.wizards;
+package org.jboss.tools.arquillian.ui.internal.refactoring;
 
 import org.eclipse.ltk.ui.refactoring.RefactoringWizard;
 
@@ -16,11 +16,14 @@ import org.eclipse.ltk.ui.refactoring.RefactoringWizard;
  * @author snjeza
  *
  */
-public class FixArchiveNameWizard extends RefactoringWizard {
+public class AddMissingTypeWizard extends RefactoringWizard {
 
-	private FixArchiveNameRefactoring refactoring;
+	private AddMissingTypeRefactoring refactoring;
 
-	public FixArchiveNameWizard(FixArchiveNameRefactoring refactoring) {
+	/**
+	 * @param refactoring
+	 */
+	public AddMissingTypeWizard(AddMissingTypeRefactoring refactoring) {
 		super(refactoring, DIALOG_BASED_USER_INTERFACE|CHECK_INITIAL_CONDITIONS_ON_OPEN);
 		this.refactoring = refactoring;
 	}
@@ -28,7 +31,7 @@ public class FixArchiveNameWizard extends RefactoringWizard {
 	@Override
 	protected void addUserInputPages() {
 		setDefaultPageTitle(getRefactoring().getName());
-		addPage(new FixArchiveNameWizardPage(refactoring));
+		addPage(new AddMissingTypeWizardPage(refactoring));
 	}
 
 }

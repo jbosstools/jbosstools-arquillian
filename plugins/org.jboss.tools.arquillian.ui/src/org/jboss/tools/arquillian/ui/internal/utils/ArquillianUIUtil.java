@@ -58,6 +58,7 @@ import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.Signature;
 import org.eclipse.jdt.core.dom.rewrite.ImportRewrite;
 import org.eclipse.jdt.core.formatter.CodeFormatter;
+import org.eclipse.jdt.internal.compiler.parser.ScannerHelper;
 import org.eclipse.jdt.internal.corext.codemanipulation.StubUtility;
 import org.eclipse.jdt.internal.corext.util.CodeFormatterUtil;
 import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
@@ -368,13 +369,14 @@ public class ArquillianUIUtil {
 		buffer.append(delimiter);
 		content = buffer.toString();
 
-		IMethod createdMethod = type
-				.createMethod(content, sibling, force, null);
+		
 
 		if (icu != null) {
 			TextEdit edit = importsRewrite.rewriteImports(null);
 			JavaModelUtil.applyEdit(importsRewrite.getCompilationUnit(), edit,
 					false, null);
+			IMethod createdMethod = type
+					.createMethod(content, sibling, force, null);
 			ISourceRange range = createdMethod.getSourceRange();
 
 			IBuffer buf = icu.getBuffer();
@@ -384,8 +386,16 @@ public class ArquillianUIUtil {
 			String formattedContent = CodeFormatterUtil.format(
 					CodeFormatter.K_CLASS_BODY_DECLARATIONS, originalContent,
 					indent, delimiter, type.getJavaProject());
-			formattedContent = Strings
-					.trimLeadingTabsAndSpaces(formattedContent);
+			//formattedContent = Strings
+			//		.trimLeadingTabsAndSpaces(formattedContent);
+			while(formattedContent.length() > 0) {
+				char ch = formattedContent.charAt(0);
+				if (ScannerHelper.isWhitespace(ch)) {
+					formattedContent = formattedContent.substring(1);
+				} else {
+					break;
+				}
+			}
 			buf.replace(range.getOffset(), range.getLength(), formattedContent);
 
 			icu.reconcile(ICompilationUnit.NO_AST, false, null, null);

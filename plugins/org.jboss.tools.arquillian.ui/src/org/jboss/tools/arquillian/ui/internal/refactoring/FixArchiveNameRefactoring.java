@@ -8,7 +8,7 @@
  * Contributors:
  *     JBoss by Red Hat - Initial implementation.
  ************************************************************************************/
-package org.jboss.tools.arquillian.ui.internal.wizards;
+package org.jboss.tools.arquillian.ui.internal.refactoring;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IMarker;
@@ -35,23 +35,31 @@ import org.jboss.tools.arquillian.ui.ArquillianUIActivator;
 public class FixArchiveNameRefactoring extends Refactoring {
 
 	private IMarker marker;
-	private Change change;
 	private String newArchiveName;
 	private String oldArchiveName;
 	private String extension;
 	private int offset;
 	private int len;
 	
+	/**
+	 * @param marker
+	 */
 	public FixArchiveNameRefactoring(IMarker marker) {
 		super();
 		this.marker = marker;
 	}
 
+	/* (non-Javadoc)
+	 * @see org.eclipse.ltk.core.refactoring.Refactoring#getName()
+	 */
 	@Override
 	public String getName() {
 		return "Fix Archive Name";
 	}
 
+	/* (non-Javadoc)
+	 * @see org.eclipse.ltk.core.refactoring.Refactoring#checkInitialConditions(org.eclipse.core.runtime.IProgressMonitor)
+	 */
 	@Override
 	public RefactoringStatus checkInitialConditions(IProgressMonitor pm)
 			throws CoreException, OperationCanceledException {
@@ -69,7 +77,7 @@ public class FixArchiveNameRefactoring extends Refactoring {
 		    		|| extension == null || extension.isEmpty()) {
 		    	invalidMarker = true;
 		    } else {
-		    	int index = oldArchiveName.lastIndexOf(".");
+		    	int index = oldArchiveName.lastIndexOf("."); //$NON-NLS-1$
 		    	if (index == -1) {
 		    		newArchiveName = oldArchiveName + extension;
 		    	} else {
@@ -89,15 +97,18 @@ public class FixArchiveNameRefactoring extends Refactoring {
 		return extension;
 	}
 
+	/* (non-Javadoc)
+	 * @see org.eclipse.ltk.core.refactoring.Refactoring#checkFinalConditions(org.eclipse.core.runtime.IProgressMonitor)
+	 */
 	@Override
 	public RefactoringStatus checkFinalConditions(IProgressMonitor pm)
 			throws CoreException, OperationCanceledException {
-//		if (change == null) {
-//			return RefactoringStatus.createErrorStatus("There are no refactorings to apply");
-//		}
 		return RefactoringStatus.create(Status.OK_STATUS);
 	}
 
+	/* (non-Javadoc)
+	 * @see org.eclipse.ltk.core.refactoring.Refactoring#createChange(org.eclipse.core.runtime.IProgressMonitor)
+	 */
 	@Override
 	public Change createChange(IProgressMonitor pm) throws CoreException,
 			OperationCanceledException {

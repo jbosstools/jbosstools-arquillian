@@ -8,13 +8,11 @@
  * Contributors:
  *     JBoss by Red Hat - Initial implementation.
  ************************************************************************************/
-package org.jboss.tools.arquillian.ui.internal.wizards;
+package org.jboss.tools.arquillian.ui.internal.refactoring;
 
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.ltk.ui.refactoring.UserInputWizardPage;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.KeyAdapter;
-import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.layout.GridData;
@@ -32,11 +30,17 @@ public class FixArchiveNameWizardPage extends UserInputWizardPage {
 	private FixArchiveNameRefactoring refactoring;
 	private Text newArchiveNameText;
 
+	/**
+	 * @param refactoring
+	 */
 	public FixArchiveNameWizardPage(FixArchiveNameRefactoring refactoring) {
 		super(refactoring.getName());
 		this.refactoring = refactoring;
 	}
 
+	/* (non-Javadoc)
+	 * @see org.eclipse.jface.dialogs.IDialogPage#createControl(org.eclipse.swt.widgets.Composite)
+	 */
 	@Override
 	public void createControl(Composite parent) {
 		Composite composite = new Composite(parent, SWT.NONE);
