@@ -447,4 +447,10 @@
      	markerType="org.jboss.tools.arquillian.core.problem.invalidArchiveName"/>
    </extension>
    
+   <extension point="org.eclipse.ui.ide.markerResolution">
+  	  <markerResolutionGenerator
+     	class="org.jboss.tools.arquillian.ui.internal.markers.AddMissingTypeResolutionGenerator"
+     	markerType="org.jboss.tools.arquillian.core.problem.class"/>
+   </extension>
+   
 </plugin>

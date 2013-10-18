@@ -41,7 +41,7 @@ public class FixArchiveNameResolutionGenerator implements
 		IJavaElement element = JavaCore.create(resource);
 		if (element != null ) {
 			return new IMarkerResolution[] {
-				new FixArchiveNameMarkerResolution(marker)	
+				new FixArchiveNameMarkerResolution()	
 			};
 		}
 		

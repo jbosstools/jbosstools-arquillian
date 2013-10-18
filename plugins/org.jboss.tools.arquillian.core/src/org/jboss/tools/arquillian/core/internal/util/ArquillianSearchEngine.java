@@ -891,7 +891,10 @@ public class ArquillianSearchEngine {
 		return false;
 	}
 
-	private static boolean isArchiveType(ITypeBinding returnType) {
+	public static boolean isArchiveType(ITypeBinding returnType) {
+		if (returnType == null) {
+			return false;
+		}
 		if ("org.jboss.shrinkwrap.api.Archive".equals(returnType
 				.getBinaryName())) {
 			return true;
