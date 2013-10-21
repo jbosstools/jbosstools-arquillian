@@ -11,12 +11,15 @@
  *******************************************************************************/
 package org.jboss.tools.arquillian.core.internal.compiler;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
-import java.util.Scanner;
+import java.util.Set;
+import java.util.jar.JarFile;
 
 import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IFile;
@@ -43,13 +46,11 @@ import org.eclipse.jdt.core.compiler.CategorizedProblem;
 import org.eclipse.jdt.core.compiler.CharOperation;
 import org.eclipse.jdt.core.compiler.CompilationParticipant;
 import org.eclipse.jdt.core.compiler.IProblem;
-import org.eclipse.jdt.core.compiler.ReconcileContext;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.Expression;
-import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
@@ -58,32 +59,26 @@ import org.eclipse.jdt.core.dom.QualifiedName;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.StringLiteral;
 import org.eclipse.jdt.internal.compiler.CompilationResult;
-import org.eclipse.jdt.internal.compiler.Compiler;
-import org.eclipse.jdt.internal.compiler.DefaultErrorHandlingPolicies;
-import org.eclipse.jdt.internal.compiler.ICompilerRequestor;
-import org.eclipse.jdt.internal.compiler.impl.CompilerOptions;
 import org.eclipse.jdt.internal.compiler.lookup.TypeConstants;
-import org.eclipse.jdt.internal.compiler.problem.AbortCompilation;
 import org.eclipse.jdt.internal.core.builder.AbstractImageBuilder;
 import org.eclipse.jdt.internal.core.builder.BuildNotifier;
 import org.eclipse.jdt.internal.core.builder.JavaBuilder;
-import org.eclipse.jdt.internal.core.builder.ProblemFactory;
 import org.eclipse.jdt.internal.core.util.Messages;
 import org.eclipse.jdt.internal.core.util.Util;
 import org.jboss.tools.arquillian.core.ArquillianCoreActivator;
 import org.jboss.tools.arquillian.core.internal.ArquillianConstants;
+import org.jboss.tools.arquillian.core.internal.dependencies.DependencyCache;
+import org.jboss.tools.arquillian.core.internal.dependencies.DependencyType;
+import org.jboss.tools.arquillian.core.internal.dependencies.TypeLocation;
 import org.jboss.tools.arquillian.core.internal.util.ArquillianSearchEngine;
 import org.jboss.tools.arquillian.core.internal.util.ArquillianUtility;
 
-public class ArquillianCompilationParticipant extends CompilationParticipant implements ICompilerRequestor {
+public class ArquillianCompilationParticipant extends CompilationParticipant {
 
-    private static final String JAVA_LANG_OBJECT = "java.lang.Object"; //$NON-NLS-1$
-	private static final String UNRESOLVED_TYPE = "Unresolved type"; //$NON-NLS-1$
-	private ArquillianNameEnvironment nameEnvironment;
+    private ArquillianNameEnvironment nameEnvironment;
     private ClasspathMultiDirectory[] sourceLocations;
     private BuildNotifier notifier;
     private List problemSourceFiles;
-    private Compiler compiler;
 
     @Override
     public void buildFinished(IJavaProject project) {
@@ -110,7 +105,6 @@ public class ArquillianCompilationParticipant extends CompilationParticipant imp
         this.problemSourceFiles = new ArrayList();
         this.notifier = new BuildNotifier(new NullProgressMonitor(), project.getProject());
         this.notifier.begin();
-        //compiler = newCompiler(project);
         nameEnvironment = new ArquillianNameEnvironment(project);
         this.notifier.updateProgressDelta(0.05f);
 
@@ -151,113 +145,118 @@ public class ArquillianCompilationParticipant extends CompilationParticipant imp
 					ArquillianCoreActivator.log(e);
 				}
         		remove = true;
-        	} 
-        	
+        	}
+        	preference = ArquillianUtility.getPreference(ArquillianConstants.INVALID_ARCHIVE_NAME, project.getProject());
+        	if (!JavaCore.IGNORE.equals(preference)) {
+        		try {
+        			Integer severity = ArquillianUtility.getSeverity(preference);
+        			validateArchiveName(sourceFile, project, severity);
+				} catch (CoreException e) {
+					ArquillianCoreActivator.log(e);
+				}
+        		remove = true;
+        	}
+        	preference = ArquillianUtility.getPreference(ArquillianConstants.TYPE_IS_NOT_INCLUDED_IN_ANY_DEPLOYMENT, project.getProject());
+        	if (!JavaCore.IGNORE.equals(preference)) {
+        		IFile file = sourceFile.resource;
+            	IJavaElement element = JavaCore.create(file);
+        		if (!(element instanceof ICompilationUnit)) {
+        			return;
+        		}
+        		ICompilationUnit unit = (ICompilationUnit) element;
+            	DependencyCache.getDependencies().remove(unit);
+            	Set<DependencyType> dependencies = DependencyCache.getDependentTypes(unit);
+            	List<File> archives = getArchives(sourceFile, project);
+            	Map<File,JarFile> jarFiles = new HashMap<File, JarFile>();
+            	Integer severity = ArquillianUtility.getSeverity(preference);
+				for (DependencyType type : dependencies) {
+					if (!getDeployment(type, archives, jarFiles)) {
+						boolean direct = DependencyCache.getDependencies().get(unit).contains(type);
+						if (direct) {
+							String message = "The " + type.getName() + " type is not included in any deployment.";
+							for (TypeLocation location : type.getLocations()) {
+								try {
+									IMarker marker = storeProblem(sourceFile, message, severity,ArquillianConstants.MARKER_CLASS_ID);
+									if (marker != null) {
+										marker.setAttribute(IMarker.CHAR_START, location.getCharStart());
+										marker.setAttribute(IMarker.CHAR_END, location.getCharEnd());
+										marker.setAttribute(IMarker.LINE_NUMBER, location.getLineNumber());
+										marker.setAttribute(ArquillianConstants.MARKER_CLASS_NAME, type.getName());
+									}
+								} catch (CoreException e) {
+									ArquillianCoreActivator.log(e);
+								}
+							}
+						} else {
+							String message = "The " + type.getName() + " type is not included in any deployment. It is indirectly referenced from required .class files";
+							try {
+								IMarker marker = storeProblem(sourceFile, message, severity,ArquillianConstants.MARKER_CLASS_ID);
+								if (marker != null) {
+									marker.setAttribute(IMarker.CHAR_START, 0);
+									marker.setAttribute(IMarker.CHAR_END, 0);
+									marker.setAttribute(IMarker.LINE_NUMBER, 0);
+									marker.setAttribute(ArquillianConstants.MARKER_CLASS_NAME, type.getName());
+								}
+							} catch (CoreException e) {
+								ArquillianCoreActivator.log(e);
+							}
+						}
+					}
+				}
+            	for (JarFile jar:jarFiles.values()) {
+            		try {
+						jar.close();
+					} catch (IOException e) {
+						// ignore
+					}
+            	}
+            	remove = true;
+        	}
         	if (remove) {
         		iterator.remove();
         	}
         }
-        final String typePreference = ArquillianUtility.getPreference(ArquillianConstants.TYPE_IS_NOT_INCLUDED_IN_ANY_DEPLOYMENT, project.getProject());
-    	
-        for (final SourceFile sourceFile:sourceFiles) {
-        	CompilationUnit rootAst = null;
-        	if (nameEnvironment.setEnvironment(sourceFile, project)) {
-        		//compile(new SourceFile[] { sourceFile });
-        		rootAst = getAST(sourceFile);
-        		if (rootAst == null) {
-        			return;
-        		}
-        		final CompilationUnit root = rootAst;
-        		IProblem[] problems = rootAst.getProblems();
-        		
-        		IFile resource = sourceFile.resource;
-                try {
-                    //resource.deleteMarkers(ArquillianConstants.MARKER_CLASS_ID, false, IResource.DEPTH_INFINITE);
-                    for (IProblem problem : problems) {
-                        storeProblem(problem, resource);
-                    }
-                } catch (CoreException e) {
-                    ArquillianCoreActivator.log(e);
-                }
-        		
-				if (!JavaCore.IGNORE.equals(typePreference)) {
-					rootAst.accept(new ASTVisitor() {
-						
-						@Override
-						public boolean visit(FieldDeclaration fieldDeclaration) {
-							ITypeBinding binding = fieldDeclaration.getType().resolveBinding();
-							if (binding != null) {
-								ITypeBinding superclass = binding.getSuperclass();
-								binding.getDeclaredFields();
-								while (superclass != null && !root.getAST().resolveWellKnownType(JAVA_LANG_OBJECT).equals(superclass)) {
-									superclass.getDeclaredFields();
-									superclass = superclass.getSuperclass();
-								}
-								superclass = binding.getSuperclass();
-								StringBuilder builder = new StringBuilder();
-								builder.append(binding.toString());
-								while (superclass != null && !root.getAST().resolveWellKnownType(JAVA_LANG_OBJECT).equals(superclass)) {
-									builder.append("\n"); //$NON-NLS-1$
-									builder.append(superclass.toString());
-									superclass = superclass.getSuperclass();
-								}
-								String source = builder.toString();
-								Scanner scanner = null;
-								try {
-									scanner = new Scanner(source);
-									while (scanner.hasNextLine()) {
-										String line = scanner.nextLine();
-										if (line.contains(UNRESOLVED_TYPE)) {
-											int index = line.indexOf(UNRESOLVED_TYPE) + UNRESOLVED_TYPE.length();
-											String str = line.substring(index);
-											String[] elements = str.trim().split(" "); //$NON-NLS-1$
-											if (elements.length >= 1) {
-												String type = elements[0];
-												String message = "The type " + type
-														+ " is not included in any deployment. "
-														+ "It is indirectly referenced from required .class files";
-												final Integer severity = ArquillianUtility.getSeverity(typePreference);
-												IMarker marker = storeProblem(sourceFile, message, severity, ArquillianConstants.MARKER_CLASS_ID);
-												if (marker != null) {
-													int start = fieldDeclaration.getStartPosition();
-													int end = start + fieldDeclaration.getLength();
-													int lineNumber = root.getLineNumber(start);
-													marker.setAttribute(IMarker.CHAR_START, start + 1);
-													marker.setAttribute(IMarker.CHAR_END, end - 1);
-													marker.setAttribute(IMarker.LINE_NUMBER, lineNumber);
-													marker.setAttribute(ArquillianConstants.MARKER_CLASS_NAME, type);
-													
-												}
-											}
-										}
-									}
-								} catch (CoreException e) {
-									ArquillianCoreActivator.log(e);
-								} finally {
-									if(scanner != null) {
-										scanner.close();
-									}
-								}
-							}
-							return false;
-						}
-
-					});
-				}
-        	}
-        	
-        	String preference = ArquillianUtility.getPreference(ArquillianConstants.INVALID_ARCHIVE_NAME, project.getProject());
-        	if (!JavaCore.IGNORE.equals(preference)) {
-        		try {
-        			Integer severity = ArquillianUtility.getSeverity(preference);
-        			validateArchiveName(rootAst, sourceFile, project, severity);
-				} catch (CoreException e) {
-					ArquillianCoreActivator.log(e);
-				}
-        	}
-        }
-        
     }
+
+    private boolean getDeployment(DependencyType type, List<File> archives, Map<File, JarFile> jarFiles) {
+    	if (type == null || archives == null || archives.size() <= 0) {
+    		return false;
+    	}
+    	for (File file:archives) {
+    		if (file.isDirectory()) {
+    			boolean ret = getDirectory(type.getName(), file);
+    			if (ret) {
+    				return true;
+    			}
+    		} else if (file.isFile()) {
+    			boolean ret = getFile(type.getName(), file, jarFiles);
+    			if (ret) {
+    				return true;
+    			}
+    		}
+    	}
+    	return false;
+    }
+	
+    private boolean getDirectory(String name, File file) {
+		name = name.replace(".", File.separator) + ".class";  //$NON-NLS-1$//$NON-NLS-2$
+		return new File(file,name).exists();
+	}
+    
+    private boolean getFile(String name, File file, Map<File, JarFile> jarFiles) {
+		JarFile jarFile = jarFiles.get(file);
+		if (jarFile == null) {
+			try {
+				jarFile = new JarFile(file);
+				jarFiles.put(file, jarFile);
+			} catch (IOException e) {
+				ArquillianCoreActivator.log(e);
+				return false;
+			}
+		}
+		name = name.replace(".", "/") + ".class";  //$NON-NLS-1$//$NON-NLS-2$ //$NON-NLS-3$
+		return jarFile.getEntry(name) != null;
+	}
 
 	private void deleteAllMarkers(IResource resource) {
 		try {
@@ -270,8 +269,7 @@ public class ArquillianCompilationParticipant extends CompilationParticipant imp
 		}
 	}
 
-	private CompilationUnit getAST(final SourceFile sourceFile) {
-		CompilationUnit rootAst;
+	private CompilationUnit getAST(final SourceFile sourceFile, IJavaProject project) {
 		IFile file = sourceFile.resource;
 		IJavaElement element = JavaCore.create(file);
 		if (!(element instanceof ICompilationUnit)) {
@@ -282,17 +280,15 @@ public class ArquillianCompilationParticipant extends CompilationParticipant imp
 		parser.setSource(cu);
 		parser.setResolveBindings(true);
 		parser.setKind(ASTParser.K_COMPILATION_UNIT);
-		parser.setProject(null);
-		
-		parser.setEnvironment(nameEnvironment.getBinaryClasspath(), new String[] {}, null, true);
-		rootAst = (CompilationUnit) parser.createAST(null);
-		return rootAst;
+		parser.setProject(project);
+		if (project == null) {
+			parser.setEnvironment(nameEnvironment.getBinaryClasspath(), new String[] {}, null, true);
+		}
+		return (CompilationUnit) parser.createAST(null);
 	}
     
-    private void validateArchiveName(CompilationUnit rootAst, final SourceFile sourceFile, IJavaProject project, final Integer severity) throws CoreException {
-		if (rootAst == null) {
-			rootAst = getAST(sourceFile);
-		}
+    private void validateArchiveName(final SourceFile sourceFile, IJavaProject project, final Integer severity) throws CoreException {
+		CompilationUnit rootAst = getAST(sourceFile, project);
 		final List<MethodDeclaration> deploymentMethods = new ArrayList<MethodDeclaration>();
 		final CompilationUnit root = rootAst;
 		rootAst.accept(new ASTVisitor() {
@@ -399,8 +395,7 @@ public class ArquillianCompilationParticipant extends CompilationParticipant imp
 		if (severity == null) {
 			return null;
 		}
-		IMarker marker = sourceFile.resource
-				.createMarker(type);
+		IMarker marker = sourceFile.resource.createMarker(type);
 		String[] attributeNames = ArquillianConstants.ARQUILLIAN_PROBLEM_MARKER_ATTRIBUTE_NAMES;
 		String[] allNames = attributeNames;
 
@@ -408,7 +403,7 @@ public class ArquillianCompilationParticipant extends CompilationParticipant imp
 		// standard attributes
 		int index = 0;
 		StringBuffer sb = new StringBuffer();
-		sb.append("Arquillian: ");
+		sb.append("Arquillian: "); //$NON-NLS-1$
 		sb.append(message);
 
 		allValues[index++] = sb.toString(); // message
@@ -449,41 +444,6 @@ public class ArquillianCompilationParticipant extends CompilationParticipant imp
 		marker.setAttributes(allNames, allValues);
 		return marker;
 	}
-
-	private void compile(SourceFile[] units) {
-        if (units.length == 0) return;
-        SourceFile[] additionalUnits = null;
-        String message = Messages.bind(Messages.build_compiling, units[0].resource.getFullPath().removeLastSegments(1).makeRelative().toString());
-        this.notifier.subTask(message);
-
-        // extend additionalFilenames with all hierarchical problem types found during this entire build
-        if (!this.problemSourceFiles.isEmpty()) {
-            int toAdd = this.problemSourceFiles.size();
-            int length = additionalUnits == null ? 0 : additionalUnits.length;
-            if (length == 0)
-                additionalUnits = new SourceFile[toAdd];
-            else
-                System.arraycopy(additionalUnits, 0, additionalUnits = new SourceFile[length + toAdd], 0, length);
-            for (int i = 0; i < toAdd; i++)
-                additionalUnits[length + i] = (SourceFile) this.problemSourceFiles.get(i);
-        }
-        String[] initialTypeNames = new String[units.length];
-        for (int i = 0, l = units.length; i < l; i++)
-            initialTypeNames[i] = units[i].initialTypeName;
-        this.nameEnvironment.setNames(initialTypeNames, additionalUnits);
-        this.notifier.checkCancel();
-        try {
-            this.compiler.compile(units);
-        } catch (AbortCompilation ignored) {
-            // ignore the AbortCompilcation coming from BuildNotifier.checkCancelWithinCompiler()
-            // the Compiler failed after the user has chose to cancel... likely due to an OutOfMemory error
-        } finally {
-
-        }
-        // Check for cancel immediately after a compile, because the compiler may
-        // have been cancelled but without propagating the correct exception
-        this.notifier.checkCancel();
-    }
 
     protected void addAllSourceFiles(final List<SourceFile> sourceFiles, final IJavaProject project) throws CoreException {
         for (int i = 0, l = this.sourceLocations.length; i < l; i++) {
@@ -568,178 +528,54 @@ public class ArquillianCompilationParticipant extends CompilationParticipant imp
     }
 
     @Override
-    public void reconcile(ReconcileContext context) {
-        // TODO Auto-generated method stub
-        super.reconcile(context);
-    }
-
-    @Override
 	public boolean isActive(IJavaProject project) {
 		if (project == null || project.getProject() == null) {
 			return false;
 		}
-		// FIXME
-
 		return true;
 	}
-
-    protected Compiler newCompiler(IJavaProject javaProject) {
-        Map projectOptions = javaProject.getOptions(true);
-        String option = (String) projectOptions.get(JavaCore.COMPILER_PB_INVALID_JAVADOC);
-        if (option == null || option.equals(JavaCore.IGNORE)) {
-            option = (String) projectOptions.get(JavaCore.COMPILER_PB_MISSING_JAVADOC_TAGS);
-            if (option == null || option.equals(JavaCore.IGNORE)) {
-                option = (String) projectOptions.get(JavaCore.COMPILER_PB_MISSING_JAVADOC_COMMENTS);
-                if (option == null || option.equals(JavaCore.IGNORE)) {
-                    option = (String) projectOptions.get(JavaCore.COMPILER_PB_UNUSED_IMPORT);
-                    if (option == null || option.equals(JavaCore.IGNORE)) {
-                        projectOptions.put(JavaCore.COMPILER_DOC_COMMENT_SUPPORT, JavaCore.DISABLED);
-                    }
-                }
-            }
-        }
-
-        CompilerOptions compilerOptions = new CompilerOptions(projectOptions);
-        compilerOptions.performMethodsFullRecovery = true;
-        compilerOptions.performStatementsRecovery = true;
-        nameEnvironment = new ArquillianNameEnvironment(javaProject);
-        Compiler newCompiler = new Compiler(
-            nameEnvironment,
-            DefaultErrorHandlingPolicies.proceedWithAllProblems(),
-            compilerOptions,
-            this,
-            ProblemFactory.getProblemFactory(Locale.getDefault()));
-        CompilerOptions options = newCompiler.options;
-        // temporary code to allow the compiler to revert to a single thread
-        String setting = System.getProperty("jdt.compiler.useSingleThread"); //$NON-NLS-1$
-        newCompiler.useSingleThread = setting != null && setting.equals("true"); //$NON-NLS-1$
-
-        // enable the compiler reference info support
-        options.produceReferenceInfo = true;
-
-        return newCompiler;
-    }
-
-    public void acceptResult(CompilationResult result) {
-        CategorizedProblem[] problems = result.getErrors();
-        if (problems == null)
-            return;
-        SourceFile sourceFile = (SourceFile) result.compilationUnit;
-        IFile resource = sourceFile.resource;
-        try {
-            resource.deleteMarkers(ArquillianConstants.MARKER_CLASS_ID, false, IResource.DEPTH_INFINITE);
-            for (CategorizedProblem problem : problems) {
-                storeProblem(problem, resource);
-            }
-        } catch (CoreException e) {
-            ArquillianCoreActivator.log(e);
-        }
-    }
-
-    private void storeProblem(IProblem problem, IFile resource)
-            throws CoreException {
-    	if ((problem.getID() & IProblem.TypeRelated) == 0 && (problem.getID() & IProblem.ImportRelated) == 0) {
-    		// ignore
-    		return;
-    	}
-    	String typePreference = ArquillianUtility.getPreference(ArquillianConstants.TYPE_IS_NOT_INCLUDED_IN_ANY_DEPLOYMENT, resource.getProject());
-    	String importPreference = ArquillianUtility.getPreference(ArquillianConstants.IMPORT_IS_NOT_INCLUDED_IN_ANY_DEPLOYMENT, resource.getProject());
-    	
-    	if (JavaCore.IGNORE.equals(typePreference) && JavaCore.IGNORE.equals(importPreference)) {
-    		return;
-    	}
-    	int id = problem.getID();
-    	if (id != IProblem.IsClassPathCorrect &&  id != IProblem.UndefinedType && id != IProblem.ImportNotFound) {
-    		// ignore
-    		return;
-    	}
-   	
-        IMarker marker = resource.createMarker(ArquillianConstants.MARKER_CLASS_ID);
-        String[] attributeNames = AbstractImageBuilder.JAVA_PROBLEM_MARKER_ATTRIBUTE_NAMES;
-        int standardLength = attributeNames.length;
-        String[] allNames = attributeNames;
-        int managedLength = 1;
-        int extraLength = 0;
-        String[] extraAttributeNames;
-        if (problem instanceof CategorizedProblem) {
-        	extraAttributeNames = ((CategorizedProblem)problem).getExtraMarkerAttributeNames();
-        	extraLength = extraAttributeNames == null ? 0 : extraAttributeNames.length;
-        } else {
-        	extraAttributeNames = new String[0];
-        }
-        if (managedLength > 0 || extraLength > 0) {
-            allNames = new String[standardLength + managedLength + extraLength + 1];
-            System.arraycopy(attributeNames, 0, allNames, 0, standardLength);
-            if (managedLength > 0)
-                allNames[standardLength] = IMarker.SOURCE_ID;
-            System.arraycopy(extraAttributeNames, 0, allNames, standardLength + managedLength, extraLength);
+ 
+    public List<File> getArchives(SourceFile sourceFile, IJavaProject javaProject) {
+		IType type = ArquillianSearchEngine.getType(sourceFile);
+        List<File> files = new ArrayList<File>();
+        List<File> archives = null;
+		if (type != null) {
+        	archives = ArquillianSearchEngine.getDeploymentArchives(type, true);
+        	if (archives == null || archives.size() <= 0) {
+        		return files;
+        	}
         }
         
-        allNames[allNames.length-1] = ArquillianConstants.MARKER_CLASS_NAME;
+		for (File archive : archives) {
+			if (archive.getName().endsWith(".jar")) { //$NON-NLS-1$
+				files.add(archive);
+			} else if (archive.getName().endsWith("war")) { //$NON-NLS-1$
+				File destination = new File(archive.getParentFile(), "archive"); //$NON-NLS-1$
+				if (!destination.isDirectory()) {
+					ArquillianUtility.deleteFile(destination);
+					ArquillianUtility.exportFile(archive, destination);
+				}
 
-        Object[] allValues = new Object[allNames.length];
-        // standard attributes
-        int index = 0;
-        String[] arguments = problem.getArguments();
-    	String message = "Arquillian: " + problem.getMessage();
-    	Integer severity = null;
-    	if (arguments != null && arguments.length > 0) {
-			if (id == IProblem.IsClassPathCorrect) {
-				// Pb(324) The type a.b.C cannot be resolved. It is indirectly referenced from required .class files
-				message = "Arquillian: The " + arguments[0] + " type is not included in any deployment. It is indirectly referenced from required .class files";
-				severity = ArquillianUtility.getSeverity(typePreference);
-			} else if (id == IProblem.UndefinedType) {
-				// Pb(2) XXX cannot be resolved to a type
-				message = "Arquillian: The " + arguments[0] + " type is not included in any deployment.";
-				severity = ArquillianUtility.getSeverity(typePreference);
-			} else if (id == IProblem.ImportNotFound) {
-				// Pb(390) The import a.b.C cannot be resolved
-				message = "Arquillian: The " + arguments[0] + " import is not included in any deployment.";
-				severity = ArquillianUtility.getSeverity(importPreference);
+				File webInf = new File(destination, "WEB-INF"); //$NON-NLS-1$
+				if (webInf.isDirectory()) {
+					File classes = new File(webInf, "classes"); //$NON-NLS-1$
+					if (classes.isDirectory()) {
+						files.add(classes);
+					}
+					File lib = new File(webInf, "lib"); //$NON-NLS-1$
+					if (lib.isDirectory()) {
+						File[] libs = lib.listFiles();
+						if (libs != null) {
+							for (File libFile : libs) {
+								if (libFile.isFile()) {
+									files.add(libFile);
+								}
+							}
+						}
+					}
+				}
 			}
-			allValues[allNames.length-1] = arguments[0];
-		}        
-    	if (severity == null) {
-    		return;
-    	}
-        allValues[index++] = message; // message
-        allValues[index++] = severity;
-        
-        allValues[index++] = new Integer(problem.getID()); // ID
-        allValues[index++] = new Integer(problem.getSourceStart()); // start
-        int end = problem.getSourceEnd();
-        allValues[index++] = new Integer(end > 0 ? end + 1 : end); // end
-        allValues[index++] = new Integer(problem.getSourceLineNumber()); // line
-        allValues[index++] = Util.getProblemArgumentsForMarker(problem.getArguments()); // arguments
-        if (problem instanceof CategorizedProblem) {
-        	allValues[index++] = new Integer(((CategorizedProblem)problem).getCategoryID()); // category ID
-        } else {
-        	allValues[index++] = new Integer(0); // CAT_UNSPECIFIED
-        }
-
-        allValues[index++] = ArquillianConstants.SOURCE_ID;
-        
-        // optional extra attributes
-        if (extraLength > 0 && problem instanceof CategorizedProblem) {
-            System.arraycopy(((CategorizedProblem)problem).getExtraMarkerAttributeValues(), 0, allValues, index, extraLength);
-        }
-
-        marker.setAttributes(allNames, allValues);
-    }
-
-    private int searchColumnNumber(int[] startLineIndexes, int lineNumber, int position) {
-        switch(lineNumber) {
-            case 1 :
-                return position + 1;
-            case 2:
-                return position - startLineIndexes[0];
-            default:
-                int line = lineNumber - 2;
-                int length = startLineIndexes.length;
-                if (line >= length) {
-                    return position - startLineIndexes[length - 1];
-                }
-                return position - startLineIndexes[line];
-        }
-    }
+		}
+        return files;
+	}
 }

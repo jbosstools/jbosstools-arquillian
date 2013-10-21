@@ -11,16 +11,20 @@
 package org.jboss.tools.arquillian.ui.internal.refactoring;
 
 import org.eclipse.jface.dialogs.Dialog;
+import org.eclipse.jface.dialogs.IDialogSettings;
 import org.eclipse.ltk.ui.refactoring.UserInputWizardPage;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
+import org.eclipse.swt.events.SelectionAdapter;
+import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Text;
+import org.jboss.tools.arquillian.ui.ArquillianUIActivator;
 
 /**
  * 
@@ -28,8 +32,13 @@ import org.eclipse.swt.widgets.Text;
  *
  */
 public class AddMissingTypeWizardPage extends UserInputWizardPage {
+	private static final String ADD_ALL_CLASSES = "addAllClasses"; //$NON-NLS-1$
+	private static final String MISSING_TYPE_SECTION = "missingTypeSection"; //$NON-NLS-1$
 	private AddMissingTypeRefactoring refactoring;
 	private Combo deploymentMethodsCombo;
+	private IDialogSettings dialogSettings;
+	private IDialogSettings section;
+	private Button addAllClassesButton;
 	
 	/**
 	 * @param refactoring
@@ -37,6 +46,11 @@ public class AddMissingTypeWizardPage extends UserInputWizardPage {
 	public AddMissingTypeWizardPage(AddMissingTypeRefactoring refactoring) {
 		super(refactoring.getName());
 		this.refactoring = refactoring;
+		dialogSettings = ArquillianUIActivator.getDefault().getDialogSettings();
+		section = dialogSettings.getSection(MISSING_TYPE_SECTION);
+		if (section == null) {
+			section = dialogSettings.addNewSection(MISSING_TYPE_SECTION);
+		}
 	}
 
 	/* (non-Javadoc)
@@ -68,11 +82,31 @@ public class AddMissingTypeWizardPage extends UserInputWizardPage {
 			}
 		});
 
+		addAllClassesButton = new Button(composite, SWT.CHECK);
+		addAllClassesButton.setText("Add dependent classes");
+		addAllClassesButton.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		boolean addAllClasses = section.getBoolean(ADD_ALL_CLASSES);
+		addAllClassesButton.setSelection(addAllClasses);
+		refactoring.setAddAllDependentClasses(addAllClasses);
+		addAllClassesButton.addSelectionListener(new SelectionAdapter() {
+
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				refactoring.setAddAllDependentClasses(addAllClassesButton.getSelection());
+			}
+		
+		});
 		setControl(composite);
 		validate();
 	}
 
 	private void validate() {
 		// FIXME
+	}
+
+	@Override
+	protected boolean performFinish() {
+		section.put(ADD_ALL_CLASSES, addAllClassesButton.getSelection());
+		return super.performFinish();
 	}
 }

@@ -12,6 +12,7 @@ package org.jboss.tools.arquillian.ui.internal.wizards;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.maven.model.Model;
 import org.apache.maven.project.MavenProject;
@@ -80,6 +81,8 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.Text;
+import org.jboss.tools.arquillian.core.internal.dependencies.DependencyCache;
+import org.jboss.tools.arquillian.core.internal.dependencies.DependencyType;
 import org.jboss.tools.arquillian.ui.ArquillianUIActivator;
 import org.jboss.tools.arquillian.ui.internal.dialogs.ArquillianResourcesSelectionDialog;
 import org.jboss.tools.arquillian.ui.internal.dialogs.ArquillianTypesSelectionDialog;
@@ -413,7 +416,7 @@ public class NewArquillianJUnitTestCaseDeploymentPage extends WizardPage impleme
 		configureViewer(resourcesViewer);
 		resourcesViewer.setContentProvider(new ResourceContentProvider());
 		
-		createButtons(group, resourcesViewer, resources);
+		createButtons(group, resourcesViewer, resources, false);
 
 	}
 
@@ -458,11 +461,11 @@ public class NewArquillianJUnitTestCaseDeploymentPage extends WizardPage impleme
 		typesViewer.setLabelProvider(new TypeLabelProvider());
 		typesViewer.setContentProvider(new TypeContentProvider());
 		
-		createButtons(group, typesViewer, types);
+		createButtons(group, typesViewer, types, true);
 
 	}
 
-	private void createButtons(Group group, final TableViewer viewer, final List<?> elements) {
+	private void createButtons(Group group, final TableViewer viewer, final List<?> elements, boolean isType) {
 		GridData gd;
 		Composite buttonContainer= new Composite(group, SWT.NONE);
 		gd= new GridData(GridData.FILL_VERTICAL);
@@ -503,6 +506,36 @@ public class NewArquillianJUnitTestCaseDeploymentPage extends WizardPage impleme
 			}
 		});
 		LayoutUtil.setButtonDimensionHint(removeAllButton);
+		
+		if (isType && (javaElement instanceof ICompilationUnit) && getType((ICompilationUnit)javaElement) != null) {
+			final Button addDependentClassesButton = new Button(buttonContainer, SWT.PUSH);
+			addDependentClassesButton.setText("Add Dependent Classes");
+			gd= new GridData(GridData.FILL_HORIZONTAL | GridData.VERTICAL_ALIGN_BEGINNING);
+			addDependentClassesButton.setLayoutData(gd);
+			addDependentClassesButton.addSelectionListener(new SelectionAdapter() {
+				@Override
+				public void widgetSelected(SelectionEvent e) {
+					if ((javaElement instanceof ICompilationUnit) && getType((ICompilationUnit)javaElement) != null) {
+					Set<DependencyType> dependentTypes = DependencyCache.getDependentTypes((ICompilationUnit)javaElement);
+					for (DependencyType dependentType:dependentTypes) {
+						try {
+							IType t = javaElement.getJavaProject().findType(dependentType.getName());
+							if (!types.contains(t)) {
+								types.add(t);
+							}
+						} catch (JavaModelException e1) {
+							ArquillianUIActivator.log(e1);
+						}
+					}
+					viewer.setInput(types.toArray(new IType[0]));
+					viewer.refresh();
+					updateButtons(viewer, elements, removeButton, removeAllButton);
+					}
+				}
+			});
+			LayoutUtil.setButtonDimensionHint(addDependentClassesButton);
+			
+		}
 		viewer.addSelectionChangedListener(new ISelectionChangedListener() {
 			
 			@Override

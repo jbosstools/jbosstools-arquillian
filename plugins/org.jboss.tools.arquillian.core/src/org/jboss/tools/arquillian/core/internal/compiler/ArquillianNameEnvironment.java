@@ -426,7 +426,7 @@ public class ArquillianNameEnvironment implements INameEnvironment, SuffixConsta
         			File destination = new File(archive.getParentFile(), "archive");
         			if (!destination.isDirectory()) {
         				ArquillianUtility.deleteFile(destination);
-        				exportFile(archive, destination);
+        				ArquillianUtility.exportFile(archive, destination);
         			}
         			
         			File webInf = new File(destination, "WEB-INF");
@@ -496,68 +496,6 @@ public class ArquillianNameEnvironment implements INameEnvironment, SuffixConsta
         return false;
 	}
 
-	public static boolean exportFile(File file, File destination) {
-		ZipFile zipFile = null;
-		destination.mkdirs();
-		try {
-			zipFile = new ZipFile(file);
-			Enumeration<? extends ZipEntry> entries = zipFile.entries();
-			while (entries.hasMoreElements()) {
-				
-				ZipEntry entry = (ZipEntry) entries.nextElement();
-				if (entry.isDirectory()) {
-					File dir = new File(destination, entry.getName());
-					dir.mkdirs();
-					continue;
-				}
-				File entryFile = new File(destination, entry.getName());
-				entryFile.getParentFile().mkdirs();
-				InputStream in = null;
-				OutputStream out = null;
-				try {
-					in = zipFile.getInputStream(entry);
-					out = new FileOutputStream(entryFile);
-					copy(in, out);
-				} finally {
-					if (in != null) {
-						try {
-							in.close();
-						} catch (Exception e) {
-							// ignore
-						}
-					}
-					if (out != null) {
-						try {
-							out.close();
-						} catch (Exception e) {
-							// ignore
-						}
-					}
-				}
-			}
-		} catch (IOException e) {
-			ArquillianCoreActivator.log(e);
-			return false;
-		} finally {
-			if (zipFile != null) {
-				try {
-					zipFile.close();
-				} catch (IOException e) {
-					// ignore
-				}
-			}
-		}
-		return true;
-	}
-	
-	public static void copy(InputStream in, OutputStream out) throws IOException {
-		byte[] buffer = new byte[16 * 1024];
-		int len;
-		while ((len = in.read(buffer)) >= 0) {
-			out.write(buffer, 0, len);
-		}
-	}
-	
 	public String[] getSourceClasspath() {
 		String[] sources = new String[sourceLocations.length];
 		int i = 0;

@@ -95,6 +95,7 @@ import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 import org.eclipse.ltk.core.refactoring.TextFileChange;
 import org.eclipse.text.edits.MultiTextEdit;
 import org.jboss.tools.arquillian.core.ArquillianCoreActivator;
+import org.jboss.tools.arquillian.core.internal.ArquillianConstants;
 import org.jboss.tools.arquillian.core.internal.util.ArquillianSearchEngine;
 import org.jboss.tools.arquillian.ui.ArquillianUIActivator;
 import org.jboss.tools.arquillian.ui.internal.markers.RefactoringUtil;
@@ -102,7 +103,7 @@ import org.jboss.tools.arquillian.ui.internal.markers.RefactoringUtil;
 /**
  *  A refactoring to add missing type to deployment
  *  
- * @author Snjeza
+ * @author snjeza
  *
  */
 public class AddMissingTypeRefactoring extends Refactoring {
@@ -122,6 +123,7 @@ public class AddMissingTypeRefactoring extends Refactoring {
 	private ImportRewrite importRewrite;
 	private String[] excludedVariableNames;
 	private String message;
+	private boolean addAllDependentClasses = false;
 	
 	/**
 	 * @param marker
@@ -145,20 +147,20 @@ public class AddMissingTypeRefactoring extends Refactoring {
 	@Override
 	public RefactoringStatus checkInitialConditions(IProgressMonitor pm)
 			throws CoreException, OperationCanceledException {
-		boolean invalidMarker = false;
 		className = RefactoringUtil.getMissingClassName(marker);
+		String message = null;
 		if (className == null) {
-			invalidMarker = true;
+			message = "Invalid marker";
 		} else {
 			deploymentMethods = getDeploymentMethods();
 			if (deploymentMethods == null || deploymentMethods.length <= 0) {
-				invalidMarker = true;
+				message = "Cannot find a deployment method";
 			} else {
 				deploymentMethodName = deploymentMethods[0];
 			}
 		}
-		if (invalidMarker) {
-			IStatus status = new Status(IStatus.ERROR, ArquillianUIActivator.PLUGIN_ID, "Invalid marker");
+		if (message != null) {
+			IStatus status = new Status(IStatus.ERROR, ArquillianUIActivator.PLUGIN_ID, message);
 			return RefactoringStatus.create(status);
 		}
 		return RefactoringStatus.create(Status.OK_STATUS);
@@ -185,7 +187,7 @@ public class AddMissingTypeRefactoring extends Refactoring {
 			OperationCanceledException {
 		message = null;
 		if (astRoot == null || deploymentMethodName == null) {
-			message = "Invalid marker";
+			message = "Cannot find a deployment method";
 			return null;
 		}
 		MethodDeclaration deploymentMethod = null;
@@ -197,13 +199,13 @@ public class AddMissingTypeRefactoring extends Refactoring {
 		}
 		
 		if (deploymentMethod == null) {
-			message = "Invalid marker";
+			message = "Cannot find a deployment method";
 			return null;
 		}
 		
 		ReturnStatement returnStatement = getReturnStatement(deploymentMethod);
 		if (returnStatement == null) {
-			message = "Invalid marker";
+			message = "Cannot a find return statement";
 			return null;
 		}
 		
@@ -229,15 +231,40 @@ public class AddMissingTypeRefactoring extends Refactoring {
 			}
 			createAndInsertTempDeclaration(start, length);
 			addReplaceExpressionWithTemp();
-			createStatement(tempName, deploymentMethod, returnStatement, rootEdit, pm);
+			createStatements(tempName, className, deploymentMethod, returnStatement, rootEdit, pm);
 		} 
 		if (expression instanceof SimpleName) {
 			String name = ((SimpleName) expression).getIdentifier();
-			createStatement(name, deploymentMethod, returnStatement, rootEdit, pm);
+			createStatements(name,className, deploymentMethod, returnStatement, rootEdit, pm);
 		}
 		
 		result.setEdit(rootEdit); 
 	    return result;
+	}
+
+	private void createStatements(String variableName, String cName, MethodDeclaration deploymentMethod,
+			ReturnStatement returnStatement, MultiTextEdit rootEdit, 
+			IProgressMonitor pm)
+			throws JavaModelException, CoreException {
+		createStatement(variableName, cName, deploymentMethod, returnStatement, rootEdit, pm);
+		if (addAllDependentClasses) {
+			Set<String> classNames = new HashSet<String>();
+			IMarker[] markers = file.findMarkers(ArquillianConstants.MARKER_CLASS_ID, true, IResource.DEPTH_INFINITE);
+			for (IMarker marker:markers) {
+				if (RefactoringUtil.isMissingClassMarker(marker)) {
+					String clazzName = RefactoringUtil.getMissingClassName(marker);
+					if (clazzName != null && !clazzName.equals(className) && !classNames.contains(clazzName)) {
+						classNames.add(clazzName);
+					}
+				}
+			}
+			for (String c:classNames) {
+				createStatement(variableName, c, deploymentMethod, returnStatement, rootEdit, pm);
+			}
+		}
+		rootEdit.addChild(rewrite.rewriteAST());
+		rootEdit.addChild(importRewrite.rewriteImports(pm));
+		ArquillianCoreActivator.getDefault().removeProjectLoader(file.getProject());
 	}
 
 	private RefactoringStatus checkTempName(String newName) {
@@ -482,21 +509,21 @@ public class AddMissingTypeRefactoring extends Refactoring {
 
 		return selectedExpression;
 	}
-	private void createStatement(String name,
+	private void createStatement(String variableName, String cName,
 			MethodDeclaration deploymentMethod,
 			ReturnStatement returnStatement, MultiTextEdit rootEdit,
 			IProgressMonitor pm) throws JavaModelException, CoreException {
 		
-		importRewrite.addImport(className);
+		importRewrite.addImport(cName);
 		MethodInvocation mi = ast.newMethodInvocation();
-		mi.setExpression(ast.newSimpleName(name));
+		mi.setExpression(ast.newSimpleName(variableName));
 		mi.setName(ast.newSimpleName("addClass")); //$NON-NLS-1$
-		int index = className.lastIndexOf("."); //$NON-NLS-1$
+		int index = cName.lastIndexOf("."); //$NON-NLS-1$
 		String simpleClassName;
 		if (index >= 0) {
-			simpleClassName = className.substring(index + 1);
+			simpleClassName = cName.substring(index + 1);
 		} else {
-			simpleClassName = className;
+			simpleClassName = cName;
 		}
 		Name typeName = ast.newName(simpleClassName);
 		org.eclipse.jdt.core.dom.Type type = ast.newSimpleType(typeName);
@@ -507,9 +534,6 @@ public class AddMissingTypeRefactoring extends Refactoring {
 		Block block = deploymentMethod.getBody();
 		ListRewrite listRewrite = rewrite.getListRewrite(block, Block.STATEMENTS_PROPERTY);
 		listRewrite.insertBefore(newStatement, returnStatement, null);
-		rootEdit.addChild(rewrite.rewriteAST());
-		rootEdit.addChild(importRewrite.rewriteImports(pm));
-		ArquillianCoreActivator.getDefault().removeProjectLoader(file.getProject());
 	}
 
 	private ReturnStatement getReturnStatement(MethodDeclaration deploymentMethod) {
@@ -608,6 +632,14 @@ public class AddMissingTypeRefactoring extends Refactoring {
 			}
 			return false;
 		}
+	}
+
+	public boolean isAddAllDependentClasses() {
+		return addAllDependentClasses;
+	}
+
+	public void setAddAllDependentClasses(boolean addAllDependentClasses) {
+		this.addAllDependentClasses = addAllDependentClasses;
 	}
 	
 }

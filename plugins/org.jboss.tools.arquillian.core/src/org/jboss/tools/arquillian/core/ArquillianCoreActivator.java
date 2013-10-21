@@ -15,10 +15,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.eclipse.core.internal.runtime.InternalPlatform;
+import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IResourceChangeEvent;
 import org.eclipse.core.resources.IResourceChangeListener;
+import org.eclipse.core.resources.IResourceDelta;
+import org.eclipse.core.resources.IResourceDeltaVisitor;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.IncrementalProjectBuilder;
 import org.eclipse.core.resources.ResourcesPlugin;
@@ -43,6 +46,7 @@ import org.eclipse.osgi.service.datalocation.Location;
 import org.eclipse.ui.preferences.ScopedPreferenceStore;
 import org.jboss.tools.arquillian.core.internal.ArquillianConstants;
 import org.jboss.tools.arquillian.core.internal.classpath.ArquillianClassLoader;
+import org.jboss.tools.arquillian.core.internal.dependencies.DependencyCache;
 import org.jboss.tools.arquillian.core.internal.launcher.ArquillianLaunchConfigurationDelegate;
 import org.jboss.tools.arquillian.core.internal.util.ArquillianUtility;
 import org.jboss.tools.common.jdt.debug.RemoteDebugActivator;
@@ -95,9 +99,32 @@ public class ArquillianCoreActivator implements BundleActivator {
 			if (event.getType() == IResourceChangeEvent.PRE_DELETE ||
 					event.getType() == IResourceChangeEvent.PRE_CLOSE) {
 				remove(event);
+				DependencyCache.removeDependencies(event.getResource());
 			} else if (event.getType() == IResourceChangeEvent.PRE_BUILD && event.getBuildKind() == IncrementalProjectBuilder.CLEAN_BUILD) {
 				remove(event);
+			} else if (event.getType() == IResourceChangeEvent.POST_CHANGE) {
+				try {
+					event.getDelta().accept(new IResourceDeltaVisitor() {
+						
+						@Override
+						public boolean visit(IResourceDelta delta) throws CoreException {
+							IResource resource = delta.getResource();
+							if (resource instanceof IFile && delta.getKind() == IResourceDelta.REMOVED) {
+								DependencyCache.removeDependencies(resource);
+								return false;
+							}
+							return true;
+						}
+					});
+				} catch (CoreException e) {
+					ArquillianCoreActivator.log(e);
+				}
 			}
+		}
+
+		private void removeDependencyCache(IResourceChangeEvent event) {
+			IResource resource = event.getResource();
+			DependencyCache.removeDependencies(resource);
 		}
 
 		private void remove(IResourceChangeEvent event) {
@@ -156,7 +183,7 @@ public class ArquillianCoreActivator implements BundleActivator {
 		plugin = this;
 		ArquillianCoreActivator.context = bundleContext;
 		ResourcesPlugin.getWorkspace().addResourceChangeListener(
-				resourceChangeListener, IResourceChangeEvent.PRE_DELETE|IResourceChangeEvent.PRE_CLOSE|IResourceChangeEvent.PRE_BUILD);
+				resourceChangeListener, IResourceChangeEvent.PRE_DELETE|IResourceChangeEvent.PRE_CLOSE|IResourceChangeEvent.PRE_BUILD|IResourceChangeEvent.POST_CHANGE);
 		JavaCore.addElementChangedListener(elementChangedListener);
 		DebugPlugin.getDefault().getLaunchManager().addLaunchConfigurationListener(launchConfigurationListener);
 	}
