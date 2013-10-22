@@ -117,4 +117,5 @@ public class ArquillianConstants {
 
 	public static final String ARCHIVE_EXTENSION = "archiveExtension"; //$NON-NLS-1$
 	
+	public static final String PREF_CONTAINER = "pref_containers"; //$NON-NLS-1$
 }

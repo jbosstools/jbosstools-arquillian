@@ -7,6 +7,8 @@ public class Dependency {
     private String group_id;
     private String artifact_id;
     private String url;
+    private String type;
+    private String scope;
 
     public String getGroup_id() {
         return group_id;
@@ -31,4 +33,20 @@ public class Dependency {
     public void setUrl(String url) {
         this.url = url;
     }
+    
+    public String getType() {
+		return type;
+	}
+    
+    public void setType(String type) {
+		this.type = type;
+	}
+    
+    public String getScope() {
+		return scope;
+	}
+    
+    public void setScope(String scope) {
+		this.scope = scope;
+	}
 }

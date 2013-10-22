@@ -18,6 +18,7 @@ import java.io.OutputStream;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
@@ -71,6 +72,13 @@ import org.eclipse.jdt.launching.IJavaLaunchConfigurationConstants;
 import org.eclipse.jdt.ui.CodeGeneration;
 import org.eclipse.jdt.ui.wizards.NewTypeWizardPage.ImportsManager;
 import org.eclipse.jface.text.ITextSelection;
+import org.eclipse.jface.dialogs.ErrorDialog;
+import org.eclipse.jface.dialogs.MessageDialog;
+import org.eclipse.jface.preference.IPreferenceNode;
+import org.eclipse.jface.preference.IPreferencePage;
+import org.eclipse.jface.preference.PreferenceDialog;
+import org.eclipse.jface.preference.PreferenceManager;
+import org.eclipse.jface.preference.PreferenceNode;
 import org.eclipse.jface.viewers.CheckboxTableViewer;
 import org.eclipse.jface.viewers.ColumnLabelProvider;
 import org.eclipse.jface.viewers.ColumnLayoutData;
@@ -83,23 +91,30 @@ import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredContentProvider;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.TableLayout;
+import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.jface.viewers.TableViewerEditor;
 import org.eclipse.jface.viewers.TableViewerFocusCellManager;
+import org.eclipse.jface.viewers.TreeSelection;
+import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.viewers.ViewerCell;
+import org.eclipse.jface.wizard.IWizard;
+import org.eclipse.jface.wizard.WizardDialog;
 import org.eclipse.m2e.core.MavenPlugin;
 import org.eclipse.m2e.core.internal.IMavenConstants;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.text.edits.TextEdit;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.IWorkbenchWindow;
+import org.eclipse.ui.IWorkbenchWizard;
 import org.jboss.forge.arquillian.container.Container;
 import org.jboss.tools.arquillian.core.ArquillianCoreActivator;
 import org.jboss.tools.arquillian.core.internal.ArquillianConstants;
@@ -109,7 +124,6 @@ import org.jboss.tools.arquillian.ui.ArquillianUIActivator;
 import org.jboss.tools.arquillian.ui.internal.launcher.ArquillianProperty;
 import org.jboss.tools.arquillian.ui.internal.launcher.AutoResizeTableLayout;
 import org.jboss.tools.arquillian.ui.internal.preferences.ContainerEditingSupport;
-import org.jboss.tools.arquillian.ui.internal.wizards.NewArquillianJUnitTestCaseDeploymentPage;
 import org.jboss.tools.arquillian.ui.internal.wizards.ProjectResource;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
@@ -953,7 +967,91 @@ public class ArquillianUIUtil {
 		}
 		viewer.refresh();
 	}
-
+	
+	/**
+	 * Opens the given wizard.
+	 * @param wizard the wizard
+	 */
+	public static void openWizard(IWizard wizard) {
+		if(wizard instanceof IWorkbenchWizard) {
+			((IWorkbenchWizard) wizard).init(ArquillianUIActivator.getDefault().getWorkbench(), null);
+		}
+		WizardDialog dialog = new WizardDialog(Display.getDefault().getActiveShell(), wizard);
+		dialog.setHelpAvailable(false);
+		dialog.create();
+		dialog.open();
+	}
+	
+	/**
+	 * Opens the confirm dialog with the given title and message.
+	 * @param title the title
+	 * @param message the message
+	 * @return result of confirm dialog
+	 */
+	public static boolean openConfirm(String title, String message) {
+		return MessageDialog.openConfirm(Display.getDefault().getActiveShell(), title, message);
+	}
+	
+	/**
+	 * Opens the given preference page.
+	 * @param page the preference page
+	 * @return result of preference page
+	 */
+	public static int openPreferenceDialog(IPreferencePage page) {
+		PreferenceManager manager = new PreferenceManager();
+		IPreferenceNode node = new PreferenceNode("1", page); //$NON-NLS-1$
+		manager.addToRoot(node);
+		PreferenceDialog dialog = new PreferenceDialog(Display.getDefault().getActiveShell(), manager);
+		dialog.create();
+		return dialog.open();
+	}
+	
+	/**
+	 * Opens the error dialog with the given title and message.
+	 * @param title the title
+	 * @param message the message
+	 * @param t the exception
+	 */
+	public static void openErrorDialog(String title, String message, Throwable t) {
+		String detailMessage = t.getMessage();
+		if(detailMessage == null || detailMessage.trim().length() == 0) {
+			detailMessage = t.getClass().getName();
+		}
+		ErrorDialog.openError(
+				Display.getDefault().getActiveShell(),
+				title,
+				message,
+				new Status(IStatus.ERROR, ArquillianUIActivator.PLUGIN_ID, detailMessage));
+	}
+	
+	/**
+	 * Returns the selection on the given viewer.
+	 * @param viewer the viewer
+	 * @return the selection
+	 */
+	public static Object getSelection(TreeViewer viewer) {
+		TreeSelection selection = (TreeSelection) viewer.getSelection();
+		return selection.getFirstElement();
+	}
+	
+	/**
+	 * Returns the list of selections on the given viewer.
+	 * @param viewer the viewer
+	 * @return the selection
+	 */
+	public static List<Object> getSelections(TreeViewer viewer) {
+		List<Object> selections = new ArrayList<Object>();
+		TreeSelection selection = (TreeSelection) viewer.getSelection();
+		if(!selection.isEmpty()) {
+			@SuppressWarnings("rawtypes")
+			Iterator iterator = selection.iterator();
+			while(iterator.hasNext()) {
+				selections.add(iterator.next());
+			}
+		}
+		return selections;
+	}
+	
 	static class ContainerContentProvider implements IStructuredContentProvider {
 		private List<Container> containers;
 
