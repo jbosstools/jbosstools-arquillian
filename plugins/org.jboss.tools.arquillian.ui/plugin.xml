@@ -433,6 +433,12 @@
             id="org.jboss.tools.arquillian.ui.preferences.arquillianPreferencePage"
             name="Arquillian">
       </page>
+      <page
+            category="org.jboss.tools.arquillian.ui.preferences.arquillianPreferencePage"
+            class="org.jboss.tools.arquillian.ui.internal.preferences.ContainerGroupPreferencePage"
+            id="org.jboss.tools.arquillian.ui.preferences.containerGroupPreferencePage"
+            name="Container/Group">
+      </page>
    </extension>
    
    <extension point="org.eclipse.ui.ide.markerResolution">
@@ -451,6 +457,20 @@
   	  <markerResolutionGenerator
      	class="org.jboss.tools.arquillian.ui.internal.markers.AddMissingTypeResolutionGenerator"
      	markerType="org.jboss.tools.arquillian.core.problem.class"/>
+  		<markerResolutionGenerator
+     		class="org.jboss.tools.arquillian.ui.internal.markers.GenerateDeploymentResolutionGenerator"
+     		markerType="org.jboss.tools.arquillian.core.problem.missingDeploymentMethod"/>
+	</extension>
+   <extension
+         point="org.eclipse.ui.editors">
+      <editor
+            class="org.jboss.tools.arquillian.ui.internal.editors.ArquillianEditor"
+            default="true"
+            filenames="arquillian.xml"
+            icon="icons/arquillian_icon16.png"
+            id="org.jboss.tools.arquillian.ui.editors.arquillianEditor"
+            name="Arquillian Configuration Editor">
+      </editor>
    </extension>
    
 </plugin>

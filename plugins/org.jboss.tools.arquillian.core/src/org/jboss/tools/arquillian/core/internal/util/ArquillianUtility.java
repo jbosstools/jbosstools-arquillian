@@ -60,6 +60,7 @@ import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.OperationCanceledException;
+import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.jobs.Job;
@@ -104,6 +105,7 @@ import org.jboss.tools.maven.core.IArtifactResolutionService;
 import org.jboss.tools.maven.core.MavenCoreActivator;
 import org.jboss.tools.maven.profiles.core.MavenProfilesCoreActivator;
 import org.jboss.tools.maven.profiles.core.profiles.ProfileStatus;
+import org.osgi.framework.Bundle;
 import org.w3c.dom.Element;
 
 /**
@@ -526,7 +528,7 @@ public class ArquillianUtility {
 		}
 	}
 
-	private static List<String> getProfiles(Model projectModel) throws CoreException {
+	public static List<String> getProfiles(Model projectModel) throws CoreException {
 		List<String> allProfiles = new ArrayList<String>();
 		// settings profiles
 		Settings settings = MavenPlugin.getMaven().getSettings();
@@ -905,5 +907,20 @@ public class ArquillianUtility {
 		newNatures[prevNatures.length] = ArquillianNature.ARQUILLIAN_NATURE_ID;
 		description.setNatureIds(newNatures);
 		project.setDescription(description, new NullProgressMonitor());
+	}
+	
+	public static URL getUrlFromBundle(String path) {
+		Bundle bundle = Platform.getBundle(ArquillianCoreActivator.PLUGIN_ID);
+		if (bundle != null) {
+			URL[] urls = FileLocator.findEntries(bundle, new Path(path));
+			if (urls != null && urls.length > 0) {
+				try {
+					return FileLocator.resolve(urls[0]);
+				} catch (IOException e) {
+					ArquillianCoreActivator.log(e);
+				}
+			}
+		}
+		return null;
 	}
 }
