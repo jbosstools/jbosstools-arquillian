@@ -20,15 +20,20 @@ import static org.eclipse.m2e.core.ui.internal.editing.PomEdits.setText;
 import static org.eclipse.m2e.core.ui.internal.editing.PomHelper.addOrUpdateDependency;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 import java.util.Properties;
 import java.util.Set;
 
@@ -906,4 +911,67 @@ public class ArquillianUtility {
 		description.setNatureIds(newNatures);
 		project.setDescription(description, new NullProgressMonitor());
 	}
+	
+	public static boolean exportFile(File file, File destination) {
+		ZipFile zipFile = null;
+		destination.mkdirs();
+		try {
+			zipFile = new ZipFile(file);
+			Enumeration<? extends ZipEntry> entries = zipFile.entries();
+			while (entries.hasMoreElements()) {
+				
+				ZipEntry entry = (ZipEntry) entries.nextElement();
+				if (entry.isDirectory()) {
+					File dir = new File(destination, entry.getName());
+					dir.mkdirs();
+					continue;
+				}
+				File entryFile = new File(destination, entry.getName());
+				entryFile.getParentFile().mkdirs();
+				InputStream in = null;
+				OutputStream out = null;
+				try {
+					in = zipFile.getInputStream(entry);
+					out = new FileOutputStream(entryFile);
+					copy(in, out);
+				} finally {
+					if (in != null) {
+						try {
+							in.close();
+						} catch (Exception e) {
+							// ignore
+						}
+					}
+					if (out != null) {
+						try {
+							out.close();
+						} catch (Exception e) {
+							// ignore
+						}
+					}
+				}
+			}
+		} catch (IOException e) {
+			ArquillianCoreActivator.log(e);
+			return false;
+		} finally {
+			if (zipFile != null) {
+				try {
+					zipFile.close();
+				} catch (IOException e) {
+					// ignore
+				}
+			}
+		}
+		return true;
+	}
+	
+	public static void copy(InputStream in, OutputStream out) throws IOException {
+		byte[] buffer = new byte[16 * 1024];
+		int len;
+		while ((len = in.read(buffer)) >= 0) {
+			out.write(buffer, 0, len);
+		}
+	}
+	
 }

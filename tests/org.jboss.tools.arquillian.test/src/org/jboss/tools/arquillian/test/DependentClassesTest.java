@@ -71,6 +71,7 @@ public class DependentClassesTest extends AbstractArquillianTest {
 		
 		for (IMarker marker:projectMarkers) {
 			AddMissingTypeRefactoring refactoring = new AddMissingTypeRefactoring(marker);
+			refactoring.setAddAllDependentClasses(true);
 			RefactoringStatus status = refactoring.checkInitialConditions(new NullProgressMonitor());
 			assertTrue(status.isOK());
 			Change change = refactoring.createChange(new NullProgressMonitor());
