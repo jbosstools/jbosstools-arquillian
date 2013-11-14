@@ -108,6 +108,7 @@ import org.jboss.tools.arquillian.core.internal.util.ArquillianUtility;
 import org.jboss.tools.arquillian.ui.ArquillianUIActivator;
 import org.jboss.tools.arquillian.ui.internal.launcher.ArquillianProperty;
 import org.jboss.tools.arquillian.ui.internal.launcher.AutoResizeTableLayout;
+import org.jboss.tools.arquillian.ui.internal.model.ArquillianZipEntry;
 import org.jboss.tools.arquillian.ui.internal.preferences.ContainerEditingSupport;
 import org.jboss.tools.arquillian.ui.internal.wizards.NewArquillianJUnitTestCaseDeploymentPage;
 import org.jboss.tools.arquillian.ui.internal.wizards.ProjectResource;
@@ -1030,12 +1031,15 @@ public class ArquillianUIUtil {
 		if (selection instanceof IStructuredSelection) {
 			Object object = ((IStructuredSelection)selection).getFirstElement();
 			if (object instanceof IResource) {
-				selected = ((IResource)object).getProject();
+				return ((IResource)object).getProject();
 			} else if (object instanceof IAdaptable){
 				IResource resource = (IResource) ((IAdaptable)object).getAdapter(IResource.class);
 				if (resource != null) {
-					selected = resource.getProject();
+					return resource.getProject();
 				}
+			} 
+			if (object instanceof ArquillianZipEntry) {
+				return ((ArquillianZipEntry)object).getProject().getProject();
 			}
 		}
 		if (selection instanceof ITextSelection) {

@@ -23,6 +23,7 @@ import java.util.zip.ZipFile;
 
 import org.eclipse.core.runtime.Assert;
 import org.eclipse.core.runtime.PlatformObject;
+import org.eclipse.jdt.core.IJavaProject;
 import org.jboss.tools.arquillian.ui.ArquillianUIActivator;
 
 /**
@@ -37,10 +38,13 @@ public class ArquillianZipEntry extends PlatformObject {
 	private boolean directory;
 	private ArquillianZipEntry parent;
 	private List<ArquillianZipEntry> entries = new ArrayList<ArquillianZipEntry>();
+	private IJavaProject project;
 	
-	public ArquillianZipEntry(File file) {
+	public ArquillianZipEntry(File file, IJavaProject project) {
 		Assert.isNotNull(file);
 		Assert.isLegal(file.exists());
+		Assert.isNotNull(project);
+		this.project = project;
 		StringBuffer buf = new StringBuffer();
 		buf.append(file.getParentFile().getName());
 		buf.append("("); //$NON-NLS-1$
@@ -59,7 +63,7 @@ public class ArquillianZipEntry extends PlatformObject {
 			Map<String,ArquillianZipEntry> map = new HashMap<String, ArquillianZipEntry>();
 			for (Enumeration<? extends ZipEntry> e= zipFile.entries(); e.hasMoreElements();) {
 				ZipEntry member= (ZipEntry) e.nextElement();
-				ArquillianZipEntry entry = new ArquillianZipEntry(member.getName(), false, member.isDirectory());
+				ArquillianZipEntry entry = new ArquillianZipEntry(member.getName(), false, member.isDirectory(), project);
 				map.put(member.getName(), entry);
 			}
 			zipFile.close();
@@ -98,10 +102,11 @@ public class ArquillianZipEntry extends PlatformObject {
 		}
 	}
 	
-	public ArquillianZipEntry(String name, boolean root, boolean directory) {
+	private ArquillianZipEntry(String name, boolean root, boolean directory, IJavaProject project) {
 		this.name = name;
 		this.root = root;
 		this.directory = directory;
+		this.project = project;
 	}
 
 	public String getName() {
@@ -130,5 +135,9 @@ public class ArquillianZipEntry extends PlatformObject {
 
 	public boolean isDirectory() {
 		return directory;
+	}
+
+	public IJavaProject getProject() {
+		return project;
 	}
 }

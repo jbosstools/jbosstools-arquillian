@@ -10,10 +10,10 @@
  ************************************************************************************/
 package org.jboss.tools.arquillian.ui.internal.views;
 
-import java.awt.print.Book;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IResourceChangeEvent;
@@ -23,16 +23,26 @@ import org.eclipse.core.resources.IResourceDeltaVisitor;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IPath;
+import org.eclipse.jdt.core.IClasspathEntry;
+import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jface.viewers.DoubleClickEvent;
 import org.eclipse.jface.viewers.ISelection;
-import org.eclipse.jface.viewers.IStructuredSelection;
+import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.ISelectionListener;
+import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.IWorkbenchPart;
+import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
+import org.eclipse.ui.ide.IDE;
 import org.eclipse.ui.navigator.CommonNavigator;
 import org.eclipse.ui.navigator.CommonViewer;
 import org.jboss.tools.arquillian.core.ArquillianCoreActivator;
+import org.jboss.tools.arquillian.ui.ArquillianUIActivator;
+import org.jboss.tools.arquillian.ui.internal.model.ArquillianZipEntry;
 import org.jboss.tools.arquillian.ui.internal.utils.ArquillianUIUtil;
 
 /**
@@ -43,6 +53,11 @@ import org.jboss.tools.arquillian.ui.internal.utils.ArquillianUIUtil;
 public class ArquillianView extends CommonNavigator {
 
 	public static final String ID = "org.jboss.tools.arquillian.ui.views.arquillianView"; //$NON-NLS-1$
+	private static final String JAVA = ".java"; //$NON-NLS-1$
+	private static final String CLASS = ".class"; //$NON-NLS-1$
+	private static final String WEB_INF_CLASSES = "WEB-INF/classes/"; //$NON-NLS-1$
+	private static final String META_INF = "META-INF/"; //$NON-NLS-1$
+	private static final String WEB_INF = "WEB-INF/"; //$NON-NLS-1$
 	
 	private IResourceChangeListener resourceChangeListener;
 	
@@ -71,14 +86,25 @@ public class ArquillianView extends CommonNavigator {
 		
 		CommonViewer commonViewer = super.createCommonViewer(aParent);
 		selectionListener = new ISelectionListener() {
+			private IProject oldSelected;
 			public void selectionChanged(IWorkbenchPart part, ISelection selection) {
-				if (ArquillianUIUtil.getSelectedProject(selection) == null) {
+				IProject selected = ArquillianUIUtil.getSelectedProject(selection);
+				if (part == ArquillianView.this) {
+					oldSelected = selected;
+					return;
+				}
+				if (selected == null) {
+					oldSelected = null;
+					return;
+				}
+				if (selected.equals(oldSelected)) {
 					return;
 				}
 				if (getCommonViewer() != null
 						&& getCommonViewer().getControl() != null
 						&& !getCommonViewer().getControl().isDisposed()) {
 					getCommonViewer().refresh();
+					oldSelected = selected;
 				}
 			}
 		};
@@ -193,5 +219,78 @@ public class ArquillianView extends CommonNavigator {
 		
 		return commonViewer;
 	}
+
+	@Override
+	protected void handleDoubleClick(DoubleClickEvent anEvent) {
+		if (!open(anEvent)) {
+			super.handleDoubleClick(anEvent);
+		}
+	}
 	
+	private void openFile(IResource resource) throws PartInitException {
+		IFile file = (IFile) resource;
+		IWorkbenchPage page = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
+		IDE.openEditor(page, file);
+	}
+
+	private boolean open(DoubleClickEvent event) {
+		if (event == null || ! (event.getSelection() instanceof StructuredSelection)) {
+			return false;
+		}
+		StructuredSelection structured = (StructuredSelection) event.getSelection();
+		Object object = structured.getFirstElement();
+		if (object instanceof ArquillianZipEntry) {
+			ArquillianZipEntry element = (ArquillianZipEntry) object;
+			if (element.isDirectory()) {
+				return false;
+			}
+			String name = element.getName();
+			if (name == null) {
+				return false;
+			}
+			if (name.startsWith(WEB_INF_CLASSES)) {
+				name = name.substring(WEB_INF_CLASSES.length());
+			}
+			if (name.endsWith(CLASS)) {
+				name = name.replace(CLASS, JAVA);
+			}
+			IJavaProject project = element.getProject();
+			try {
+				IClasspathEntry[] entries = project.getRawClasspath();
+				for (IClasspathEntry entry:entries) {
+					if (entry.getEntryKind() == IClasspathEntry.CPE_SOURCE) {
+						IPath entryPath = entry.getPath();
+						IPath path = entryPath.append(name);
+						IResource resource = ResourcesPlugin.getWorkspace().getRoot().findMember(path);
+						if (resource instanceof IFile && resource.exists()) {
+							openFile(resource);
+							return true;
+						} else {
+							String n = name.replace(WEB_INF,""); //$NON-NLS-1$
+							path = entryPath.append(n);
+							resource = ResourcesPlugin.getWorkspace().getRoot().findMember(path);
+							if (resource instanceof IFile && resource.exists()) {
+								openFile(resource);
+								return true;
+							} else {
+								n = name.replace(META_INF,""); //$NON-NLS-1$
+								path = entryPath.append(n);
+								resource = ResourcesPlugin.getWorkspace().getRoot().findMember(path);
+								if (resource instanceof IFile && resource.exists()) {
+									openFile(resource);
+									return true;
+								}
+							}
+						}
+					}
+				}
+			} catch (JavaModelException e) {
+				ArquillianUIActivator.log(e);
+			} catch (PartInitException e) {
+				ArquillianUIActivator.log(e);
+			}
+		}
+		return false;
+	}
+
 }
