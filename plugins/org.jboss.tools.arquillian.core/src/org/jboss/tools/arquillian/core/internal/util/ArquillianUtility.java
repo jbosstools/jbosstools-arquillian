@@ -764,8 +764,19 @@ public class ArquillianUtility {
 	}
 
 	public static boolean isValidatorEnabled(IProject project) {
+		if (!isArquillianProject(project)) {
+			return false;
+		}
 		String preference = getPreference(ArquillianConstants.ENABLE_ARQUILLIAN_VALIDATOR, project);
 		return Boolean.TRUE.toString().equals(preference);
+	}
+	
+	public static boolean isArquillianProject(IProject project) {
+		try {
+			return project != null && project.hasNature(ArquillianNature.ARQUILLIAN_NATURE_ID);
+		} catch (CoreException e) {
+			return false;
+		} 
 	}
 	
 	public static Integer getSeverity(String preference) {

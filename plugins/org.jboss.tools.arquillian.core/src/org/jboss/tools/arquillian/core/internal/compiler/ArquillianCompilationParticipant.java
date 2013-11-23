@@ -108,7 +108,7 @@ public class ArquillianCompilationParticipant extends CompilationParticipant {
         nameEnvironment = new ArquillianNameEnvironment(project);
         this.notifier.updateProgressDelta(0.05f);
 
-        this.notifier.subTask(Messages.build_analyzingSources);
+        this.notifier.subTask("Analyzing sources (" + project.getElementName() + ")");
         sourceLocations = nameEnvironment.sourceLocations;
         try {
             addAllSourceFiles(sourceFiles, project);
