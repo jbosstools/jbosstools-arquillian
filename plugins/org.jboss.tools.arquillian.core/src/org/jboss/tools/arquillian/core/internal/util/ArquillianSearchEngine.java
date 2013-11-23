@@ -38,7 +38,6 @@ import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.NullProgressMonitor;
-import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.SubProgressMonitor;
@@ -48,7 +47,6 @@ import org.eclipse.jdt.core.IClassFile;
 import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
-import org.eclipse.jdt.core.IJavaModel;
 import org.eclipse.jdt.core.IJavaModelMarker;
 import org.eclipse.jdt.core.IJavaModelStatusConstants;
 import org.eclipse.jdt.core.IJavaProject;
@@ -370,7 +368,7 @@ public class ArquillianSearchEngine {
 						IStatus.ERROR,
 						ArquillianCoreActivator.PLUGIN_ID,
 						CONTAINER_DEPLOYABLE_CONTAINER_NOT_EXISTS,
-						"Cannot find 'org.jboss.arquillian.container.spi.client.container.DeployableContainer' on project build path. Do you want to add it.",
+						"Cannot find 'org.jboss.arquillian.container.spi.client.container.DeployableContainer' on the project build path. Do you want to add it?",
 						null);
 			}
 			ITypeHierarchy hierarchy = type.newTypeHierarchy(javaProject, new NullProgressMonitor());
@@ -383,7 +381,7 @@ public class ArquillianSearchEngine {
             }
             if (count == 0) {
             	return new Status(IStatus.ERROR, ArquillianCoreActivator.PLUGIN_ID, 1 ,  
-            			"Arquillian tests require exactly one implementation of DeploymentContainer on the build path. Do you want to configure it?", null);
+            			"Arquillian tests are missing an implementation of DeploymentContainer on the project build path. Do you want to configure it?", null);
             }
             if (count == 1) {
             	return Status.OK_STATUS;
@@ -425,7 +423,7 @@ public class ArquillianSearchEngine {
 			return new Status(IStatus.ERROR, ArquillianCoreActivator.PLUGIN_ID, e.getLocalizedMessage(), e);
 		}
 		return new Status(IStatus.ERROR, ArquillianCoreActivator.PLUGIN_ID, 1 ,  
-    			"Arquillian tests require exactly one implementation of DeploymentContainer on the build path. Do you want to configure it?", null);
+    			"Arquillian tests require exactly one implementation of DeploymentContainer on the project build path but several were found. Do you want to configure it?", null);
 	}
 	
 	private static IFile getFile(IJavaProject javaProject, String fileName) throws JavaModelException {
