@@ -214,6 +214,9 @@ public class ArquillianSearchEngine {
 	 * @return true if a Java element is an Arquillian JUnit test
 	 */
 	public static boolean isArquillianJUnitTest(IJavaElement element, boolean checkDeployment, boolean checkTest, boolean checkAbstract) {
+		if (element == null || element.getJavaProject() == null || !ArquillianUtility.isArquillianProject(element.getJavaProject().getProject())) {
+			return false;
+		}
 		try {
 			IType testType= null;
 			if (element instanceof ICompilationUnit) {
@@ -270,6 +273,9 @@ public class ArquillianSearchEngine {
 	}
 
 	private static boolean isArquillianJUnitTest(IType type, boolean checkDeployment, boolean checkTest, boolean checkAbstract) throws JavaModelException {
+		if (type == null || type.getJavaProject() == null || !ArquillianUtility.isArquillianProject(type.getJavaProject().getProject())) {
+			return false;
+		}
 		if (isAccessibleClass(type)) {
 			ITypeBinding binding = getTypeBinding(type);
 			if (binding != null) {
@@ -663,7 +669,7 @@ public class ArquillianSearchEngine {
 		}
 		Bundle bundle = Platform.getBundle(ArquillianCoreActivator.PLUGIN_ID);
 		if (bundle == null) {
-			ArquillianCoreActivator.log("The " + ArquillianCoreActivator.PLUGIN_ID + "bundle is invalid.");
+			ArquillianCoreActivator.logWarning("The " + ArquillianCoreActivator.PLUGIN_ID + "bundle is invalid.");
 			return archives;
 		}
 		IPath stateLocation = InternalPlatform.getDefault().getStateLocation(
@@ -683,7 +689,7 @@ public class ArquillianSearchEngine {
 		}
 
 		if (projectName == null) {
-			ArquillianCoreActivator.log("Cannot find any project for the " + type.getElementName() + "type.");
+			ArquillianCoreActivator.logWarning("Cannot find any project for the " + type.getElementName() + "type.");
 			return archives;
 		}
 		IPath location = stateLocation.append(projectName);
@@ -765,16 +771,23 @@ public class ArquillianSearchEngine {
 				
 				return warFile;
 			}
-		} catch (Exception e) {
-			//ArquillianCoreActivator.log(e);
-			String message = e.getLocalizedMessage();
+		} catch (OutOfMemoryError e) {
+			throw new OutOfMemoryError(e.getLocalizedMessage());
+		} catch (InternalError e) {
+			throw new InternalError(e.getLocalizedMessage());
+		} catch (StackOverflowError e) {
+			throw new StackOverflowError(e.getLocalizedMessage());
+		} catch (UnknownError e) {
+			throw new UnknownError(e.getLocalizedMessage());
+		} catch (Throwable e) {
+			String message = e.getClass().getName() + ": " + e.getLocalizedMessage() + "(project=" + javaProject.getProject().getName() + ")"; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$;
 			Throwable cause = e.getCause();
 			int i = 0;
 			while (cause != null && i++ < 5) {
-				message = cause.getLocalizedMessage();
+				message = cause.getClass().getName() + ": " + cause.getLocalizedMessage() + "(project=" + javaProject.getProject().getName() + ")"; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 				cause = cause.getCause();
 			}
-			ArquillianCoreActivator.log(message);
+			ArquillianCoreActivator.logWarning(message);
 			try {
 				Integer severity = ArquillianUtility.getSeverity(ArquillianUtility.getPreference(ArquillianConstants.DEPLOYMENT_ARCHIVE_CANNOT_BE_CREATED));
 				createProblem(message, type, deploymentMethod, severity);
