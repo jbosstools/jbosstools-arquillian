@@ -62,6 +62,9 @@ public class DependencyCache {
 			String typeName = dependencyType.getName();
 			try {
 				IType type = javaProject.findType(typeName);
+				if (type == null) {
+					continue;
+				}
 				ICompilationUnit compilationUnit = type.getCompilationUnit();
 				collectDependencies(compilationUnit);
 			} catch (JavaModelException e) {
@@ -97,7 +100,7 @@ public class DependencyCache {
 					IType javaType = javaProject.findType(type.getName());
 					if (javaType != null) {
 						ICompilationUnit cu = javaType.getCompilationUnit();
-						if (cu != null) {
+						if (cu != null && DependencyCache.getDependencies().get(cu) != null) {
 							add.addAll(DependencyCache.getDependencies().get(cu));
 							types.addAll(DependencyCache.getDependencies().get(cu));
 						}

@@ -221,8 +221,13 @@ public class ArquillianCoreActivator implements BundleActivator {
 		plugin.getLog().log(status);
 	}
 	
-	public static void log(String message) {
+	public static void logError(String message) {
 		IStatus status = new Status(IStatus.ERROR, PLUGIN_ID, message);
+		plugin.getLog().log(status);
+	}
+	
+	public static void logWarning(String message) {
+		IStatus status = new Status(IStatus.WARNING, PLUGIN_ID, message);
 		plugin.getLog().log(status);
 	}
 	
