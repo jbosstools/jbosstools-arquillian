@@ -158,15 +158,18 @@ public class ArquillianCompilationParticipant extends CompilationParticipant {
         	}
         	preference = ArquillianUtility.getPreference(ArquillianConstants.TYPE_IS_NOT_INCLUDED_IN_ANY_DEPLOYMENT, project.getProject());
         	if (!JavaCore.IGNORE.equals(preference)) {
-        		IFile file = sourceFile.resource;
-            	IJavaElement element = JavaCore.create(file);
-        		if (!(element instanceof ICompilationUnit)) {
-        			return;
-        		}
-        		ICompilationUnit unit = (ICompilationUnit) element;
-            	DependencyCache.getDependencies().remove(unit);
+				IFile file = sourceFile.resource;
+				IJavaElement element = JavaCore.create(file);
+				if (!(element instanceof ICompilationUnit)) {
+					continue;
+				}
+				ICompilationUnit unit = (ICompilationUnit) element;
+				DependencyCache.getDependencies().remove(unit);
+				List<File> archives = getArchives(sourceFile, project);
+				if (archives == null) {
+					continue;
+				}
             	Set<DependencyType> dependencies = DependencyCache.getDependentTypes(unit);
-            	List<File> archives = getArchives(sourceFile, project);
             	Map<File,JarFile> jarFiles = new HashMap<File, JarFile>();
             	Integer severity = ArquillianUtility.getSeverity(preference);
 				for (DependencyType type : dependencies) {
@@ -250,7 +253,7 @@ public class ArquillianCompilationParticipant extends CompilationParticipant {
 				jarFile = new JarFile(file);
 				jarFiles.put(file, jarFile);
 			} catch (IOException e) {
-				ArquillianCoreActivator.log(e);
+				ArquillianCoreActivator.logWarning(e.getLocalizedMessage());
 				return false;
 			}
 		}

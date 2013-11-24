@@ -723,7 +723,7 @@ public class ArquillianSearchEngine {
 									&& pathname.getName().startsWith("archive"); //$NON-NLS-1$
 						}
 					});
-					if (files != null && files.length > 0 && files[0].isFile()) {
+					if (files != null && files.length > 0 && files[0].isFile() && files[0].length() > 0) {
 						archives.add(files[0]);
 					}
 				}

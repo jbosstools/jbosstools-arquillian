@@ -24,6 +24,7 @@ import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IType;
+import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.AST;
@@ -44,7 +45,7 @@ public class DependencyCache {
 		return dependencies;
 	}
 	
-	public static void collectDependencies(ICompilationUnit unit) {
+	private static void collectDependencies(ICompilationUnit unit, boolean excludeSuperclass) {
 		if (unit == null || getDependencies().get(unit) != null) {
 			return;
 		}
@@ -53,8 +54,24 @@ public class DependencyCache {
 		if (primaryType == null) {
 			return;
 		}
+		Set<String> excludeSet = new HashSet<String>();
 		String name = primaryType.getFullyQualifiedName();
-		DependencyVisitor visitor = new DependencyVisitor(cu, name);
+		if (excludeSuperclass) {
+			try {
+				ITypeHierarchy hierarchy = primaryType.newSupertypeHierarchy(null);
+				IType superclass = hierarchy.getSuperclass(primaryType);
+				if (superclass != null) {
+					excludeSet.add(superclass.getFullyQualifiedName());
+				}
+				IType[] superInterfaces = hierarchy.getAllSuperInterfaces(primaryType);
+				for (IType superInterface:superInterfaces) {
+					excludeSet.add(superInterface.getFullyQualifiedName());
+				}
+			} catch (JavaModelException e) {
+				ArquillianCoreActivator.logWarning(e.getLocalizedMessage());
+			}
+		}
+		DependencyVisitor visitor = new DependencyVisitor(cu, name, excludeSet, unit.getJavaProject());
 		cu.accept(visitor);
 		getDependencies().put(unit, visitor.getTypes());
 		IJavaProject javaProject = unit.getJavaProject();
@@ -66,7 +83,7 @@ public class DependencyCache {
 					continue;
 				}
 				ICompilationUnit compilationUnit = type.getCompilationUnit();
-				collectDependencies(compilationUnit);
+				collectDependencies(compilationUnit, false);
 			} catch (JavaModelException e) {
 				ArquillianCoreActivator.log(e);
 			}
@@ -80,7 +97,7 @@ public class DependencyCache {
 			return types;
 		}
 		IJavaProject javaProject = unit.getJavaProject();
-		DependencyCache.collectDependencies(unit);
+		DependencyCache.collectDependencies(unit, true);
 		Set<DependencyType> toVisit = new HashSet<DependencyType>();
 		toVisit.addAll(getDependencies().get(unit));
 		types.addAll(toVisit);
