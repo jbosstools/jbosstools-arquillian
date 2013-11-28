@@ -65,10 +65,10 @@ public class ArquillianFilterTest extends AbstractArquillianTest {
 		importMavenProject("projects/testFilter2.zip", TEST_PROJECT_NAME2, path);
 		JobUtils.waitForIdle(1000);
 		IProject project = getProject(TEST_PROJECT_NAME);
-		ArquillianUtility.addArquillianNature(project);
+		ArquillianUtility.addArquillianNature(project, true);
 		JobUtils.waitForIdle(1000);
 		project = getProject(TEST_PROJECT_NAME2);
-		ArquillianUtility.addArquillianNature(project);
+		ArquillianUtility.addArquillianNature(project, true);
 		JobUtils.waitForIdle(1000);
 	}
 
