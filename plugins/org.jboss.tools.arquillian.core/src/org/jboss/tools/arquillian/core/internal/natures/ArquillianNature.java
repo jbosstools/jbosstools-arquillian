@@ -28,7 +28,7 @@ public class ArquillianNature implements IProjectNature {
 	
 	@Override
 	public void configure() throws CoreException {
-		ArquillianUtility.addArquillianSupport(project); 
+		
 	}
 
 	@Override
