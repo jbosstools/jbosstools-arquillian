@@ -47,7 +47,7 @@ public class ArquillianValidatorTest extends AbstractArquillianTest {
 		importMavenProject("projects/arquillian-plugin-test.zip", TEST_PROJECT_NAME);
 		JobUtils.waitForIdle(1000);
 		IProject project = getProject(TEST_PROJECT_NAME);
-		ArquillianUtility.addArquillianNature(project);
+		ArquillianUtility.addArquillianNature(project, true);
 		JobUtils.waitForIdle();
 		if (!ArquillianUtility.isValidatorEnabled(project)) {
 			IEclipsePreferences prefs = new ProjectScope(project).getNode(ArquillianCoreActivator.PLUGIN_ID);

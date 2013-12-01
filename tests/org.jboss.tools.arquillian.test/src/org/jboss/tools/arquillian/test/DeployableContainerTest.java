@@ -51,7 +51,7 @@ public class DeployableContainerTest extends AbstractArquillianTest {
 		importMavenProject("projects/testDeployableContainer.zip", TEST_PROJECT_NAME);
 		JobUtils.waitForIdle(1000);
 		IProject project = getProject(TEST_PROJECT_NAME);
-		ArquillianUtility.addArquillianNature(project);
+		ArquillianUtility.addArquillianNature(project, true);
 		JobUtils.waitForIdle(1000);
 		if (!ArquillianUtility.isValidatorEnabled(project)) {
 			IEclipsePreferences prefs = new ProjectScope(project).getNode(ArquillianCoreActivator.PLUGIN_ID);
