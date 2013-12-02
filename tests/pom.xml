@@ -14,5 +14,4 @@
 	<modules>
 		<module>org.jboss.tools.arquillian.test</module>
 	</modules>
-<version>1.1.0-SNAPSHOT</version></project>
-	
+</project>
