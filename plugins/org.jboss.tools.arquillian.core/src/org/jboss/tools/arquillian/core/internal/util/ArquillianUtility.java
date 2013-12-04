@@ -197,6 +197,9 @@ public class ArquillianUtility {
 
 	public static void addArquillianSupport(IProject project)
 			throws CoreException {
+		if (project == null || !project.hasNature(ArquillianNature.ARQUILLIAN_NATURE_ID)) {
+			return;
+		}
 		IFile pomFile = project.getFile(IMavenConstants.POM_FILE_NAME);
 		MavenProject mavenProject = MavenPlugin.getMaven().readProject(
 				pomFile.getLocation().toFile(), new NullProgressMonitor());
@@ -901,7 +904,7 @@ public class ArquillianUtility {
 		}
 	}
 	
-	public static void addArquillianNature(IProject project) throws CoreException {
+	public static void addArquillianNature(IProject project, boolean updatePom) throws CoreException {
 		Assert.isNotNull(project);
 		IProjectDescription description = project.getDescription();
 		String[] prevNatures = description.getNatureIds();
@@ -910,5 +913,8 @@ public class ArquillianUtility {
 		newNatures[prevNatures.length] = ArquillianNature.ARQUILLIAN_NATURE_ID;
 		description.setNatureIds(newNatures);
 		project.setDescription(description, new NullProgressMonitor());
+		if (updatePom) {
+			addArquillianSupport(project);
+		}
 	}
 }

@@ -44,7 +44,7 @@ public class CheckArquillianModificationsTest extends AbstractArquillianTest {
 		JobUtils.waitForIdle(1000);
 		project = getProject(projectName);
 		assertNotNull(project);
-		ArquillianUtility.addArquillianNature(project);
+		ArquillianUtility.addArquillianNature(project, true);
 		JobUtils.waitForIdle();
 		
 		//If test run w/ Java 6, project will have errors, 
