@@ -30,7 +30,6 @@ import org.jboss.tools.arquillian.core.ArquillianCoreActivator;
 import org.jboss.tools.arquillian.core.internal.ArquillianConstants;
 import org.jboss.tools.arquillian.core.internal.util.ArquillianUtility;
 import org.jboss.tools.arquillian.ui.internal.refactoring.AddMissingTypeRefactoring;
-import org.jboss.tools.arquillian.ui.internal.refactoring.FixArchiveNameRefactoring;
 import org.jboss.tools.test.util.JobUtils;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;

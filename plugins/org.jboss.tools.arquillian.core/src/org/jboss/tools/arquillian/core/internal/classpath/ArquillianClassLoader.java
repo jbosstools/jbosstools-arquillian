@@ -25,7 +25,6 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.jar.JarEntry;
@@ -68,11 +67,10 @@ public class ArquillianClassLoader extends ClassLoader implements
 	}
 
 	private IJavaProject jProject;
-	private List<IPath> jars;
-	private List<IJavaProject> dependentProjects = new ArrayList<IJavaProject>();
+	private Set<IPath> jars;
+	private Set<IJavaProject> dependentProjects = new HashSet<IJavaProject>();
 	private Map<String, URL> found = new HashMap<String, URL>();
-	private List<String> notFound = new ArrayList<String>();
-	private Set<IPath> outputLocations;
+	private Set<String> notFound = new HashSet<String>();
 	static ClassLoader finderClassLoader;
 	static Finder contextFinder;
 	static {
@@ -92,7 +90,6 @@ public class ArquillianClassLoader extends ClassLoader implements
 		notFound.clear();
 		URLs.clear();
 		dependentProjects.clear();
-		outputLocations.clear();
 		jProject = null;
 	}
 
@@ -105,13 +102,6 @@ public class ArquillianClassLoader extends ClassLoader implements
 			URL[] urls = (URL[]) URLs.toArray(new URL[0]);
 			sourceLoader = new URLClassLoader(urls,contextClassLoader);
 		}
-		this.outputLocations = getOutpuLocations();
-		try {
-			outputLocations.add(jProject.getOutputLocation());
-		} catch (JavaModelException e) {
-			ArquillianCoreActivator.log(e);
-		}
-		
 	}
 
 	// Return a list of all classloaders on the stack that are neither the
@@ -198,7 +188,8 @@ public class ArquillianClassLoader extends ClassLoader implements
 				else if ("java".equalsIgnoreCase(path.getFileExtension()) && resource != null) { //$NON-NLS-1$
 					if (resource.getProject() != null) {
 						String outputClass = StringUtils.replace(type.getFullyQualifiedName(), ".", "/").concat(".class"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-						for (IPath outputLocation : outputLocations) {
+						IJavaProject javaProject = JavaCore.create(resource.getProject());
+						for (IPath outputLocation : getOutputLocations(javaProject)) {
 							IPath classPath = outputLocation
 									.append(outputClass);
 							IFile file = ResourcesPlugin.getWorkspace()
@@ -338,11 +329,11 @@ public class ArquillianClassLoader extends ClassLoader implements
 		}
 		return out.toByteArray();
 	}
-	private Set<IPath> getOutpuLocations() {
+	private Set<IPath> getOutputLocations(IJavaProject javaProject) {
 		Set<IPath> paths = new HashSet<IPath>();
 		IClasspathEntry[] entries;
 		try {
-			entries = jProject.getRawClasspath();
+			entries = javaProject.getRawClasspath();
 		} catch (JavaModelException e) {
 			// ignore
 			return paths;
@@ -354,6 +345,11 @@ public class ArquillianClassLoader extends ClassLoader implements
 					paths.add(outputPath);
 				}
 			}
+		}
+		try {
+			paths.add(jProject.getOutputLocation());
+		} catch (JavaModelException e) {
+			ArquillianCoreActivator.log(e);
 		}
 		return paths;
 	}	
@@ -615,9 +611,9 @@ public class ArquillianClassLoader extends ClassLoader implements
 		return file;
 	}
 
-	private List<IPath> getJarPaths(IJavaProject jProject) {
-		List<IPath> classPaths = new ArrayList<IPath>();
-		List<IPath> sourcePaths = new ArrayList<IPath>();
+	private Set<IPath> getJarPaths(IJavaProject jProject) {
+		Set<IPath> classPaths = new HashSet<IPath>();
+		Set<IPath> sourcePaths = new HashSet<IPath>();
 		if (jProject == null)
 			return classPaths;
 		try {
@@ -626,46 +622,21 @@ public class ArquillianClassLoader extends ClassLoader implements
 			for (int i = 0; i < entries.length; i++) {
 				IClasspathEntry entry = entries[i];
 				if (entry.getEntryKind() == IClasspathEntry.CPE_SOURCE) {
-					IPath path = entry.getOutputLocation();
-					if (path == null) {
-						path = jProject.getOutputLocation();
-					}
-					File file = getRawLocationFile(path);
-					if (file.exists()) {
-						URLs.add(file.toURI().toURL());
-					}
-					sourcePaths.add(entry.getPath());
+					addSourcePaths(jProject, sourcePaths, entry);
 				} else if (entry.getEntryKind() == IClasspathEntry.CPE_LIBRARY) {
 					IClasspathEntry resLib = JavaCore
 							.getResolvedClasspathEntry(entry);
 					addClassPath(classPaths, resLib);
 				} else if (entry.getEntryKind() == IClasspathEntry.CPE_PROJECT) {
-					IClasspathEntry projectEntry = JavaCore
-							.getResolvedClasspathEntry(entry);
-					IPath path = projectEntry.getPath();
-					String name = path.segment(0);
-					IProject project = ResourcesPlugin.getWorkspace().getRoot()
-							.getProject(name);
-					if (project.exists()) {
-						IJavaProject javaProject = JavaCore.create(project);
-						if (javaProject.exists()) {
-							dependentProjects.add(javaProject);
-							classPaths.addAll(getJarPaths(javaProject));
-						}
-					}
+					addProjectPaths(classPaths, entry);
 				} else if (entry.getEntryKind() == IClasspathEntry.CPE_VARIABLE) {
 					IClasspathEntry resLib = JavaCore
 							.getResolvedClasspathEntry(entry);
 					addClassPath(classPaths, resLib);
 				} else if (entry.getEntryKind() == IClasspathEntry.CPE_CONTAINER) {
-					if (!entry.getPath().toString().endsWith(
+					if (!entry.getPath().segment(0).toString().endsWith(
 							"JRE_CONTAINER")) {
-						IClasspathEntry[] resLibs = JavaCore
-								.getClasspathContainer(entry.getPath(),
-										jProject).getClasspathEntries();
-						for (int j = 0; j < resLibs.length; j++) {
-							addClassPath(classPaths, resLibs[j]);
-						}
+						addContainerPaths(jProject, classPaths, entry, sourcePaths);
 					}
 				}
 			}
@@ -686,7 +657,56 @@ public class ArquillianClassLoader extends ClassLoader implements
 		return classPaths;
 	}
 
-	private void addClassPath(List<IPath> classPaths, IClasspathEntry resLibs) {
+	private void addSourcePaths(IJavaProject jProject, Set<IPath> sourcePaths,
+			IClasspathEntry entry) throws JavaModelException,
+			MalformedURLException {
+		IPath path = entry.getOutputLocation();
+		if (path == null) {
+			path = jProject.getOutputLocation();
+		}
+		File file = getRawLocationFile(path);
+		if (file.exists()) {
+			URLs.add(file.toURI().toURL());
+		}
+		sourcePaths.add(entry.getPath());
+	}
+
+	private void addContainerPaths(IJavaProject jProject,
+			Set<IPath> classPaths, IClasspathEntry entry, Set<IPath> sourcePaths)
+			throws JavaModelException, MalformedURLException {
+		IClasspathEntry[] resLibs = JavaCore
+				.getClasspathContainer(entry.getPath(),
+						jProject).getClasspathEntries();
+		for (int j = 0; j < resLibs.length; j++) {
+			if (resLibs[j].getEntryKind() == IClasspathEntry.CPE_PROJECT) {
+				addProjectPaths(classPaths, resLibs[j]);
+			} else if (resLibs[j].getEntryKind() == IClasspathEntry.CPE_CONTAINER) {
+				addContainerPaths(jProject, classPaths, resLibs[j], sourcePaths);
+			} else if (resLibs[j].getEntryKind() == IClasspathEntry.CPE_LIBRARY) {
+				addClassPath(classPaths, resLibs[j]);
+			} else if (resLibs[j].getEntryKind() == IClasspathEntry.CPE_SOURCE) {
+				addSourcePaths(jProject, sourcePaths, resLibs[j]);
+			}
+		}
+	}
+
+	private void addProjectPaths(Set<IPath> classPaths, IClasspathEntry entry) {
+		IClasspathEntry projectEntry = JavaCore
+				.getResolvedClasspathEntry(entry);
+		IPath path = projectEntry.getPath();
+		String name = path.segment(0);
+		IProject project = ResourcesPlugin.getWorkspace().getRoot()
+				.getProject(name);
+		if (project.exists()) {
+			IJavaProject javaProject = JavaCore.create(project);
+			if (javaProject.exists() && !dependentProjects.contains(javaProject)) {
+				dependentProjects.add(javaProject);
+				classPaths.addAll(getJarPaths(javaProject));
+			}
+		}
+	}
+
+	private void addClassPath(Set<IPath> classPaths, IClasspathEntry resLibs) {
 		IPath path = resLibs.getPath();
 		String ls = path.lastSegment();
 		if (ls != null && ls.length() > 0) {
