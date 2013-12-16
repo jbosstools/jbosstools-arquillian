@@ -109,7 +109,7 @@ public class ArquillianCoreActivator implements BundleActivator {
 						@Override
 						public boolean visit(IResourceDelta delta) throws CoreException {
 							IResource resource = delta.getResource();
-							if (resource instanceof IFile && delta.getKind() == IResourceDelta.REMOVED) {
+							if (resource instanceof IFile && (delta.getKind() == IResourceDelta.REMOVED || delta.getKind() == IResourceDelta.CHANGED) ) {
 								DependencyCache.removeDependencies(resource);
 								return false;
 							}

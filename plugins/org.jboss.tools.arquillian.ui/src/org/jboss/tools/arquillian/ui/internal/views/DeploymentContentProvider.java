@@ -61,7 +61,7 @@ public class DeploymentContentProvider implements ITreeContentProvider {
 				}
 				List<ArquillianZipEntry> entries = new ArrayList<ArquillianZipEntry>();
 				for (File archive:archives) {
-					entries.add(new ArquillianZipEntry(archive));
+					entries.add(new ArquillianZipEntry(archive, cu.getJavaProject()));
 				}
 				return entries.toArray(new ArquillianZipEntry[0]);
 			}
