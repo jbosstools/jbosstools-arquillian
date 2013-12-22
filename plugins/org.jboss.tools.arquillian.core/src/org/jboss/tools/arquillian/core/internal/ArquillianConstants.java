@@ -117,4 +117,9 @@ public class ArquillianConstants {
 
 	public static final String ARCHIVE_EXTENSION = "archiveExtension"; //$NON-NLS-1$
 	
+	public static final String JAR = "jar"; //$NON-NLS-1$
+	public static final String WAR = "war"; //$NON-NLS-1$
+	public static final String EAR = "ear"; //$NON-NLS-1$
+	public static final String RAR = "rar"; //$NON-NLS-1$
+
 }

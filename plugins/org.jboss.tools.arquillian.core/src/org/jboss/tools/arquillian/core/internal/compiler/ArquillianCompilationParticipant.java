@@ -45,7 +45,6 @@ import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.compiler.CategorizedProblem;
 import org.eclipse.jdt.core.compiler.CharOperation;
 import org.eclipse.jdt.core.compiler.CompilationParticipant;
-import org.eclipse.jdt.core.compiler.IProblem;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.ASTVisitor;
@@ -58,15 +57,14 @@ import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.QualifiedName;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.StringLiteral;
-import org.eclipse.jdt.internal.compiler.CompilationResult;
 import org.eclipse.jdt.internal.compiler.lookup.TypeConstants;
-import org.eclipse.jdt.internal.core.builder.AbstractImageBuilder;
 import org.eclipse.jdt.internal.core.builder.BuildNotifier;
 import org.eclipse.jdt.internal.core.builder.JavaBuilder;
-import org.eclipse.jdt.internal.core.util.Messages;
 import org.eclipse.jdt.internal.core.util.Util;
 import org.jboss.tools.arquillian.core.ArquillianCoreActivator;
 import org.jboss.tools.arquillian.core.internal.ArquillianConstants;
+import org.jboss.tools.arquillian.core.internal.archives.Archive;
+import org.jboss.tools.arquillian.core.internal.archives.Entry;
 import org.jboss.tools.arquillian.core.internal.dependencies.DependencyCache;
 import org.jboss.tools.arquillian.core.internal.dependencies.DependencyType;
 import org.jboss.tools.arquillian.core.internal.dependencies.TypeLocation;
@@ -75,7 +73,8 @@ import org.jboss.tools.arquillian.core.internal.util.ArquillianUtility;
 
 public class ArquillianCompilationParticipant extends CompilationParticipant {
 
-    private ArquillianNameEnvironment nameEnvironment;
+    private static final String WEB_INF_CLASSES = "WEB-INF.classes."; //$NON-NLS-1$
+	private ArquillianNameEnvironment nameEnvironment;
     private ClasspathMultiDirectory[] sourceLocations;
     private BuildNotifier notifier;
     private List problemSourceFiles;
@@ -165,7 +164,7 @@ public class ArquillianCompilationParticipant extends CompilationParticipant {
 				}
 				ICompilationUnit unit = (ICompilationUnit) element;
 				DependencyCache.getDependencies().remove(unit);
-				List<File> archives = getArchives(sourceFile, project);
+				List<Archive> archives = ArquillianSearchEngine.getDeploymentArchivesNew(ArquillianSearchEngine.getType(sourceFile), true); 
 				if (archives == null) {
 					continue;
 				}
@@ -173,8 +172,8 @@ public class ArquillianCompilationParticipant extends CompilationParticipant {
             	Map<File,JarFile> jarFiles = new HashMap<File, JarFile>();
             	Integer severity = ArquillianUtility.getSeverity(preference);
 				for (DependencyType type : dependencies) {
-					if (!getDeployment(type, archives, jarFiles)) {
-						boolean direct = DependencyCache.getDependencies().get(unit).contains(type);
+					if (!getDeployment(type, archives)) {
+						boolean direct = DependencyCache.getDependencies().get(unit) != null && DependencyCache.getDependencies().get(unit).contains(type);
 						if (direct) {
 							String message = "The " + type.getName() + " type is not included in any deployment.";
 							for (TypeLocation location : type.getLocations()) {
@@ -221,7 +220,38 @@ public class ArquillianCompilationParticipant extends CompilationParticipant {
         }
     }
 
-    private boolean getDeployment(DependencyType type, List<File> archives, Map<File, JarFile> jarFiles) {
+    private boolean getDeployment(DependencyType type, List<Archive> archives) {
+    	if (type == null || archives == null || archives.size() <= 0) {
+    		return false;
+    	}
+    	for (Archive archive:archives) {
+    		String name = type.getName();
+    		if (name == null || archive == null) {
+    			return false;
+    		}
+    		
+    		for (Entry entry:archive.getEntries()) {
+    			if (!entry.isValid() || entry.isDirectory()) {
+    				continue;
+    			}
+    			String fqn = entry.getFullyQualifiedName();
+    			if (fqn == null) {
+    				continue;
+    			}
+    			if (ArquillianConstants.WAR.equals(archive.getType()) &&
+    					fqn.startsWith(WEB_INF_CLASSES)) {
+    				fqn = fqn.substring(WEB_INF_CLASSES.length());
+    			}
+    			if (name.equals(fqn)) {
+    				return true;
+    			}
+    			// FIXME WEB-INF/lib
+    		}
+    	}
+		return false;
+	}
+
+	private boolean getDeployment(DependencyType type, List<File> archives, Map<File, JarFile> jarFiles) {
     	if (type == null || archives == null || archives.size() <= 0) {
     		return false;
     	}
@@ -538,7 +568,7 @@ public class ArquillianCompilationParticipant extends CompilationParticipant {
 		return true;
 	}
  
-    public List<File> getArchives(SourceFile sourceFile, IJavaProject javaProject) {
+    private List<File> getArchives(SourceFile sourceFile, IJavaProject javaProject) {
 		IType type = ArquillianSearchEngine.getType(sourceFile);
         List<File> files = new ArrayList<File>();
         List<File> archives = null;

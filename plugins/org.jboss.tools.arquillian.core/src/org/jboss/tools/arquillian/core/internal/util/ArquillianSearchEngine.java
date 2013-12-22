@@ -87,8 +87,10 @@ import org.eclipse.jface.operation.IRunnableContext;
 import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.jboss.tools.arquillian.core.ArquillianCoreActivator;
 import org.jboss.tools.arquillian.core.internal.ArquillianConstants;
+import org.jboss.tools.arquillian.core.internal.archives.Archive;
+import org.jboss.tools.arquillian.core.internal.archives.ArchiveContainer;
+import org.jboss.tools.arquillian.core.internal.archives.ArchiveLocation;
 import org.jboss.tools.arquillian.core.internal.compiler.SourceFile;
-import org.jboss.tools.arquillian.core.internal.natures.ArquillianNature;
 import org.jboss.tools.arquillian.core.internal.util.xpl.ArquillianSecurityException;
 import org.jboss.tools.arquillian.core.internal.util.xpl.ArquillianSecurityManager;
 import org.osgi.framework.Bundle;
@@ -662,6 +664,64 @@ public class ArquillianSearchEngine {
 		return  false;
 	}
 	
+	public static List<Archive> getDeploymentArchivesNew(IType type, boolean create) {
+		List<Archive> archives = new ArrayList<Archive>();
+		if (type == null || !hasDeploymentMethod(type)) {
+			return archives;
+		}
+		String projectName = null;
+		ICompilationUnit cu = type.getCompilationUnit();
+		IJavaProject javaProject = null;
+		if (cu != null) {
+			IResource resource = cu.getResource();
+			if (resource != null) {
+				IProject project = resource.getProject();
+				if (project != null) {
+					projectName = project.getName();
+					javaProject = JavaCore.create(project);
+				}
+			}
+		}
+
+		if (projectName == null) {
+			ArquillianCoreActivator.logWarning("Cannot find any project for the " + type.getElementName() + "type.");
+			return archives;
+		}
+		String fqn = type.getFullyQualifiedName();
+		try {
+			List<IMethodBinding> deploymentMethods = getDeploymentMethods(type);
+			for (IMethodBinding deploymentMethod : deploymentMethods) {
+				String name = deploymentMethod.getName();
+				ArchiveLocation location = new ArchiveLocation(projectName, fqn, name);
+				Archive archive = ArchiveContainer.getArchive(location);
+				if (archive == null || (create && archive.getType() == null)) {
+					SecurityManager orig = System.getSecurityManager();
+					try {
+						System.setSecurityManager(new ArquillianSecurityManager(orig, Thread.currentThread()));
+						archive = createArchive(javaProject, type, deploymentMethod, location);
+						if (archive != null) {
+							ArchiveContainer.putArchive(location, archive);
+						} else {
+							archive = new Archive(null, location, null);
+							ArchiveContainer.putArchive(location, archive);
+						}
+					} catch (ArquillianSecurityException e) {
+						ArquillianCoreActivator.log(e);
+					} finally {
+						System.setSecurityManager(orig);
+					}
+				} 
+				if (archive != null) {
+					archives.add(archive);
+				}
+			}
+		} catch (JavaModelException e) {
+			ArquillianCoreActivator.log(e);
+		}
+
+		return archives;
+	}
+
 	public static List<File> getDeploymentArchives(IType type, boolean create) {
 		List<File> archives = new ArrayList<File>();
 		if (type == null || !hasDeploymentMethod(type)) {
@@ -733,6 +793,67 @@ public class ArquillianSearchEngine {
 		}
 
 		return archives;
+	}
+
+	private static Archive createArchive(IJavaProject javaProject, IType type, IMethodBinding deploymentMethod,
+			ArchiveLocation location) {
+		String className = type.getFullyQualifiedName();
+		String methodName = deploymentMethod.getName();
+		ClassLoader loader = ArquillianCoreActivator.getDefault().getClassLoader(javaProject);
+		ClassLoader oldLoader = Thread.currentThread().getContextClassLoader();
+		try {
+			Thread.currentThread().setContextClassLoader(loader);
+			Class<?> clazz = Class.forName(className, true, loader);
+			Object object = clazz.newInstance();
+			Method method = clazz.getMethod(methodName, new Class[0]);
+			
+			Object archiveObject = method.invoke(object, new Object[0]);
+			Class<?> archiveClass = archiveObject.getClass();
+			
+			Method toStringMethod = archiveClass.getMethod("toString", new Class[] { boolean.class }); //$NON-NLS-1$
+			Object toStringObject = toStringMethod.invoke(archiveObject, new Object[] {Boolean.TRUE});
+			if (toStringObject instanceof String) {
+				String description = (String) toStringObject;
+				Class<?> jarClass = Class.forName(ArquillianUtility.ORG_JBOSS_SHRINKWRAP_API_SPEC_JAVA_ARCHIVE, true, loader);
+				String archiveType = null;
+				if (jarClass.isAssignableFrom(archiveClass)) {
+					archiveType = ArquillianConstants.JAR;
+				} else {
+					Class<?> warClass = Class.forName(ArquillianUtility.ORG_JBOSS_SHRINKWRAP_API_SPEC_WEB_ARCHIVE, true, loader);
+					if (warClass.isAssignableFrom(archiveClass)) {
+						archiveType = ArquillianConstants.WAR;
+					}
+				}
+				Archive archive = new Archive(description, location, archiveType);
+				return archive;
+			}
+		} catch (OutOfMemoryError e) {
+			throw new OutOfMemoryError(e.getLocalizedMessage());
+		} catch (InternalError e) {
+			throw new InternalError(e.getLocalizedMessage());
+		} catch (StackOverflowError e) {
+			throw new StackOverflowError(e.getLocalizedMessage());
+		} catch (UnknownError e) {
+			throw new UnknownError(e.getLocalizedMessage());
+		} catch (Throwable e) {
+			String message = e.getClass().getName() + ": " + e.getLocalizedMessage() + "(project=" + javaProject.getProject().getName() + ")"; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+			Throwable cause = e.getCause();
+			int i = 0;
+			while (cause != null && i++ < 5) {
+				message = cause.getClass().getName() + ": " + cause.getLocalizedMessage() + "(project=" + javaProject.getProject().getName() + ")"; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+				cause = cause.getCause();
+			}
+			ArquillianCoreActivator.logWarning(message);
+			try {
+				Integer severity = ArquillianUtility.getSeverity(ArquillianUtility.getPreference(ArquillianConstants.DEPLOYMENT_ARCHIVE_CANNOT_BE_CREATED));
+				createProblem(message, type, deploymentMethod, severity);
+			} catch (CoreException e1) {
+				ArquillianCoreActivator.log(e1);
+			}
+		} finally {
+			Thread.currentThread().setContextClassLoader(oldLoader);
+		}
+		return null;
 	}
 
 	private static File createArchive(IJavaProject javaProject, IType type, IMethodBinding deploymentMethod,

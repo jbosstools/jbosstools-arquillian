@@ -41,7 +41,6 @@ import org.junit.Test;
  * @author snjeza
  * 
  */
-@SuppressWarnings("restriction")
 public class DeployableContainerTest extends AbstractArquillianTest {
 
 	private static final String TEST_PROJECT_NAME = "testDeployableContainer";

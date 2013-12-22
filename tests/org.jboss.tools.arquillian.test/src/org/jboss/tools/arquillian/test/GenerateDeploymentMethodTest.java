@@ -108,7 +108,7 @@ public class GenerateDeploymentMethodTest extends AbstractArquillianTest {
 
 		@Override
 		public String getArchiveType() {
-			return ArquillianUIActivator.RAR;
+			return ArquillianConstants.RAR;
 		}
 
 		@Override

@@ -400,7 +400,7 @@
          </triggerPoints>
          <possibleChildren>
             <or>
-               <instanceof value="org.jboss.tools.arquillian.ui.internal.model.ArquillianZipEntry"/>  
+               <instanceof value="org.jboss.tools.arquillian.ui.internal.model.ArquillianArchiveEntry"/>  
             </or>
          </possibleChildren>
       </navigatorContent>
