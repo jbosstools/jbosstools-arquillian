@@ -42,7 +42,7 @@ import org.eclipse.ui.navigator.CommonNavigator;
 import org.eclipse.ui.navigator.CommonViewer;
 import org.jboss.tools.arquillian.core.ArquillianCoreActivator;
 import org.jboss.tools.arquillian.ui.ArquillianUIActivator;
-import org.jboss.tools.arquillian.ui.internal.model.ArquillianZipEntry;
+import org.jboss.tools.arquillian.ui.internal.model.ArquillianArchiveEntry;
 import org.jboss.tools.arquillian.ui.internal.utils.ArquillianUIUtil;
 
 /**
@@ -239,8 +239,8 @@ public class ArquillianView extends CommonNavigator {
 		}
 		StructuredSelection structured = (StructuredSelection) event.getSelection();
 		Object object = structured.getFirstElement();
-		if (object instanceof ArquillianZipEntry) {
-			ArquillianZipEntry element = (ArquillianZipEntry) object;
+		if (object instanceof ArquillianArchiveEntry) {
+			ArquillianArchiveEntry element = (ArquillianArchiveEntry) object;
 			if (element.isDirectory()) {
 				return false;
 			}

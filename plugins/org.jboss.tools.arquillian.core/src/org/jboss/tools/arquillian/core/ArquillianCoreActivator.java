@@ -45,6 +45,7 @@ import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.osgi.service.datalocation.Location;
 import org.eclipse.ui.preferences.ScopedPreferenceStore;
 import org.jboss.tools.arquillian.core.internal.ArquillianConstants;
+import org.jboss.tools.arquillian.core.internal.archives.ArchiveContainer;
 import org.jboss.tools.arquillian.core.internal.classpath.ArquillianClassLoader;
 import org.jboss.tools.arquillian.core.internal.dependencies.DependencyCache;
 import org.jboss.tools.arquillian.core.internal.launcher.ArquillianLaunchConfigurationDelegate;
@@ -100,8 +101,11 @@ public class ArquillianCoreActivator implements BundleActivator {
 					event.getType() == IResourceChangeEvent.PRE_CLOSE) {
 				remove(event);
 				DependencyCache.removeDependencies(event.getResource());
+				ArchiveContainer.remove(event.getResource());
 			} else if (event.getType() == IResourceChangeEvent.PRE_BUILD && event.getBuildKind() == IncrementalProjectBuilder.CLEAN_BUILD) {
 				remove(event);
+				DependencyCache.removeDependencies(event.getResource());
+				ArchiveContainer.remove(event.getResource());
 			} else if (event.getType() == IResourceChangeEvent.POST_CHANGE) {
 				try {
 					event.getDelta().accept(new IResourceDeltaVisitor() {
@@ -111,6 +115,7 @@ public class ArquillianCoreActivator implements BundleActivator {
 							IResource resource = delta.getResource();
 							if (resource instanceof IFile && (delta.getKind() == IResourceDelta.REMOVED || delta.getKind() == IResourceDelta.CHANGED) ) {
 								DependencyCache.removeDependencies(resource);
+								ArchiveContainer.remove(resource);
 								return false;
 							}
 							return true;
@@ -120,11 +125,6 @@ public class ArquillianCoreActivator implements BundleActivator {
 					ArquillianCoreActivator.log(e);
 				}
 			}
-		}
-
-		private void removeDependencyCache(IResourceChangeEvent event) {
-			IResource resource = event.getResource();
-			DependencyCache.removeDependencies(resource);
 		}
 
 		private void remove(IResourceChangeEvent event) {

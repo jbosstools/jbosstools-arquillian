@@ -10,7 +10,6 @@
  ************************************************************************************/
 package org.jboss.tools.arquillian.ui.internal.views;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,9 +17,9 @@ import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jface.viewers.ITreeContentProvider;
 import org.eclipse.jface.viewers.Viewer;
+import org.jboss.tools.arquillian.core.internal.archives.Archive;
 import org.jboss.tools.arquillian.core.internal.util.ArquillianSearchEngine;
-import org.jboss.tools.arquillian.core.internal.util.ArquillianUtility;
-import org.jboss.tools.arquillian.ui.internal.model.ArquillianZipEntry;
+import org.jboss.tools.arquillian.ui.internal.model.ArquillianArchiveEntry;
 
 /**
  * 
@@ -55,19 +54,19 @@ public class DeploymentContentProvider implements ITreeContentProvider {
 				}
 				//boolean create = !ArquillianUtility.isValidatorEnabled(cu.getJavaProject().getProject());
 				boolean create = false;
-				List<File> archives = ArquillianSearchEngine.getDeploymentArchives(type, create);
+				List<Archive> archives = ArquillianSearchEngine.getDeploymentArchivesNew(type, create);
 				if (archives == null || archives.size() <= 0) {
 					return null;
 				}
-				List<ArquillianZipEntry> entries = new ArrayList<ArquillianZipEntry>();
-				for (File archive:archives) {
-					entries.add(new ArquillianZipEntry(archive, cu.getJavaProject()));
+				List<ArquillianArchiveEntry> entries = new ArrayList<ArquillianArchiveEntry>();
+				for (Archive archive:archives) {
+					entries.add(new ArquillianArchiveEntry(archive, cu.getJavaProject()));
 				}
-				return entries.toArray(new ArquillianZipEntry[0]);
+				return entries.toArray(new ArquillianArchiveEntry[0]);
 			}
 		}
-		if (parentElement instanceof ArquillianZipEntry) {
-			ArquillianZipEntry entry = (ArquillianZipEntry) parentElement;
+		if (parentElement instanceof ArquillianArchiveEntry) {
+			ArquillianArchiveEntry entry = (ArquillianArchiveEntry) parentElement;
 			return entry.getChildren();
 		}
 		return null;
@@ -75,8 +74,8 @@ public class DeploymentContentProvider implements ITreeContentProvider {
 
 	@Override
 	public Object getParent(Object element) {
-		if (element instanceof ArquillianZipEntry) {
-			((ArquillianZipEntry) element).getParent();
+		if (element instanceof ArquillianArchiveEntry) {
+			((ArquillianArchiveEntry) element).getParent();
 		}
 		return null;
 	}

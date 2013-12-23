@@ -62,7 +62,6 @@ import org.eclipse.jdt.internal.compiler.parser.ScannerHelper;
 import org.eclipse.jdt.internal.corext.codemanipulation.StubUtility;
 import org.eclipse.jdt.internal.corext.util.CodeFormatterUtil;
 import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
-import org.eclipse.jdt.internal.corext.util.Strings;
 import org.eclipse.jdt.internal.junit.util.JUnitStubUtility;
 import org.eclipse.jdt.internal.junit.util.JUnitStubUtility.GenStubSettings;
 import org.eclipse.jdt.internal.ui.actions.SelectionConverter;
@@ -108,9 +107,8 @@ import org.jboss.tools.arquillian.core.internal.util.ArquillianUtility;
 import org.jboss.tools.arquillian.ui.ArquillianUIActivator;
 import org.jboss.tools.arquillian.ui.internal.launcher.ArquillianProperty;
 import org.jboss.tools.arquillian.ui.internal.launcher.AutoResizeTableLayout;
-import org.jboss.tools.arquillian.ui.internal.model.ArquillianZipEntry;
+import org.jboss.tools.arquillian.ui.internal.model.ArquillianArchiveEntry;
 import org.jboss.tools.arquillian.ui.internal.preferences.ContainerEditingSupport;
-import org.jboss.tools.arquillian.ui.internal.wizards.NewArquillianJUnitTestCaseDeploymentPage;
 import org.jboss.tools.arquillian.ui.internal.wizards.ProjectResource;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
@@ -225,7 +223,7 @@ public class ArquillianUIUtil {
 			}
 		}
 
-		String archiveType = ArquillianUIActivator.JAR;
+		String archiveType = ArquillianConstants.JAR;
 		String archiveName = ""; //$NON-NLS-1$
 		String deploymentName = null;
 		String deploymentOrder = null;
@@ -244,7 +242,7 @@ public class ArquillianUIUtil {
 			types = deploymentDescriptor.getTypes();
 			ProjectResource[] allResources = deploymentDescriptor.getResources();
 			for (ProjectResource resource : allResources) {
-				if (ArquillianUIActivator.WAR.equals(archiveType)
+				if (ArquillianConstants.WAR.equals(archiveType)
 						&& resource.isDeployAsWebInfResource()) {
 					webInfResources.add(resource.getPath().toString());
 				} else {
@@ -279,22 +277,22 @@ public class ArquillianUIUtil {
 		buffer.append(methodName);
 		buffer.append("()"); //$NON-NLS-1$
 		buffer.append(" {").append(delimiter); //$NON-NLS-1$
-		if (ArquillianUIActivator.JAR.equals(archiveType)) {
+		if (ArquillianConstants.JAR.equals(archiveType)) {
 			addImport(imports, importsRewrite,
 					ArquillianUtility.ORG_JBOSS_SHRINKWRAP_API_SPEC_JAVA_ARCHIVE);
 			buffer.append("JavaArchive archive = ShrinkWrap.create(JavaArchive.class"); //$NON-NLS-1$
 		}
-		if (ArquillianUIActivator.WAR.equals(archiveType)) {
+		if (ArquillianConstants.WAR.equals(archiveType)) {
 			addImport(imports, importsRewrite,
 					ArquillianUtility.ORG_JBOSS_SHRINKWRAP_API_SPEC_WEB_ARCHIVE);
 			buffer.append("WebArchive archive = ShrinkWrap.create(WebArchive.class"); //$NON-NLS-1$
 		}
-		if (ArquillianUIActivator.EAR.equals(archiveType)) {
+		if (ArquillianConstants.EAR.equals(archiveType)) {
 			addImport(imports, importsRewrite,
 					"org.jboss.shrinkwrap.api.spec.EnterpriseArchive"); //$NON-NLS-1$
 			buffer.append("EnterpriseArchive archive = ShrinkWrap.create(EnterpriseArchive.class"); //$NON-NLS-1$
 		}
-		if (ArquillianUIActivator.RAR.equals(archiveType)) {
+		if (ArquillianConstants.RAR.equals(archiveType)) {
 			addImport(imports, importsRewrite,
 					"org.jboss.shrinkwrap.api.spec.ResourceAdapterArchive"); //$NON-NLS-1$
 			buffer.append("ResourceAdapterArchive archive = ShrinkWrap.create(ResourceAdapterArchive.class"); //$NON-NLS-1$
@@ -351,11 +349,11 @@ public class ArquillianUIUtil {
 			buffer.append(" )"); //$NON-NLS-1$
 		}
 
-		if (addBeansXml && !ArquillianUIActivator.EAR.equals(archiveType)) {
+		if (addBeansXml && !ArquillianConstants.EAR.equals(archiveType)) {
 			addImport(imports, importsRewrite,
 					"org.jboss.shrinkwrap.api.asset.EmptyAsset"); //$NON-NLS-1$
 			buffer.append(delimiter);
-			if (ArquillianUIActivator.WAR.equals(archiveType)) {
+			if (ArquillianConstants.WAR.equals(archiveType)) {
 				buffer.append(".addAsWebInfResource(EmptyAsset.INSTANCE, \"beans.xml\")"); //$NON-NLS-1$
 			} else {
 				buffer.append(".addAsManifestResource(EmptyAsset.INSTANCE, \"beans.xml\")"); //$NON-NLS-1$
@@ -1038,8 +1036,8 @@ public class ArquillianUIUtil {
 					return resource.getProject();
 				}
 			} 
-			if (object instanceof ArquillianZipEntry) {
-				return ((ArquillianZipEntry)object).getProject().getProject();
+			if (object instanceof ArquillianArchiveEntry) {
+				return ((ArquillianArchiveEntry)object).getProject().getProject();
 			}
 		}
 		if (selection instanceof ITextSelection) {

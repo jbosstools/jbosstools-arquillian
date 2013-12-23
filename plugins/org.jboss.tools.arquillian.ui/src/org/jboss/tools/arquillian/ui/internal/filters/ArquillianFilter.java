@@ -25,7 +25,7 @@ import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.viewers.ViewerFilter;
 import org.jboss.tools.arquillian.core.internal.util.ArquillianSearchEngine;
 import org.jboss.tools.arquillian.ui.ArquillianUIActivator;
-import org.jboss.tools.arquillian.ui.internal.model.ArquillianZipEntry;
+import org.jboss.tools.arquillian.ui.internal.model.ArquillianArchiveEntry;
 
 /**
  * 
@@ -36,7 +36,7 @@ public class ArquillianFilter extends ViewerFilter {
 
 	@Override
 	public boolean select(Viewer viewer, Object parentElement, Object element) {
-		if (element instanceof ArquillianZipEntry) {
+		if (element instanceof ArquillianArchiveEntry) {
 			return true;
 		}
 		if (element instanceof IProject) {

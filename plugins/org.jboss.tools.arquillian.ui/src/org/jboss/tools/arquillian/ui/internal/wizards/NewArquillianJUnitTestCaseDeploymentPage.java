@@ -81,6 +81,7 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.Text;
+import org.jboss.tools.arquillian.core.internal.ArquillianConstants;
 import org.jboss.tools.arquillian.core.internal.dependencies.DependencyCache;
 import org.jboss.tools.arquillian.core.internal.dependencies.DependencyType;
 import org.jboss.tools.arquillian.ui.ArquillianUIActivator;
@@ -105,10 +106,10 @@ public class NewArquillianJUnitTestCaseDeploymentPage extends WizardPage impleme
 	private static final int RAR_INDEX = 3;
 	
 	private static String[] archiveTypes = { 
-		ArquillianUIActivator.JAR, 
-		ArquillianUIActivator.WAR, 
-		ArquillianUIActivator.EAR, 
-		ArquillianUIActivator.RAR };
+		ArquillianConstants.JAR, 
+		ArquillianConstants.WAR, 
+		ArquillianConstants.EAR, 
+		ArquillianConstants.RAR };
 	private Text methodNameText;
 	private Combo archiveTypeCombo;
 	private Button beansXmlButton;
@@ -230,13 +231,13 @@ public class NewArquillianJUnitTestCaseDeploymentPage extends WizardPage impleme
 						pomFile.getLocation().toFile(), new NullProgressMonitor());
 					Model model = mavenProject.getModel();
 					String packaging = model.getPackaging();
-					if (ArquillianUIActivator.WAR.equals(packaging)) {
+					if (ArquillianConstants.WAR.equals(packaging)) {
 						archiveTypeCombo.select(WAR_INDEX);
 					}
-					if (ArquillianUIActivator.EAR.equals(packaging)) {
+					if (ArquillianConstants.EAR.equals(packaging)) {
 						archiveTypeCombo.select(EAR_INDEX);
 					}
-					if (ArquillianUIActivator.RAR.equals(packaging)) {
+					if (ArquillianConstants.RAR.equals(packaging)) {
 						archiveTypeCombo.select(RAR_INDEX);
 					}
 				} catch (CoreException e1) {
@@ -406,7 +407,7 @@ public class NewArquillianJUnitTestCaseDeploymentPage extends WizardPage impleme
 		webinfColumn.getColumn().setText(columnHeaders[1]);
 		webinfColumn.getColumn().setResizable(false);
 		webinfColumn.getColumn().setMoveable(false);
-		if (ArquillianUIActivator.WAR.equals(archiveTypeCombo.getText())) {
+		if (ArquillianConstants.WAR.equals(archiveTypeCombo.getText())) {
 			webinfColumn.getColumn().setWidth(WEB_INF_RESOURCE_COLUMN_WIDTH);
 		} else {
 			webinfColumn.getColumn().setWidth(0);
@@ -757,7 +758,7 @@ public class NewArquillianJUnitTestCaseDeploymentPage extends WizardPage impleme
 	
 	private void refreshResourceViewer() {
 		if (resourcesViewer != null && !resourcesViewer.getControl().isDisposed()) {
-			if (ArquillianUIActivator.WAR.equals(archiveTypeCombo.getText())) {
+			if (ArquillianConstants.WAR.equals(archiveTypeCombo.getText())) {
 				webinfColumn.getColumn().setWidth(WEB_INF_RESOURCE_COLUMN_WIDTH);
 			} else {
 				webinfColumn.getColumn().setWidth(0);
@@ -786,7 +787,7 @@ public class NewArquillianJUnitTestCaseDeploymentPage extends WizardPage impleme
 
 		@Override
 		public Image getImage(Object element) {
-			if (element == null || !ArquillianUIActivator.WAR.equals(archiveTypeCombo.getText())) {
+			if (element == null || !ArquillianConstants.WAR.equals(archiveTypeCombo.getText())) {
 				return null;
 			}
 			ProjectResource resourceDeployment = (ProjectResource) element;

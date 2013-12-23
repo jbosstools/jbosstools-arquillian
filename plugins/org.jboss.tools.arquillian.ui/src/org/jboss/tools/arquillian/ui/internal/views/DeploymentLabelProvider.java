@@ -19,7 +19,7 @@ import org.eclipse.swt.graphics.Image;
 import org.eclipse.ui.ISharedImages;
 import org.eclipse.ui.PlatformUI;
 import org.jboss.tools.arquillian.ui.ArquillianUIActivator;
-import org.jboss.tools.arquillian.ui.internal.model.ArquillianZipEntry;
+import org.jboss.tools.arquillian.ui.internal.model.ArquillianArchiveEntry;
 /**
  * 
  * @author snjeza
@@ -49,8 +49,8 @@ public class DeploymentLabelProvider implements IStyledLabelProvider, ILabelProv
 
 	@Override
 	public String getText(Object element) {
-		if (element instanceof ArquillianZipEntry) {
-			String fullName = ((ArquillianZipEntry) element).getName();
+		if (element instanceof ArquillianArchiveEntry) {
+			String fullName = ((ArquillianArchiveEntry) element).getName();
 			if (fullName == null) {
 				return null;
 			}
@@ -70,8 +70,8 @@ public class DeploymentLabelProvider implements IStyledLabelProvider, ILabelProv
 	@Override
 	public Image getImage(Object element) {
 		Image image = null;
-		if (element instanceof ArquillianZipEntry) {
-			ArquillianZipEntry entry = (ArquillianZipEntry) element;
+		if (element instanceof ArquillianArchiveEntry) {
+			ArquillianArchiveEntry entry = (ArquillianArchiveEntry) element;
 			if (entry.isRoot()) {
 				ImageDescriptor descriptor = ArquillianUIActivator.imageDescriptorFromPlugin(ArquillianUIActivator.PLUGIN_ID, "icons/jar_obj.gif"); //$NON-NLS-1$
 				image = ArquillianUIActivator.getImage(descriptor);

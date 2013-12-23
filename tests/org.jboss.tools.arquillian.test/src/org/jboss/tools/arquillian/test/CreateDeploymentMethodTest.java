@@ -34,7 +34,6 @@ import org.eclipse.jdt.core.JavaModelException;
 import org.jboss.tools.arquillian.core.ArquillianCoreActivator;
 import org.jboss.tools.arquillian.core.internal.ArquillianConstants;
 import org.jboss.tools.arquillian.core.internal.util.ArquillianUtility;
-import org.jboss.tools.arquillian.ui.ArquillianUIActivator;
 import org.jboss.tools.arquillian.ui.internal.utils.ArquillianUIUtil;
 import org.jboss.tools.arquillian.ui.internal.utils.IDeploymentDescriptor;
 import org.jboss.tools.arquillian.ui.internal.wizards.ProjectResource;
@@ -70,7 +69,7 @@ public class CreateDeploymentMethodTest extends AbstractArquillianTest {
 
 	@Test
 	public void testCreateDeploymentMethod() throws CoreException {
-		IResource resource = createDeploymentMethod(ArquillianUIActivator.RAR);
+		IResource resource = createDeploymentMethod(ArquillianConstants.RAR);
 		IMarker[] projectMarkers = resource.findMarkers(
 				ArquillianConstants.MARKER_CLASS_ID, true, IResource.DEPTH_INFINITE);
 		assertTrue("Deployment method isn't created", projectMarkers.length == 0);		
@@ -112,7 +111,7 @@ public class CreateDeploymentMethodTest extends AbstractArquillianTest {
 	
 	@Test
 	public void testAddEmptyBeansXmlEAR() throws CoreException, IOException {
-		IResource resource = createDeploymentMethod(ArquillianUIActivator.EAR, true);
+		IResource resource = createDeploymentMethod(ArquillianConstants.EAR, true);
 		JobUtils.waitForIdle(1000);
 		assertTrue(resource instanceof IFile);
 		InputStream is = null;
@@ -133,7 +132,7 @@ public class CreateDeploymentMethodTest extends AbstractArquillianTest {
 	
 	@Test
 	public void testAddEmptyBeansXmlWAR() throws CoreException, IOException {
-		IResource resource = createDeploymentMethod(ArquillianUIActivator.WAR, true);
+		IResource resource = createDeploymentMethod(ArquillianConstants.WAR, true);
 		JobUtils.waitForIdle(1000);
 		assertTrue(resource instanceof IFile);
 		InputStream is = null;
@@ -155,7 +154,7 @@ public class CreateDeploymentMethodTest extends AbstractArquillianTest {
 	
 	@Test
 	public void testAddEmptyBeansXmlJAR() throws CoreException, IOException {
-		IResource resource = createDeploymentMethod(ArquillianUIActivator.JAR, true);
+		IResource resource = createDeploymentMethod(ArquillianConstants.JAR, true);
 		JobUtils.waitForIdle(1000);
 		assertTrue(resource instanceof IFile);
 		InputStream is = null;
