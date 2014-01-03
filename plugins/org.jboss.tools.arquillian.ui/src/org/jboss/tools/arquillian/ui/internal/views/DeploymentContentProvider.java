@@ -10,7 +10,6 @@
  ************************************************************************************/
 package org.jboss.tools.arquillian.ui.internal.views;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.jdt.core.ICompilationUnit;
@@ -18,8 +17,8 @@ import org.eclipse.jdt.core.IType;
 import org.eclipse.jface.viewers.ITreeContentProvider;
 import org.eclipse.jface.viewers.Viewer;
 import org.jboss.tools.arquillian.core.internal.archives.Archive;
+import org.jboss.tools.arquillian.core.internal.archives.IEntry;
 import org.jboss.tools.arquillian.core.internal.util.ArquillianSearchEngine;
-import org.jboss.tools.arquillian.ui.internal.model.ArquillianArchiveEntry;
 
 /**
  * 
@@ -28,21 +27,33 @@ import org.jboss.tools.arquillian.ui.internal.model.ArquillianArchiveEntry;
  */
 public class DeploymentContentProvider implements ITreeContentProvider {
 
+	/* (non-Javadoc)
+	 * @see org.eclipse.jface.viewers.IContentProvider#dispose()
+	 */
 	@Override
 	public void dispose() {
 		
 	}
 
+	/* (non-Javadoc)
+	 * @see org.eclipse.jface.viewers.IContentProvider#inputChanged(org.eclipse.jface.viewers.Viewer, java.lang.Object, java.lang.Object)
+	 */
 	@Override
 	public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
 		
 	}
 
+	/* (non-Javadoc)
+	 * @see org.eclipse.jface.viewers.ITreeContentProvider#getElements(java.lang.Object)
+	 */
 	@Override
 	public Object[] getElements(Object inputElement) {
 		return getChildren(inputElement);
 	}
 
+	/* (non-Javadoc)
+	 * @see org.eclipse.jface.viewers.ITreeContentProvider#getChildren(java.lang.Object)
+	 */
 	@Override
 	public Object[] getChildren(Object parentElement) {
 		if (parentElement instanceof ICompilationUnit) {
@@ -54,32 +65,37 @@ public class DeploymentContentProvider implements ITreeContentProvider {
 				}
 				//boolean create = !ArquillianUtility.isValidatorEnabled(cu.getJavaProject().getProject());
 				boolean create = false;
-				List<Archive> archives = ArquillianSearchEngine.getDeploymentArchivesNew(type, create);
+				List<Archive> archives = ArquillianSearchEngine.getDeploymentArchives(type, create);
 				if (archives == null || archives.size() <= 0) {
 					return null;
 				}
-				List<ArquillianArchiveEntry> entries = new ArrayList<ArquillianArchiveEntry>();
 				for (Archive archive:archives) {
-					entries.add(new ArquillianArchiveEntry(archive, cu.getJavaProject()));
+					archive.getChildren();
 				}
-				return entries.toArray(new ArquillianArchiveEntry[0]);
+				return archives.toArray(new IEntry[0]);
 			}
 		}
-		if (parentElement instanceof ArquillianArchiveEntry) {
-			ArquillianArchiveEntry entry = (ArquillianArchiveEntry) parentElement;
-			return entry.getChildren();
+		if (parentElement instanceof IEntry) {
+			IEntry entry = (IEntry) parentElement;
+			return entry.getChildren().toArray(new IEntry[0]);
 		}
 		return null;
 	}
 
+	/* (non-Javadoc)
+	 * @see org.eclipse.jface.viewers.ITreeContentProvider#getParent(java.lang.Object)
+	 */
 	@Override
 	public Object getParent(Object element) {
-		if (element instanceof ArquillianArchiveEntry) {
-			((ArquillianArchiveEntry) element).getParent();
+		if (element instanceof IEntry) {
+			((IEntry) element).getParent();
 		}
 		return null;
 	}
 
+	/* (non-Javadoc)
+	 * @see org.eclipse.jface.viewers.ITreeContentProvider#hasChildren(java.lang.Object)
+	 */
 	@Override
 	public boolean hasChildren(Object element) {
 		Object[] elements = getChildren(element);

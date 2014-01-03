@@ -11,10 +11,9 @@
 
 package org.jboss.tools.arquillian.core.internal.util;
 
-import java.io.File;
-import java.io.FileFilter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -25,7 +24,6 @@ import java.util.List;
 import java.util.Set;
 
 import org.codehaus.plexus.util.IOUtil;
-import org.eclipse.core.internal.runtime.InternalPlatform;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.IProject;
@@ -90,10 +88,8 @@ import org.jboss.tools.arquillian.core.internal.ArquillianConstants;
 import org.jboss.tools.arquillian.core.internal.archives.Archive;
 import org.jboss.tools.arquillian.core.internal.archives.ArchiveContainer;
 import org.jboss.tools.arquillian.core.internal.archives.ArchiveLocation;
-import org.jboss.tools.arquillian.core.internal.compiler.SourceFile;
 import org.jboss.tools.arquillian.core.internal.util.xpl.ArquillianSecurityException;
 import org.jboss.tools.arquillian.core.internal.util.xpl.ArquillianSecurityManager;
-import org.osgi.framework.Bundle;
 
 /**
  * 
@@ -102,6 +98,7 @@ import org.osgi.framework.Bundle;
  */
 public class ArquillianSearchEngine {
 
+	private static final String ORG_JBOSS_SHRINKWRAP_API_ARCHIVE = "org.jboss.shrinkwrap.api.Archive"; //$NON-NLS-1$
 	private static final String ARCHIVE_WAR = "archive.war"; //$NON-NLS-1$
 	private static final String ARCHIVE_JAR = "archive.jar"; //$NON-NLS-1$
 	private static final String VALUE = "value"; //$NON-NLS-1$
@@ -594,27 +591,7 @@ public class ArquillianSearchEngine {
 		return true;
 	}
 
-	public static boolean hasDeploymentMethod(SourceFile sourceFile,
-			IJavaProject project) {
-		IType type = getType(sourceFile);
-		if (type == null) {
-			return false;
-		}
-		return hasDeploymentMethod(type);
-	}
-
-	public static IType getType(SourceFile sourceFile) {
-		IFile file = sourceFile.resource;
-		IJavaElement element = JavaCore.create(file);
-		if (!(element instanceof ICompilationUnit)) {
-			return null;
-		}
-		ICompilationUnit cu = (ICompilationUnit) element;
-		IType type = cu.findPrimaryType();
-		return type;
-	}
-
-	private static boolean hasDeploymentMethod(IType type) {
+	public static boolean hasDeploymentMethod(IType type) {
 		if (type == null) {
 			return false;
 		}
@@ -625,10 +602,8 @@ public class ArquillianSearchEngine {
 			return false;
 		}
 	}
-	
-	public static boolean hasTestMethod(SourceFile sourceFile,
-			IJavaProject project) {
-		IType type = getType(sourceFile);
+
+	public static boolean hasTestMethod(IType type) {
 		try {
 			ITypeBinding binding = getTypeBinding(type);
 			return Annotation.TEST.annotatesAtLeastOneMethod(binding);
@@ -664,7 +639,7 @@ public class ArquillianSearchEngine {
 		return  false;
 	}
 	
-	public static List<Archive> getDeploymentArchivesNew(IType type, boolean create) {
+	public static List<Archive> getDeploymentArchives(IType type, boolean create) {
 		List<Archive> archives = new ArrayList<Archive>();
 		if (type == null || !hasDeploymentMethod(type)) {
 			return archives;
@@ -694,7 +669,7 @@ public class ArquillianSearchEngine {
 				String name = deploymentMethod.getName();
 				ArchiveLocation location = new ArchiveLocation(projectName, fqn, name);
 				Archive archive = ArchiveContainer.getArchive(location);
-				if (archive == null || (create && archive.getType() == null)) {
+				if (archive == null || (create && archive != null && archive.getDescription() == null)) {
 					SecurityManager orig = System.getSecurityManager();
 					try {
 						System.setSecurityManager(new ArquillianSecurityManager(orig, Thread.currentThread()));
@@ -722,79 +697,7 @@ public class ArquillianSearchEngine {
 		return archives;
 	}
 
-	public static List<File> getDeploymentArchives(IType type, boolean create) {
-		List<File> archives = new ArrayList<File>();
-		if (type == null || !hasDeploymentMethod(type)) {
-			return archives;
-		}
-		Bundle bundle = Platform.getBundle(ArquillianCoreActivator.PLUGIN_ID);
-		if (bundle == null) {
-			ArquillianCoreActivator.logWarning("The " + ArquillianCoreActivator.PLUGIN_ID + "bundle is invalid.");
-			return archives;
-		}
-		IPath stateLocation = InternalPlatform.getDefault().getStateLocation(
-				bundle, true);
-		String projectName = null;
-		ICompilationUnit cu = type.getCompilationUnit();
-		IJavaProject javaProject = null;
-		if (cu != null) {
-			IResource resource = cu.getResource();
-			if (resource != null) {
-				IProject project = resource.getProject();
-				if (project != null) {
-					projectName = project.getName();
-					javaProject = JavaCore.create(project);
-				}
-			}
-		}
-
-		if (projectName == null) {
-			ArquillianCoreActivator.logWarning("Cannot find any project for the " + type.getElementName() + "type.");
-			return archives;
-		}
-		IPath location = stateLocation.append(projectName);
-		location = location.append("arquillianDeploymentArchives"); //$NON-NLS-1$
-		String fqn = type.getFullyQualifiedName();
-		fqn = fqn.replace(".", "/");  //$NON-NLS-1$//$NON-NLS-2$
-		location = location.append(fqn);
-		try {
-			List<IMethodBinding> deploymentMethods = getDeploymentMethods(type);
-			for (IMethodBinding deploymentMethod : deploymentMethods) {
-				String name = deploymentMethod.getName();
-				IPath methodLocation = location.append(name);
-				File file = methodLocation.toFile();
-				if (!file.exists() && create) {
-					SecurityManager orig = System.getSecurityManager();
-					try {
-						System.setSecurityManager(new ArquillianSecurityManager(orig, Thread.currentThread()));
-						createArchive(javaProject, type, deploymentMethod, file);
-					} catch (ArquillianSecurityException e) {
-						ArquillianCoreActivator.log(e);
-					} finally {
-						System.setSecurityManager(orig);
-					}
-				}
-				if (file.isDirectory()) {
-					File[] files = file.listFiles(new FileFilter() {
-
-						@Override
-						public boolean accept(File pathname) {
-							return pathname.isFile()
-									&& pathname.getName().startsWith("archive"); //$NON-NLS-1$
-						}
-					});
-					if (files != null && files.length > 0 && files[0].isFile() && files[0].length() > 0) {
-						archives.add(files[0]);
-					}
-				}
-			}
-		} catch (JavaModelException e) {
-			ArquillianCoreActivator.log(e);
-		}
-
-		return archives;
-	}
-
+	
 	private static Archive createArchive(IJavaProject javaProject, IType type, IMethodBinding deploymentMethod,
 			ArchiveLocation location) {
 		String className = type.getFullyQualifiedName();
@@ -810,21 +713,19 @@ public class ArquillianSearchEngine {
 			Object archiveObject = method.invoke(object, new Object[0]);
 			Class<?> archiveClass = archiveObject.getClass();
 			
-			Method toStringMethod = archiveClass.getMethod("toString", new Class[] { boolean.class }); //$NON-NLS-1$
-			Object toStringObject = toStringMethod.invoke(archiveObject, new Object[] {Boolean.TRUE});
+			Class<?> formatterClass = Class.forName("org.jboss.arquillian.container.test.impl.client.deployment.tool.ToolingDeploymentFormatter", true, loader); //$NON-NLS-1$
+			
+			Constructor<?> constructor = formatterClass.getDeclaredConstructor(new Class[] {Class.class} );
+			
+			Object formatterObject = constructor.newInstance(new Object[] { clazz } );
+			
+			Class<?> formatter = Class.forName("org.jboss.shrinkwrap.api.formatter.Formatter", true, loader); //$NON-NLS-1$
+			
+			Method toStringMethod = archiveClass.getMethod("toString", new Class[] { formatter }); //$NON-NLS-1$
+			Object toStringObject = toStringMethod.invoke(archiveObject, new Object[] {formatterObject});
 			if (toStringObject instanceof String) {
 				String description = (String) toStringObject;
-				Class<?> jarClass = Class.forName(ArquillianUtility.ORG_JBOSS_SHRINKWRAP_API_SPEC_JAVA_ARCHIVE, true, loader);
-				String archiveType = null;
-				if (jarClass.isAssignableFrom(archiveClass)) {
-					archiveType = ArquillianConstants.JAR;
-				} else {
-					Class<?> warClass = Class.forName(ArquillianUtility.ORG_JBOSS_SHRINKWRAP_API_SPEC_WEB_ARCHIVE, true, loader);
-					if (warClass.isAssignableFrom(archiveClass)) {
-						archiveType = ArquillianConstants.WAR;
-					}
-				}
-				Archive archive = new Archive(description, location, archiveType);
+				Archive archive = new Archive(description, location, javaProject);
 				return archive;
 			}
 		} catch (OutOfMemoryError e) {
@@ -844,71 +745,9 @@ public class ArquillianSearchEngine {
 				cause = cause.getCause();
 			}
 			ArquillianCoreActivator.logWarning(message);
-			try {
-				Integer severity = ArquillianUtility.getSeverity(ArquillianUtility.getPreference(ArquillianConstants.DEPLOYMENT_ARCHIVE_CANNOT_BE_CREATED));
-				createProblem(message, type, deploymentMethod, severity);
-			} catch (CoreException e1) {
-				ArquillianCoreActivator.log(e1);
+			if (Platform.inDebugMode()) {
+				ArquillianCoreActivator.log(e);
 			}
-		} finally {
-			Thread.currentThread().setContextClassLoader(oldLoader);
-		}
-		return null;
-	}
-
-	private static File createArchive(IJavaProject javaProject, IType type, IMethodBinding deploymentMethod,
-			File file) {
-		String className = type.getFullyQualifiedName();
-		String methodName = deploymentMethod.getName();
-		ClassLoader loader = ArquillianCoreActivator.getDefault().getClassLoader(javaProject);
-		ClassLoader oldLoader = Thread.currentThread().getContextClassLoader();
-		try {
-			Thread.currentThread().setContextClassLoader(loader);
-			Class<?> clazz = Class.forName(className, true, loader);
-			Object object = clazz.newInstance();
-			Method method = clazz.getMethod(methodName, new Class[0]);
-			
-			Object archiveObject = method.invoke(object, new Object[0]);
-			Class<?> archiveClass = archiveObject.getClass();
-			
-			Class<?> exporterClass = Class.forName("org.jboss.shrinkwrap.api.exporter.ZipExporter", true, loader); //$NON-NLS-1$
-			Method asMethod = archiveClass.getMethod("as", new Class[] { Class.class }); //$NON-NLS-1$
-			Object asObject = asMethod.invoke(archiveObject, new Object[] {exporterClass});
-			Class<?> asClass = asObject.getClass();
-			Method exportToMethod = asClass.getMethod("exportTo", new Class[] {File.class, boolean.class }); //$NON-NLS-1$
-			Class<?> jarClass = Class.forName(ArquillianUtility.ORG_JBOSS_SHRINKWRAP_API_SPEC_JAVA_ARCHIVE, true, loader);
-			if (jarClass.isAssignableFrom(archiveClass)) {
-				File jarFile = new File(file, ARCHIVE_JAR);
-				file.mkdirs();
-				exportToMethod.invoke(asObject, new Object[] {jarFile, Boolean.TRUE});
-				return jarFile;
-			}
-			Class<?> warClass = Class.forName(ArquillianUtility.ORG_JBOSS_SHRINKWRAP_API_SPEC_WEB_ARCHIVE, true, loader);
-			if (warClass.isAssignableFrom(archiveClass)) {
-				File warFile = new File(file, ARCHIVE_WAR);
-				
-				file.mkdirs();
-				exportToMethod.invoke(asObject, new Object[] {warFile, Boolean.TRUE});
-				
-				return warFile;
-			}
-		} catch (OutOfMemoryError e) {
-			throw new OutOfMemoryError(e.getLocalizedMessage());
-		} catch (InternalError e) {
-			throw new InternalError(e.getLocalizedMessage());
-		} catch (StackOverflowError e) {
-			throw new StackOverflowError(e.getLocalizedMessage());
-		} catch (UnknownError e) {
-			throw new UnknownError(e.getLocalizedMessage());
-		} catch (Throwable e) {
-			String message = e.getClass().getName() + ": " + e.getLocalizedMessage() + "(project=" + javaProject.getProject().getName() + ")"; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-			Throwable cause = e.getCause();
-			int i = 0;
-			while (cause != null && i++ < 5) {
-				message = cause.getClass().getName() + ": " + cause.getLocalizedMessage() + "(project=" + javaProject.getProject().getName() + ")"; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-				cause = cause.getCause();
-			}
-			ArquillianCoreActivator.logWarning(message);
 			try {
 				Integer severity = ArquillianUtility.getSeverity(ArquillianUtility.getPreference(ArquillianConstants.DEPLOYMENT_ARCHIVE_CANNOT_BE_CREATED));
 				createProblem(message, type, deploymentMethod, severity);
@@ -1028,7 +867,7 @@ public class ArquillianSearchEngine {
 		if (returnType == null) {
 			return false;
 		}
-		if ("org.jboss.shrinkwrap.api.Archive".equals(returnType
+		if (ORG_JBOSS_SHRINKWRAP_API_ARCHIVE.equals(returnType
 				.getBinaryName())) {
 			return true;
 		}

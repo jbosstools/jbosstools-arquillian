@@ -1,0 +1,104 @@
+<?xml version="1.0"?>
+<deployment name="archive_ij.rar"
+	testclass="org.jboss.as.test.smoke.deployment.rar.tests.activation.IronJacamarActivationTestCase">
+	<asset type="Directory" path="/" />
+	<asset type="Directory" path="/META-INF" />
+	<asset type="ClassLoaderAsset" path="/META-INF/ironjacamar.xml"
+		source="org/jboss/as/test/smoke/deployment/rar/tests/activation/ironjacamar.xml" />
+	<asset type="StringAsset" path="/META-INF/MANIFEST.MF" />
+	<asset type="ClassLoaderAsset" path="/META-INF/ra.xml"
+		source="org/jboss/as/test/smoke/deployment/rar/tests/activation/ra.xml" />
+	<asset type="ArchiveAsset" path="/multiple.jar">
+		<asset type="Directory" path="/" />
+		<asset type="Directory" path="/org" />
+		<asset type="Directory" path="/org/jboss" />
+		<asset type="Directory" path="/org/jboss/as" />
+		<asset type="Directory" path="/org/jboss/as/test" />
+		<asset type="Directory" path="/org/jboss/as/test/integration" />
+		<asset type="Directory" path="/org/jboss/as/test/integration/management" />
+		<asset type="Directory" path="/org/jboss/as/test/integration/management/util" />
+		<asset type="ClassAsset"
+			path="/org/jboss/as/test/integration/management/util/MgmtOperationException.class"
+			source="org.jboss.as.test.integration.management.util.MgmtOperationException" />
+		<asset type="Directory" path="/org/jboss/as/test/smoke" />
+		<asset type="Directory" path="/org/jboss/as/test/smoke/deployment" />
+		<asset type="Directory" path="/org/jboss/as/test/smoke/deployment/rar" />
+		<asset type="ClassLoaderAsset"
+			path="/org/jboss/as/test/smoke/deployment/rar/MultipleConnectionFactory1Impl.class"
+			source="org/jboss/as/test/smoke/deployment/rar/MultipleConnectionFactory1Impl.class" />
+		<asset type="ClassLoaderAsset"
+			path="/org/jboss/as/test/smoke/deployment/rar/MultipleConnectionFactory1.class"
+			source="org/jboss/as/test/smoke/deployment/rar/MultipleConnectionFactory1.class" />
+		<asset type="ClassLoaderAsset"
+			path="/org/jboss/as/test/smoke/deployment/rar/MultipleResourceAdapter.class"
+			source="org/jboss/as/test/smoke/deployment/rar/MultipleResourceAdapter.class" />
+		<asset type="ClassLoaderAsset"
+			path="/org/jboss/as/test/smoke/deployment/rar/MultipleManagedConnectionFactory1.class"
+			source="org/jboss/as/test/smoke/deployment/rar/MultipleManagedConnectionFactory1.class" />
+		<asset type="ClassLoaderAsset"
+			path="/org/jboss/as/test/smoke/deployment/rar/Multiple2ManagedConnectionMetaData.class"
+			source="org/jboss/as/test/smoke/deployment/rar/Multiple2ManagedConnectionMetaData.class" />
+		<asset type="ClassLoaderAsset"
+			path="/org/jboss/as/test/smoke/deployment/rar/MultipleManagedConnectionFactory2.class"
+			source="org/jboss/as/test/smoke/deployment/rar/MultipleManagedConnectionFactory2.class" />
+		<asset type="ClassLoaderAsset"
+			path="/org/jboss/as/test/smoke/deployment/rar/MultipleResourceAdapter2.class"
+			source="org/jboss/as/test/smoke/deployment/rar/MultipleResourceAdapter2.class" />
+		<asset type="ClassLoaderAsset"
+			path="/org/jboss/as/test/smoke/deployment/rar/MultipleAdminObject1Impl.class"
+			source="org/jboss/as/test/smoke/deployment/rar/MultipleAdminObject1Impl.class" />
+		<asset type="ClassLoaderAsset"
+			path="/org/jboss/as/test/smoke/deployment/rar/MultipleAdminObject2Impl.class"
+			source="org/jboss/as/test/smoke/deployment/rar/MultipleAdminObject2Impl.class" />
+		<asset type="ClassLoaderAsset"
+			path="/org/jboss/as/test/smoke/deployment/rar/MultipleConnectionFactory2.class"
+			source="org/jboss/as/test/smoke/deployment/rar/MultipleConnectionFactory2.class" />
+		<asset type="Directory" path="/org/jboss/as/test/smoke/deployment/rar/tests" />
+		<asset type="Directory"
+			path="/org/jboss/as/test/smoke/deployment/rar/tests/activation" />
+		<asset type="ClassAsset"
+			path="/org/jboss/as/test/smoke/deployment/rar/tests/activation/IronJacamarActivationTestCase.class"
+			source="org.jboss.as.test.smoke.deployment.rar.tests.activation.IronJacamarActivationTestCase" />
+		<asset type="ClassLoaderAsset"
+			path="/org/jboss/as/test/smoke/deployment/rar/MultipleActivationSpec.class"
+			source="org/jboss/as/test/smoke/deployment/rar/MultipleActivationSpec.class" />
+		<asset type="ClassLoaderAsset"
+			path="/org/jboss/as/test/smoke/deployment/rar/MultipleConnection2.class"
+			source="org/jboss/as/test/smoke/deployment/rar/MultipleConnection2.class" />
+		<asset type="ClassLoaderAsset"
+			path="/org/jboss/as/test/smoke/deployment/rar/MultipleManagedConnection1.class"
+			source="org/jboss/as/test/smoke/deployment/rar/MultipleManagedConnection1.class" />
+		<asset type="ClassLoaderAsset"
+			path="/org/jboss/as/test/smoke/deployment/rar/MultipleConnection1.class"
+			source="org/jboss/as/test/smoke/deployment/rar/MultipleConnection1.class" />
+		<asset type="ClassLoaderAsset"
+			path="/org/jboss/as/test/smoke/deployment/rar/MultipleConnection1Impl.class"
+			source="org/jboss/as/test/smoke/deployment/rar/MultipleConnection1Impl.class" />
+		<asset type="ClassLoaderAsset"
+			path="/org/jboss/as/test/smoke/deployment/rar/MultipleManagedConnectionMetaData.class"
+			source="org/jboss/as/test/smoke/deployment/rar/MultipleManagedConnectionMetaData.class" />
+		<asset type="ClassLoaderAsset"
+			path="/org/jboss/as/test/smoke/deployment/rar/MultipleAdminObject1.class"
+			source="org/jboss/as/test/smoke/deployment/rar/MultipleAdminObject1.class" />
+		<asset type="ClassLoaderAsset"
+			path="/org/jboss/as/test/smoke/deployment/rar/MultipleAdminObject2.class"
+			source="org/jboss/as/test/smoke/deployment/rar/MultipleAdminObject2.class" />
+		<asset type="ClassLoaderAsset"
+			path="/org/jboss/as/test/smoke/deployment/rar/MultipleManagedConnection2.class"
+			source="org/jboss/as/test/smoke/deployment/rar/MultipleManagedConnection2.class" />
+		<asset type="ClassLoaderAsset"
+			path="/org/jboss/as/test/smoke/deployment/rar/MultipleConnectionFactory2Impl.class"
+			source="org/jboss/as/test/smoke/deployment/rar/MultipleConnectionFactory2Impl.class" />
+		<asset type="ClassLoaderAsset"
+			path="/org/jboss/as/test/smoke/deployment/rar/MultipleRaMetaData.class"
+			source="org/jboss/as/test/smoke/deployment/rar/MultipleRaMetaData.class" />
+		<asset type="ClassLoaderAsset"
+			path="/org/jboss/as/test/smoke/deployment/rar/MultipleConnection2Impl.class"
+			source="org/jboss/as/test/smoke/deployment/rar/MultipleConnection2Impl.class" />
+		<asset type="Directory" path="/org/jboss/staxmapper" />
+		<asset type="ClassAsset" path="/org/jboss/staxmapper/XMLElementReader.class"
+			source="org.jboss.staxmapper.XMLElementReader" />
+		<asset type="ClassAsset" path="/org/jboss/staxmapper/XMLElementWriter.class"
+			source="org.jboss.staxmapper.XMLElementWriter" />
+	</asset>
+</deployment>

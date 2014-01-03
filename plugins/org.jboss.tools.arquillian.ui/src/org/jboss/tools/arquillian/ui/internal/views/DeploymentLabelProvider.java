@@ -18,8 +18,9 @@ import org.eclipse.jface.viewers.StyledString;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.ui.ISharedImages;
 import org.eclipse.ui.PlatformUI;
+import org.jboss.tools.arquillian.core.internal.archives.Archive;
+import org.jboss.tools.arquillian.core.internal.archives.IEntry;
 import org.jboss.tools.arquillian.ui.ArquillianUIActivator;
-import org.jboss.tools.arquillian.ui.internal.model.ArquillianArchiveEntry;
 /**
  * 
  * @author snjeza
@@ -27,52 +28,66 @@ import org.jboss.tools.arquillian.ui.internal.model.ArquillianArchiveEntry;
  */
 public class DeploymentLabelProvider implements IStyledLabelProvider, ILabelProvider {
 
+	/* (non-Javadoc)
+	 * @see org.eclipse.jface.viewers.IBaseLabelProvider#addListener(org.eclipse.jface.viewers.ILabelProviderListener)
+	 */
 	@Override
 	public void addListener(ILabelProviderListener listener) {
 		
 	}
 
+	/* (non-Javadoc)
+	 * @see org.eclipse.jface.viewers.IBaseLabelProvider#dispose()
+	 */
 	@Override
 	public void dispose() {
 		
 	}
 
+	/* (non-Javadoc)
+	 * @see org.eclipse.jface.viewers.IBaseLabelProvider#isLabelProperty(java.lang.Object, java.lang.String)
+	 */
 	@Override
 	public boolean isLabelProperty(Object element, String property) {
 		return false;
 	}
 
+	/* (non-Javadoc)
+	 * @see org.eclipse.jface.viewers.IBaseLabelProvider#removeListener(org.eclipse.jface.viewers.ILabelProviderListener)
+	 */
 	@Override
 	public void removeListener(ILabelProviderListener listener) {
 		
 	}
 
+	/* (non-Javadoc)
+	 * @see org.eclipse.jface.viewers.ILabelProvider#getText(java.lang.Object)
+	 */
 	@Override
 	public String getText(Object element) {
-		if (element instanceof ArquillianArchiveEntry) {
-			String fullName = ((ArquillianArchiveEntry) element).getName();
-			if (fullName == null) {
-				return null;
-			}
-			String[] names = fullName.split("/"); //$NON-NLS-1$
-			if (names.length > 0) {
-				return names[names.length - 1];
-			}
+		if (element instanceof IEntry) {
+			return ((IEntry) element).getName();
 		}
 		return null;
 	}
 
+	/* (non-Javadoc)
+	 * @see org.eclipse.jface.viewers.DelegatingStyledCellLabelProvider.IStyledLabelProvider#getStyledText(java.lang.Object)
+	 */
 	@Override
 	public StyledString getStyledText(Object element) {
 		return new StyledString(getText(element));
 	}
 
+	/* (non-Javadoc)
+	 * @see org.eclipse.jface.viewers.DelegatingStyledCellLabelProvider.IStyledLabelProvider#getImage(java.lang.Object)
+	 */
 	@Override
 	public Image getImage(Object element) {
 		Image image = null;
-		if (element instanceof ArquillianArchiveEntry) {
-			ArquillianArchiveEntry entry = (ArquillianArchiveEntry) element;
-			if (entry.isRoot()) {
+		if (element instanceof IEntry) {
+			IEntry entry = (IEntry) element;
+			if (entry instanceof Archive) {
 				ImageDescriptor descriptor = ArquillianUIActivator.imageDescriptorFromPlugin(ArquillianUIActivator.PLUGIN_ID, "icons/jar_obj.gif"); //$NON-NLS-1$
 				image = ArquillianUIActivator.getImage(descriptor);
 			} else {

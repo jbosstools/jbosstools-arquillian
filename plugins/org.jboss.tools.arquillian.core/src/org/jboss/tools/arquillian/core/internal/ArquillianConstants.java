@@ -52,6 +52,8 @@ public class ArquillianConstants {
 	
 	public static final String MARKER_CLASS_NAME = "markerClassName"; //$NON-NLS-1$
 
+	public static final String MARKER_BASE_ID = "org.jboss.tools.arquillian.core.problem";  //$NON-NLS-1$
+	
 	public static final String MARKER_CLASS_ID = "org.jboss.tools.arquillian.core.problem.class";  //$NON-NLS-1$
 	
 	public static final String MARKER_RESOURCE_ID = "org.jboss.tools.arquillian.core.problem.resource";  //$NON-NLS-1$
@@ -121,5 +123,7 @@ public class ArquillianConstants {
 	public static final String WAR = "war"; //$NON-NLS-1$
 	public static final String EAR = "ear"; //$NON-NLS-1$
 	public static final String RAR = "rar"; //$NON-NLS-1$
+
+	public static final String FIRST_START = "firstStart"; //$NON-NLS-1$
 
 }

@@ -26,6 +26,7 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jface.viewers.DoubleClickEvent;
 import org.eclipse.jface.viewers.ISelection;
@@ -41,8 +42,9 @@ import org.eclipse.ui.ide.IDE;
 import org.eclipse.ui.navigator.CommonNavigator;
 import org.eclipse.ui.navigator.CommonViewer;
 import org.jboss.tools.arquillian.core.ArquillianCoreActivator;
+import org.jboss.tools.arquillian.core.internal.archives.Entry;
+import org.jboss.tools.arquillian.core.internal.archives.IEntry;
 import org.jboss.tools.arquillian.ui.ArquillianUIActivator;
-import org.jboss.tools.arquillian.ui.internal.model.ArquillianArchiveEntry;
 import org.jboss.tools.arquillian.ui.internal.utils.ArquillianUIUtil;
 
 /**
@@ -239,56 +241,57 @@ public class ArquillianView extends CommonNavigator {
 		}
 		StructuredSelection structured = (StructuredSelection) event.getSelection();
 		Object object = structured.getFirstElement();
-		if (object instanceof ArquillianArchiveEntry) {
-			ArquillianArchiveEntry element = (ArquillianArchiveEntry) object;
-			if (element.isDirectory()) {
+		if (object instanceof Entry) {
+			Entry element = (Entry) object;
+			if (element.getFullyQualifiedName() == null) {
 				return false;
 			}
-			String name = element.getName();
-			if (name == null) {
-				return false;
-			}
-			if (name.startsWith(WEB_INF_CLASSES)) {
-				name = name.substring(WEB_INF_CLASSES.length());
-			}
-			if (name.endsWith(CLASS)) {
-				name = name.replace(CLASS, JAVA);
-			}
-			IJavaProject project = element.getProject();
+			IJavaProject project = element.getJavaProject();
 			try {
-				IClasspathEntry[] entries = project.getRawClasspath();
-				for (IClasspathEntry entry:entries) {
-					if (entry.getEntryKind() == IClasspathEntry.CPE_SOURCE) {
-						IPath entryPath = entry.getPath();
-						IPath path = entryPath.append(name);
-						IResource resource = ResourcesPlugin.getWorkspace().getRoot().findMember(path);
-						if (resource instanceof IFile && resource.exists()) {
-							openFile(resource);
-							return true;
-						} else {
-							String n = name.replace(WEB_INF,""); //$NON-NLS-1$
-							path = entryPath.append(n);
-							resource = ResourcesPlugin.getWorkspace().getRoot().findMember(path);
-							if (resource instanceof IFile && resource.exists()) {
-								openFile(resource);
-								return true;
-							} else {
-								n = name.replace(META_INF,""); //$NON-NLS-1$
-								path = entryPath.append(n);
-								resource = ResourcesPlugin.getWorkspace().getRoot().findMember(path);
-								if (resource instanceof IFile && resource.exists()) {
-									openFile(resource);
-									return true;
-								}
-							}
-						}
-					}
+				IType type = project.findType(element.getFullyQualifiedName());
+				IResource resource  = type.getUnderlyingResource();
+				if (resource != null) {
+					openFile(resource);
 				}
-			} catch (JavaModelException e) {
-				ArquillianUIActivator.log(e);
 			} catch (PartInitException e) {
 				ArquillianUIActivator.log(e);
+			} catch (JavaModelException e) {
+				ArquillianUIActivator.log(e);
 			}
+//			try {
+//				IClasspathEntry[] entries = project.getRawClasspath();
+//				for (IClasspathEntry entry:entries) {
+//					if (entry.getEntryKind() == IClasspathEntry.CPE_SOURCE) {
+//						IPath entryPath = entry.getPath();
+//						IPath path = entryPath.append(name);
+//						IResource resource = ResourcesPlugin.getWorkspace().getRoot().findMember(path);
+//						if (resource instanceof IFile && resource.exists()) {
+//							openFile(resource);
+//							return true;
+//						} else {
+//							String n = name.replace(WEB_INF,""); //$NON-NLS-1$
+//							path = entryPath.append(n);
+//							resource = ResourcesPlugin.getWorkspace().getRoot().findMember(path);
+//							if (resource instanceof IFile && resource.exists()) {
+//								openFile(resource);
+//								return true;
+//							} else {
+//								n = name.replace(META_INF,""); //$NON-NLS-1$
+//								path = entryPath.append(n);
+//								resource = ResourcesPlugin.getWorkspace().getRoot().findMember(path);
+//								if (resource instanceof IFile && resource.exists()) {
+//									openFile(resource);
+//									return true;
+//								}
+//							}
+//						}
+//					}
+//				}
+//			} catch (JavaModelException e) {
+//				ArquillianUIActivator.log(e);
+//			} catch (PartInitException e) {
+//				ArquillianUIActivator.log(e);
+//			}
 		}
 		return false;
 	}
