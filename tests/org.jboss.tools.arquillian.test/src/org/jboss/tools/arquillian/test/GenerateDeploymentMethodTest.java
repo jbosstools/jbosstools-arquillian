@@ -27,7 +27,6 @@ import org.eclipse.jdt.core.JavaModelException;
 import org.jboss.tools.arquillian.core.ArquillianCoreActivator;
 import org.jboss.tools.arquillian.core.internal.ArquillianConstants;
 import org.jboss.tools.arquillian.core.internal.util.ArquillianUtility;
-import org.jboss.tools.arquillian.ui.ArquillianUIActivator;
 import org.jboss.tools.arquillian.ui.internal.commands.ArquillianPropertyTester;
 import org.jboss.tools.arquillian.ui.internal.utils.IDeploymentDescriptor;
 import org.jboss.tools.arquillian.ui.internal.wizards.ProjectResource;

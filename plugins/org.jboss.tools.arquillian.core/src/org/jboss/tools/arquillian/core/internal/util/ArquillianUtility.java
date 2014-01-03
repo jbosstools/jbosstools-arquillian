@@ -32,10 +32,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 import java.util.Properties;
 import java.util.Set;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.repository.ArtifactRepository;
@@ -49,6 +49,7 @@ import org.apache.maven.model.Plugin;
 import org.apache.maven.model.Profile;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.settings.Settings;
+import org.eclipse.core.resources.ICommand;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.IProject;
@@ -156,6 +157,8 @@ public class ArquillianUtility {
 	public static final String ORG_JBOSS_SHRINKWRAP_API_SPEC_JAVA_ARCHIVE = "org.jboss.shrinkwrap.api.spec.JavaArchive"; //$NON-NLS-1$
 	public static final String ORG_JBOSS_SHRINKWRAP_API_SPEC_ENTERPRISE_ARCHIVE = "org.jboss.shrinkwrap.api.spec.EnterpriseArchive"; //$NON-NLS-1$
 	public static final String ORG_JBOSS_SHRINKWRAP_API_SPEC_RESOURCEADAPTER_ARCHIVE = "org.jboss.shrinkwrap.api.spec.ResourceAdapterArchive"; //$NON-NLS-1$
+	
+	public static final String ARQUILLIAN_BUILDER_ID = "org.jboss.tools.arquillian.core.arquillianBuilder"; //$NON-NLS-1$
 		
 	public static String getDependencyVersion(MavenProject mavenProject,
 			String gid, String aid) {
@@ -924,11 +927,112 @@ public class ArquillianUtility {
 		newNatures[prevNatures.length] = ArquillianNature.ARQUILLIAN_NATURE_ID;
 		description.setNatureIds(newNatures);
 		project.setDescription(description, new NullProgressMonitor());
+		addBuilder(project);
 		if (updatePom) {
 			addArquillianSupport(project);
 		}
 	}
 	
+	public static void addBuilder(IProject project) {
+		if (project == null) {
+			return;
+		}
+		int javaIndex = -1;
+		int arquillianIndex = -1;
+		try {
+			IProjectDescription description = project.getDescription();
+			ICommand[] commands = description.getBuildSpec();
+			if (commands != null) {
+				for (int i = 0; i < commands.length; i++) {
+					ICommand command = commands[i];
+					String builderName = command.getBuilderName();
+					if (builderName == null) {
+						continue;
+					}
+
+					if (builderName.equals(ARQUILLIAN_BUILDER_ID)) {
+						arquillianIndex = i;
+					}
+					if (builderName.equals(JavaCore.BUILDER_ID)) {
+						javaIndex = i;
+					}
+				}
+			}
+
+			if (arquillianIndex > -1 && javaIndex > arquillianIndex) {
+				removeBuilder(project);
+				arquillianIndex = -1;
+				description = project.getDescription();
+				commands = description.getBuildSpec();
+			}
+			if (arquillianIndex == -1) {
+				ICommand newCommand = description.newCommand();
+				newCommand.setBuilderName(ARQUILLIAN_BUILDER_ID);
+
+				ICommand[] newCommands = null;
+				if (commands != null) {
+					newCommands = new ICommand[commands.length + 1];
+					System.arraycopy(commands, 0, newCommands, 0, commands.length);
+					newCommands[commands.length] = newCommand;
+				} else {
+					newCommands = new ICommand[1];
+					newCommands[0] = newCommand;
+				}
+				description.setBuildSpec(newCommands);
+
+				project.setDescription(description, null);
+			}
+		} catch (CoreException exc) {
+			return;
+		}
+	}
+
+	public static void removeArquillianSupport(IProject project) throws CoreException {
+		if (project == null || !project.hasNature(ArquillianNature.ARQUILLIAN_NATURE_ID)) {
+			return;
+		}
+		IProjectDescription description = project.getDescription();
+		String[] prevNatures = description.getNatureIds();
+		String[] newNatures = new String[prevNatures.length - 1];
+		int i = 0;
+		for (String prevNature : prevNatures) {
+			if (!ArquillianNature.ARQUILLIAN_NATURE_ID.equals(prevNature)) {
+				newNatures[i] = prevNature;
+				i++;
+			}
+		}
+		description.setNatureIds(newNatures);
+		project.setDescription(description, new NullProgressMonitor());
+		removeBuilder(project);
+	}
+	
+	private static void removeBuilder(IProject project) {
+		try {
+			IProjectDescription description = project.getDescription();
+			ICommand[] commands = description.getBuildSpec();
+			if (commands != null) {
+				List<ICommand> newCommands = new ArrayList<ICommand>();
+				boolean builderAdded = false;
+				for (int i = 0; i < commands.length; i++) {
+					ICommand command = commands[i];
+					String builderName = command.getBuilderName();
+					if (builderName.equals(ARQUILLIAN_BUILDER_ID)) {
+						builderAdded = true;
+						continue;
+					}
+					newCommands.add(command);
+				}
+				if (builderAdded) {
+					description.setBuildSpec(newCommands.toArray(new ICommand[0]));
+					project.setDescription(description, null);
+				}
+			}
+		} catch (CoreException e) {
+			// do nothing
+		}
+		
+	}
+
 	public static boolean exportFile(File file, File destination) {
 		ZipFile zipFile = null;
 		destination.mkdirs();

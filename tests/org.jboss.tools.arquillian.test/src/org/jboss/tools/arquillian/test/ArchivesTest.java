@@ -1,5 +1,5 @@
 /*************************************************************************************
- * Copyright (c) 2012 Red Hat, Inc. and others.
+ * Copyright (c) 2014 Red Hat, Inc. and others.
  * All rights reserved. This program and the accompanying materials 
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -10,14 +10,20 @@
  ************************************************************************************/
 package org.jboss.tools.arquillian.test;
 
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 import java.util.List;
+import java.util.Set;
 
+import org.codehaus.plexus.util.IOUtil;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.NullProgressMonitor;
+import org.eclipse.core.runtime.Platform;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaCore;
@@ -28,13 +34,15 @@ import org.eclipse.m2e.core.project.MavenUpdateRequest;
 import org.eclipse.m2e.core.project.ResolverConfiguration;
 import org.jboss.tools.arquillian.core.internal.ArquillianConstants;
 import org.jboss.tools.arquillian.core.internal.archives.Archive;
-import org.jboss.tools.arquillian.core.internal.archives.Entry;
+import org.jboss.tools.arquillian.core.internal.archives.ArchiveLocation;
+import org.jboss.tools.arquillian.core.internal.archives.IEntry;
 import org.jboss.tools.arquillian.core.internal.util.ArquillianSearchEngine;
 import org.jboss.tools.arquillian.core.internal.util.ArquillianUtility;
 import org.jboss.tools.test.util.JobUtils;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.osgi.framework.Bundle;
 
 /**
  * 
@@ -77,18 +85,30 @@ public class ArchivesTest extends AbstractArquillianTest {
 	}
 
 	@Test
-	public void testEntries() {
-		Entry entry = new Entry("02d7c314-bd82-467b-b309-7a574ca461fa.jar:");
-		assertFalse("The entry is valid", entry.isValid());
-		entry = new Entry("/META-INF/");
-		assertTrue("The entry isn't valid", entry.isValid());
-		assertTrue("The entry isn't a directory", entry.isDirectory());
-		entry = new Entry("/org/arquillian/example/PhraseBuilder.class");
-		assertTrue("The entry isn't valid", entry.isValid());
-		assertFalse("The entry is a directory", entry.isDirectory());
-		entry = new Entry("/PhraseBuilder.class");
-		assertTrue("The entry is valid", entry.isValid());
-		assertFalse("The entry is a directory", entry.isDirectory());
+	public void testEntries() throws IOException {
+		IProject project = getProject(TEST_PROJECT_NAME);
+		InputStream is = null;
+		try {
+			Bundle bundle = Platform.getBundle(ArquillianTestActivator.PLUGIN_ID);
+			URL url = bundle.getEntry("/projects/archive.xml");
+			is = url.openStream();
+			String description = IOUtil.toString(is);
+			ArchiveLocation location = new ArchiveLocation(project.getName(), "org.arquillian.eclipse.DependentClassTest", "createDeployment");
+			IJavaProject javaProject = JavaCore.create(project);
+			Archive archive = new Archive(description, location, javaProject );
+			Set<IEntry> entries = archive.getChildren();
+			assertEquals(entries.size(), 2);
+			assertTrue(archive.getFullyQuallifiedNames().contains("org.jboss.as.test.smoke.deployment.rar.MultipleConnectionFactory1"));
+		} finally {
+			if (is != null) {
+				try {
+					is.close();
+				} catch (Exception e) {
+					// ignore
+				}
+			}
+		}
+		
 	}
 	
 	@Test
@@ -96,7 +116,7 @@ public class ArchivesTest extends AbstractArquillianTest {
 		IProject project = getProject(TEST_PROJECT_NAME);
 		IJavaProject javaProject = JavaCore.create(project);
 		IType type = javaProject.findType("org.arquillian.example.GreeterTest");
-		List<Archive> archives = ArquillianSearchEngine.getDeploymentArchivesNew(type, true);
+		List<Archive> archives = ArquillianSearchEngine.getDeploymentArchives(type, true);
 		assertTrue("Archives haven't been configured", archives.size() > 0);
 		
 	}

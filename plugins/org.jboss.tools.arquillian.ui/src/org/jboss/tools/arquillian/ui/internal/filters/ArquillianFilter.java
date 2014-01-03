@@ -10,9 +10,6 @@
  ************************************************************************************/
 package org.jboss.tools.arquillian.ui.internal.filters;
 
-import java.util.HashSet;
-import java.util.Set;
-
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jdt.core.ICompilationUnit;
@@ -23,9 +20,10 @@ import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.viewers.ViewerFilter;
+import org.jboss.tools.arquillian.core.internal.archives.IEntry;
+import org.jboss.tools.arquillian.core.internal.natures.ArquillianNature;
 import org.jboss.tools.arquillian.core.internal.util.ArquillianSearchEngine;
 import org.jboss.tools.arquillian.ui.ArquillianUIActivator;
-import org.jboss.tools.arquillian.ui.internal.model.ArquillianArchiveEntry;
 
 /**
  * 
@@ -34,44 +32,58 @@ import org.jboss.tools.arquillian.ui.internal.model.ArquillianArchiveEntry;
  */
 public class ArquillianFilter extends ViewerFilter {
 
+	/* (non-Javadoc)
+	 * @see org.eclipse.jface.viewers.ViewerFilter#select(org.eclipse.jface.viewers.Viewer, java.lang.Object, java.lang.Object)
+	 */
 	@Override
 	public boolean select(Viewer viewer, Object parentElement, Object element) {
-		if (element instanceof ArquillianArchiveEntry) {
+		if (element instanceof IEntry) {
 			return true;
 		}
 		if (element instanceof IProject) {
-			IProject project = (IProject) element;
-			IJavaProject javaProject = JavaCore.create(project);
-			if (javaProject == null || !javaProject.exists()) {
-				return false;
+			try {
+				if ( ((IProject)element).hasNature(JavaCore.NATURE_ID)) {
+					IJavaProject javaProject = JavaCore.create((IProject) element);
+					return hasDeployments(javaProject);
+				}
+			} catch (CoreException e) {
+				// ignore
 			}
-			if (!ArquillianSearchEngine.hasArquillianType(javaProject)) {
-				return false;
-			}
-			
-			return hasDeplyments(javaProject);
 		}
-		if (element instanceof IPackageFragmentRoot) {
-			return hasDeplyments((IPackageFragmentRoot) element);
-		}
-		if (element instanceof IPackageFragment) {
-			return hasDeplyments((IPackageFragment) element);
-		}
-		if (element instanceof ICompilationUnit) {
-			return ArquillianSearchEngine.isArquillianJUnitTest((ICompilationUnit) element, true, false, false);
+		if (element instanceof IJavaElement) {
+			return hasDeployments((IJavaElement) element);
 		}
 		return false;
 	}
 
-	private boolean hasDeplyments(IJavaElement javaProject) {
-		Set<IJavaElement> result = new HashSet<IJavaElement>();
+	private boolean hasDeployments(IJavaElement element) {
 		try {
-			ArquillianSearchEngine.findTestsInContainer(javaProject, result , null, true, false, false);
-			return result.size() > 0;
+			if (element instanceof IJavaProject) {
+				return ((IJavaProject) element).getProject().hasNature(ArquillianNature.ARQUILLIAN_NATURE_ID);
+			}
+			if (element instanceof IPackageFragmentRoot) {
+				IJavaElement[] children = ((IPackageFragmentRoot)element).getChildren();
+				for (IJavaElement child:children) {
+					if (hasDeployments(child)) {
+						return true;
+					}
+				}
+			}
+			if (element instanceof IPackageFragment) {
+				ICompilationUnit[] units = ((IPackageFragment)element).getCompilationUnits();
+				for (ICompilationUnit unit:units) {
+					if (hasDeployments(unit)) {
+						return true;
+					}
+				}
+			}
+			if (element instanceof ICompilationUnit) {
+				return ArquillianSearchEngine.isArquillianJUnitTest((ICompilationUnit) element, true, false, false);
+			}
 		} catch (CoreException e) {
 			ArquillianUIActivator.log(e);
-			return false;
 		}
+		return false;
 	}
 
 }

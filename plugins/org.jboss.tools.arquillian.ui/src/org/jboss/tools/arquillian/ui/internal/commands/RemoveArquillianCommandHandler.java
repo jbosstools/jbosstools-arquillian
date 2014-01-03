@@ -17,6 +17,7 @@ import org.eclipse.core.resources.IProjectDescription;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.jboss.tools.arquillian.core.internal.natures.ArquillianNature;
+import org.jboss.tools.arquillian.core.internal.util.ArquillianUtility;
 import org.jboss.tools.arquillian.ui.ArquillianUIActivator;
 
 /**
@@ -31,22 +32,7 @@ public class RemoveArquillianCommandHandler extends ArquillianAbstractHandler {
 		IProject project = getProject(event);
 
 		try {
-			if (project == null || !project.hasNature(ArquillianNature.ARQUILLIAN_NATURE_ID)) {
-				// FIXME
-				return null;
-			}
-			IProjectDescription description = project.getDescription();
-			String[] prevNatures = description.getNatureIds();
-			String[] newNatures = new String[prevNatures.length - 1];
-			int i = 0;
-			for (String prevNature : prevNatures) {
-				if (!ArquillianNature.ARQUILLIAN_NATURE_ID.equals(prevNature)) {
-					newNatures[i] = prevNature;
-					i++;
-				}
-			}
-			description.setNatureIds(newNatures);
-			project.setDescription(description, new NullProgressMonitor());
+			ArquillianUtility.removeArquillianSupport(project);
 		} catch (CoreException e) {
 			ArquillianUIActivator.log(e);
 		}

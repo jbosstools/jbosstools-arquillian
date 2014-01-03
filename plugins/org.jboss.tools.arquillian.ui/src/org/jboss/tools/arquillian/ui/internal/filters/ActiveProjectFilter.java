@@ -11,13 +11,7 @@
 package org.jboss.tools.arquillian.ui.internal.filters;
 
 import org.eclipse.core.resources.IProject;
-import org.eclipse.core.resources.IResource;
-import org.eclipse.core.runtime.IAdaptable;
-import org.eclipse.jdt.core.ICompilationUnit;
-import org.eclipse.jdt.core.IType;
-import org.eclipse.jface.text.ITextSelection;
 import org.eclipse.jface.viewers.ISelection;
-import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.viewers.ViewerFilter;
 import org.eclipse.ui.IWorkbenchPage;
@@ -31,6 +25,9 @@ import org.jboss.tools.arquillian.ui.internal.utils.ArquillianUIUtil;
  */
 public class ActiveProjectFilter extends ViewerFilter {
 
+	/* (non-Javadoc)
+	 * @see org.eclipse.jface.viewers.ViewerFilter#select(org.eclipse.jface.viewers.Viewer, java.lang.Object, java.lang.Object)
+	 */
 	@Override
 	public boolean select(Viewer viewer, Object parentElement, Object element) {
 		if (element instanceof IProject) {

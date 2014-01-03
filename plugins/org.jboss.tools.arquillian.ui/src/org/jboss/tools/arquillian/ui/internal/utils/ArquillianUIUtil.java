@@ -102,12 +102,12 @@ import org.eclipse.ui.IWorkbenchWindow;
 import org.jboss.forge.arquillian.container.Container;
 import org.jboss.tools.arquillian.core.ArquillianCoreActivator;
 import org.jboss.tools.arquillian.core.internal.ArquillianConstants;
+import org.jboss.tools.arquillian.core.internal.archives.IEntry;
 import org.jboss.tools.arquillian.core.internal.util.ArquillianSearchEngine;
 import org.jboss.tools.arquillian.core.internal.util.ArquillianUtility;
 import org.jboss.tools.arquillian.ui.ArquillianUIActivator;
 import org.jboss.tools.arquillian.ui.internal.launcher.ArquillianProperty;
 import org.jboss.tools.arquillian.ui.internal.launcher.AutoResizeTableLayout;
-import org.jboss.tools.arquillian.ui.internal.model.ArquillianArchiveEntry;
 import org.jboss.tools.arquillian.ui.internal.preferences.ContainerEditingSupport;
 import org.jboss.tools.arquillian.ui.internal.wizards.ProjectResource;
 import org.w3c.dom.DOMException;
@@ -368,9 +368,9 @@ public class ArquillianUIUtil {
 		buffer.append(delimiter);
 		content = buffer.toString();
 
-		
-
-		if (icu != null) {
+		if (icu == null) {
+			type.createMethod(content, sibling, force, null);
+		} else {
 			TextEdit edit = importsRewrite.rewriteImports(null);
 			JavaModelUtil.applyEdit(importsRewrite.getCompilationUnit(), edit,
 					false, null);
@@ -1036,8 +1036,8 @@ public class ArquillianUIUtil {
 					return resource.getProject();
 				}
 			} 
-			if (object instanceof ArquillianArchiveEntry) {
-				return ((ArquillianArchiveEntry)object).getProject().getProject();
+			if (object instanceof IEntry) {
+				return ((IEntry)object).getJavaProject().getProject();
 			}
 		}
 		if (selection instanceof ITextSelection) {
