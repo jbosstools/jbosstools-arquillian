@@ -245,6 +245,9 @@ public class ArquillianCoreActivator implements BundleActivator {
 					IProject[] projects = ResourcesPlugin.getWorkspace().getRoot()
 							.getProjects();
 					for (IProject project : projects) {
+						if (monitor.isCanceled()) {
+							return Status.CANCEL_STATUS;
+						}
 						if (project.isAccessible() && project.isOpen() && project.hasNature(ArquillianNature.ARQUILLIAN_NATURE_ID)) {
 							ArquillianUtility.addBuilder(project);
 						}
