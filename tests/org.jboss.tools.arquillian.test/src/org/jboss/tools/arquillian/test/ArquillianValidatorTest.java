@@ -104,6 +104,7 @@ public class ArquillianValidatorTest extends AbstractArquillianTest {
 					ArquillianConstants.MARKER_CLASS_ID, true, IResource.DEPTH_INFINITE);
 			assertTrue("Arquillian markers are created", projectMarkers.length == 0);
 			setWorkspaceAutoBuild(true);
+			JobUtils.delay(1000);
 			JobUtils.waitForIdle();
 			projectMarkers = project.findMarkers(
 					ArquillianConstants.MARKER_CLASS_ID, true, IResource.DEPTH_INFINITE);
