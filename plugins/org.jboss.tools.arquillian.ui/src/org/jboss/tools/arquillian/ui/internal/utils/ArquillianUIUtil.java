@@ -12,6 +12,7 @@ package org.jboss.tools.arquillian.ui.internal.utils;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -834,7 +835,6 @@ public class ArquillianUIUtil {
 
 	private static IFile getNewFile(IJavaProject javaProject,
 			String arquillianProperties) throws CoreException {
-		IPath path = null;
 		IProject project = javaProject.getProject();
 		if (project.hasNature(IMavenConstants.NATURE_ID)) {
 			IFile pomFile = project.getFile(IMavenConstants.POM_FILE_NAME);
@@ -848,30 +848,34 @@ public class ArquillianUIUtil {
 			} else {
 				testDirectory = build.getTestSourceDirectory();
 			}
-			path = Path.fromOSString(testDirectory);
-			IPath workspacePath = ResourcesPlugin.getWorkspace().getRoot()
-					.getRawLocation();
-			path = path.makeRelativeTo(workspacePath).makeAbsolute();
-			IPath projectPath = javaProject.getPath();
-			path = path.makeRelativeTo(projectPath);
-			IFolder folder = javaProject.getProject().getFolder(path);
-			if (!folder.exists()) {
-				path = null;
+			File testDir = new File(testDirectory);
+			if (testDir.isDirectory()) {
+				File arquillianFile = new File(testDir, arquillianProperties);
+				IPath path = new Path(arquillianFile.getAbsolutePath());
+				IFile iFile = ResourcesPlugin.getWorkspace().getRoot().getFileForLocation(path);
+				if (!iFile.getParent().exists()) {
+					IPath projectPath = javaProject.getProject().getLocation();
+					IPath iFilePath = iFile.getLocation();
+					if (iFilePath.toString().startsWith(projectPath.toString())) {
+						String s = iFilePath.toString().substring(projectPath.toString().length());
+						path = new Path(s);
+						return javaProject.getProject().getFile(path);
+					}
+				}
+				return iFile;
 			}
 		}
-		if (path == null) {
-			IClasspathEntry[] rawClasspath = javaProject.getRawClasspath();
-			for (IClasspathEntry entry : rawClasspath) {
-				if (entry.getEntryKind() == IClasspathEntry.CPE_SOURCE) {
-					IPackageFragmentRoot[] roots = javaProject
-							.findPackageFragmentRoots(entry);
-					if (roots == null) {
-						continue;
-					}
-					for (IPackageFragmentRoot root : roots) {
-						path = root.getPath();
-						break;
-					}
+		IPath path = null;
+		IClasspathEntry[] rawClasspath = javaProject.getRawClasspath();
+		for (IClasspathEntry entry : rawClasspath) {
+			if (entry.getEntryKind() == IClasspathEntry.CPE_SOURCE) {
+				IPackageFragmentRoot[] roots = javaProject.findPackageFragmentRoots(entry);
+				if (roots == null) {
+					continue;
+				}
+				for (IPackageFragmentRoot root : roots) {
+					path = root.getPath();
+					break;
 				}
 			}
 		}
@@ -879,6 +883,11 @@ public class ArquillianUIUtil {
 			throw new CoreException(new Status(IStatus.ERROR, ArquillianUIActivator.PLUGIN_ID, "Invalid project"));
 		}
 		IFolder folder = javaProject.getProject().getFolder(path);
+		if (!folder.exists()) {
+			IPath projectPath = javaProject.getPath();
+			path = path.makeRelativeTo(projectPath);
+			folder = javaProject.getProject().getFolder(path);
+		}
 		return folder.getFile(arquillianProperties);
 	}
 

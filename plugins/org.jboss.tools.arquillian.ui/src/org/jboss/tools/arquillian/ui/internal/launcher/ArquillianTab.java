@@ -34,6 +34,7 @@ import org.eclipse.debug.core.ILaunchConfiguration;
 import org.eclipse.debug.core.ILaunchConfigurationWorkingCopy;
 import org.eclipse.debug.ui.AbstractLaunchConfigurationTab;
 import org.eclipse.debug.ui.ILaunchConfigurationTab;
+import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.dialogs.MessageDialog;
@@ -84,6 +85,7 @@ import org.eclipse.wst.server.core.IServerListener;
 import org.eclipse.wst.server.core.ServerCore;
 import org.eclipse.wst.server.core.ServerEvent;
 import org.jboss.tools.arquillian.core.internal.ArquillianConstants;
+import org.jboss.tools.arquillian.core.internal.natures.ArquillianNature;
 import org.jboss.tools.arquillian.core.internal.util.ArquillianUtility;
 import org.jboss.tools.arquillian.ui.ArquillianUIActivator;
 import org.jboss.tools.arquillian.ui.internal.utils.ArquillianUIUtil;
@@ -188,6 +190,9 @@ public class ArquillianTab extends AbstractLaunchConfigurationTab {
 				resourceChangeListener, IResourceChangeEvent.POST_BUILD);
 	}
 
+	/* (non-Javadoc)
+	 * @see org.eclipse.debug.ui.ILaunchConfigurationTab#createControl(org.eclipse.swt.widgets.Composite)
+	 */
 	@Override
 	public void createControl(Composite parent) {
 		Composite composite = new Composite(parent, SWT.NONE);
@@ -196,8 +201,8 @@ public class ArquillianTab extends AbstractLaunchConfigurationTab {
 		composite.setLayout(new GridLayout(1, true));
 		GridData gd = new GridData(SWT.FILL, SWT.FILL, true, true);
 		composite.setLayoutData(gd);
-		
 		composite.setFont(parent.getFont());
+		Dialog.applyDialogFont(composite);
 		
 		Group propertiesGroup = new Group(composite, SWT.NONE);
 		propertiesGroup.setLayout(new GridLayout(1, false));
@@ -291,6 +296,7 @@ public class ArquillianTab extends AbstractLaunchConfigurationTab {
 				ArquillianUtility.runAction(configuration, ArquillianConstants.ADD_ARQUILLIAN_PROFILES_COMMAND, true);
 			}
 		});
+		addProfilesButton.setEnabled(isArquillianProject(configuration));
 		if (mavenProfileExists()) {
 			selectProfilesButton = createButton(propertiesButtonComposite, ArquillianConstants.SELECT_MAVEN_PROFILES);
 			selectProfilesButton.addSelectionListener(new SelectionAdapter() {
@@ -300,6 +306,7 @@ public class ArquillianTab extends AbstractLaunchConfigurationTab {
 					ArquillianUtility.runAction(configuration, ArquillianConstants.SELECT_MAVEN_PROFILES_COMMAND, true);
 				}
 			});
+			selectProfilesButton.setEnabled(isArquillianProject(configuration));
 		} else {
 			new Label(propertiesButtonComposite, SWT.NONE);
 		}
@@ -425,7 +432,16 @@ public class ArquillianTab extends AbstractLaunchConfigurationTab {
 			}
 		});
 		
-		Dialog.applyDialogFont(composite);
+	}
+
+	private boolean isArquillianProject(ILaunchConfiguration conf) {
+		IJavaProject javaProject;
+		try {
+			javaProject = ArquillianUtility.getJavaProject(conf);
+			return javaProject != null && javaProject.getProject() != null && javaProject.getProject().isAccessible() && javaProject.getProject().hasNature(ArquillianNature.ARQUILLIAN_NATURE_ID);
+		} catch (CoreException e) {
+			return false;
+		}
 	}
 
 	private boolean mavenProfileExists() {
@@ -595,9 +611,12 @@ public class ArquillianTab extends AbstractLaunchConfigurationTab {
 		initializeFrom(configuration);
 	}
 
+	/* (non-Javadoc)
+	 * @see org.eclipse.debug.ui.ILaunchConfigurationTab#initializeFrom(org.eclipse.debug.core.ILaunchConfiguration)
+	 */
 	@Override
 	public void initializeFrom(ILaunchConfiguration configuration) {
-		if (propertiesViewer != null) {
+		if (propertiesViewer != null && isArquillianProject(configuration)) {
 			properties = ArquillianUIUtil
 					.getArquillianProperties(configuration);
 			propertiesViewer.setInput(properties);
@@ -605,6 +624,15 @@ public class ArquillianTab extends AbstractLaunchConfigurationTab {
 			updatePropertiesButton();
 		}
 		this.configuration = configuration;
+		updateButton(addProfilesButton);
+		updateButton(selectProfilesButton);
+		updateButton(testButton);
+	}
+
+	private void updateButton(Button button) {
+		if (button != null && !button.isDisposed()) {
+			button.setEnabled(isArquillianProject(configuration));
+		}
 	}
 
 	private void updatePropertiesButton() {
