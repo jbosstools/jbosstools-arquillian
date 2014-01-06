@@ -15,6 +15,8 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 import org.eclipse.core.resources.IProject;
@@ -528,8 +530,13 @@ public class ArquillianTab extends AbstractLaunchConfigurationTab {
 	private IServer[] getServers() {
 		removeServerListeners();
 		servers = ServerCore.getServers();
+		List<IServer> l = new ArrayList<IServer>();
+		for (IServer server:servers) {
+			if (server != null && server.getRuntime() != null && server.getRuntime().getLocation() != null)
+				l.add(server);
+		}
 		addServerListeners();
-		return servers;
+		return l.toArray(new IServer[0]);
 	}
 
 	private void addServerListeners() {
@@ -884,7 +891,7 @@ public class ArquillianTab extends AbstractLaunchConfigurationTab {
 			
 			case 2:
 				IRuntime rt = server.getRuntime();
-				if( rt != null ) {
+				if( rt != null && rt.getLocation() != null) {
 					return rt.getLocation().toOSString();
 				}
 				return ""; //$NON-NLS-1$
