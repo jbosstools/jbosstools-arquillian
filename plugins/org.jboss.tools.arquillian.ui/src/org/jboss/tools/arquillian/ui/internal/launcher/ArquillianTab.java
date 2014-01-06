@@ -88,6 +88,7 @@ import org.jboss.tools.arquillian.core.internal.ArquillianConstants;
 import org.jboss.tools.arquillian.core.internal.natures.ArquillianNature;
 import org.jboss.tools.arquillian.core.internal.util.ArquillianUtility;
 import org.jboss.tools.arquillian.ui.ArquillianUIActivator;
+import org.jboss.tools.arquillian.ui.internal.commands.AddArquillianProfilesCommandHandler;
 import org.jboss.tools.arquillian.ui.internal.utils.ArquillianUIUtil;
 import org.osgi.framework.Bundle;
 
@@ -293,7 +294,17 @@ public class ArquillianTab extends AbstractLaunchConfigurationTab {
 			
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				ArquillianUtility.runAction(configuration, ArquillianConstants.ADD_ARQUILLIAN_PROFILES_COMMAND, true);
+				IProject project = null;
+				try {
+					IJavaProject javaProject = ArquillianUtility.getJavaProject(configuration);
+					
+					if (javaProject != null) {
+						project = javaProject.getProject();
+					}
+				} catch (CoreException e1) {
+					ArquillianUIActivator.log(e1);
+				}
+				new AddArquillianProfilesCommandHandler().execute(project);
 			}
 		});
 		addProfilesButton.setEnabled(isArquillianProject(configuration));
