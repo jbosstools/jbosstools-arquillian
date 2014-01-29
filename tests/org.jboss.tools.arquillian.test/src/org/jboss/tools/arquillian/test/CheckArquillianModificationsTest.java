@@ -18,7 +18,6 @@ import java.io.InputStream;
 import org.codehaus.plexus.util.IOUtil;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.NullProgressMonitor;
-import org.jboss.tools.arquillian.core.internal.util.ArquillianUtility;
 import org.jboss.tools.test.util.JobUtils;
 import org.junit.AfterClass;
 import org.junit.Test;
@@ -44,7 +43,7 @@ public class CheckArquillianModificationsTest extends AbstractArquillianTest {
 		JobUtils.waitForIdle(1000);
 		project = getProject(projectName);
 		assertNotNull(project);
-		ArquillianUtility.addArquillianNature(project, true);
+		addArquillianSupport(project);
 		JobUtils.waitForIdle();
 		
 		//If test run w/ Java 6, project will have errors, 

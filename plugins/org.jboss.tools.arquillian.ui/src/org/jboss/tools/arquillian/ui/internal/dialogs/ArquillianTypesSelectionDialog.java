@@ -36,6 +36,7 @@ import org.eclipse.jdt.core.IType;
 import org.eclipse.jface.dialogs.IDialogSettings;
 import org.eclipse.m2e.core.MavenPlugin;
 import org.eclipse.m2e.core.internal.IMavenConstants;
+import org.eclipse.m2e.core.project.IMavenProjectFacade;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Shell;
@@ -126,10 +127,9 @@ public class ArquillianTypesSelectionDialog extends
 			try {
 				IProject project = javaProject.getProject();
 				if (project.hasNature(IMavenConstants.NATURE_ID)) {
-					IFile pomFile = project.getFile(IMavenConstants.POM_FILE_NAME);
-					MavenProject mavenProject = MavenPlugin.getMaven().readProject(
-							pomFile.getLocation().toFile(), new NullProgressMonitor());
-					Build build = mavenProject.getBuild();
+					IMavenProjectFacade facade = MavenPlugin.getMavenProjectRegistry().create(project, new NullProgressMonitor());
+				    MavenProject mavenProject = facade.getMavenProject(new NullProgressMonitor());
+				    Build build = mavenProject.getBuild();
 					String testSourceDirectory = build.getTestSourceDirectory();
 					testSourcePath = Path.fromOSString(testSourceDirectory);
 					IPath workspacePath = ResourcesPlugin.getWorkspace().getRoot().getRawLocation();
