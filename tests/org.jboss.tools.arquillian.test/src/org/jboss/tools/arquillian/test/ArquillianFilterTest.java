@@ -29,7 +29,6 @@ import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.navigator.CommonNavigator;
 import org.eclipse.ui.navigator.CommonViewer;
-import org.jboss.tools.arquillian.core.internal.util.ArquillianUtility;
 import org.jboss.tools.arquillian.ui.internal.filters.ActiveProjectFilter;
 import org.jboss.tools.arquillian.ui.internal.views.ArquillianView;
 import org.jboss.tools.test.util.JobUtils;
@@ -57,10 +56,10 @@ public class ArquillianFilterTest extends AbstractArquillianTest {
 		importMavenProject("projects/testFilter2.zip", TEST_PROJECT_NAME2, path);
 		JobUtils.waitForIdle(1000);
 		IProject project = getProject(TEST_PROJECT_NAME);
-		ArquillianUtility.addArquillianNature(project, true);
+		addArquillianSupport(project);
 		JobUtils.waitForIdle(1000);
 		project = getProject(TEST_PROJECT_NAME2);
-		ArquillianUtility.addArquillianNature(project, true);
+		addArquillianSupport(project);
 		JobUtils.waitForIdle(1000);
 	}
 
@@ -73,34 +72,41 @@ public class ArquillianFilterTest extends AbstractArquillianTest {
 				.getActiveWorkbenchWindow().getActivePage();
 		page.setPerspective(persDescription);
 		IViewPart arquilliaView = page.showView(ArquillianView.ID);
-		assertTrue(arquilliaView instanceof CommonNavigator);
-		PackageExplorerPart packageView = (PackageExplorerPart) page.showView(JavaUI.ID_PACKAGES);
-		IProject project = getProject(TEST_PROJECT_NAME);
-		packageView.selectAndReveal(project);
-		
-		CommonNavigator navigator = (CommonNavigator) arquilliaView;
-		CommonViewer viewer = navigator.getCommonViewer();
-		TreeItem[] items = viewer.getTree().getItems();
-		assertTrue(items.length == 1);
-		ViewerFilter[] filters = viewer.getFilters();
-		assertTrue(filters.length > 0);
-		ActiveProjectFilter activeProjectFilter = null;
-		ViewerFilter[] newFilters = new ViewerFilter[filters.length - 1];
-		int i = 0;
-		int j = 0;
-		for (ViewerFilter filter: filters) {
-			if (filter instanceof ActiveProjectFilter) {
-				activeProjectFilter = (ActiveProjectFilter) filter;
-				i++;
-			} else {
-				newFilters[j++] = filters[i++];
+		try {
+			assertTrue(arquilliaView instanceof CommonNavigator);
+			PackageExplorerPart packageView = (PackageExplorerPart) page.showView(JavaUI.ID_PACKAGES);
+			IProject project = getProject(TEST_PROJECT_NAME);
+			packageView.selectAndReveal(project);
+			
+			CommonNavigator navigator = (CommonNavigator) arquilliaView;
+			CommonViewer viewer = navigator.getCommonViewer();
+			TreeItem[] items = viewer.getTree().getItems();
+			assertTrue(items.length == 1);
+			ViewerFilter[] filters = viewer.getFilters();
+			assertTrue(filters.length > 0);
+			ActiveProjectFilter activeProjectFilter = null;
+			ViewerFilter[] newFilters = new ViewerFilter[filters.length - 1];
+			int i = 0;
+			int j = 0;
+			for (ViewerFilter filter: filters) {
+				if (filter instanceof ActiveProjectFilter) {
+					activeProjectFilter = (ActiveProjectFilter) filter;
+					i++;
+				} else {
+					newFilters[j++] = filters[i++];
+				}
+			}
+			assertNotNull(activeProjectFilter);
+			viewer.setFilters(newFilters);
+			
+			items = viewer.getTree().getItems();
+			assertTrue("Invalid filter", items.length == 2);
+		} finally {
+			if (arquilliaView != null) {
+				page.hideView(arquilliaView);
 			}
 		}
-		assertNotNull(activeProjectFilter);
-		viewer.setFilters(newFilters);
 		
-		items = viewer.getTree().getItems();
-		assertTrue("Invalid filter", items.length == 2);
 	}
 	
 		

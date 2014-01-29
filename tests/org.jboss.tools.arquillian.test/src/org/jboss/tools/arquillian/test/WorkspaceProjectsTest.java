@@ -23,7 +23,6 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.Platform;
 import org.jboss.tools.arquillian.core.internal.ArquillianConstants;
-import org.jboss.tools.arquillian.core.internal.util.ArquillianUtility;
 import org.jboss.tools.test.util.JobUtils;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -49,10 +48,10 @@ public class WorkspaceProjectsTest extends AbstractArquillianTest {
 		importMavenProject("projects/workspaceProject2.zip", TEST_PROJECT_NAME2, path);
 		JobUtils.waitForIdle(1000);
 		IProject project = getProject(TEST_PROJECT_NAME);
-		ArquillianUtility.addArquillianNature(project, true);
+		addArquillianSupport(project);
 		JobUtils.waitForIdle(1000);
 		project = getProject(TEST_PROJECT_NAME2);
-		ArquillianUtility.addArquillianNature(project, true);
+		addArquillianSupport(project);
 		JobUtils.waitForIdle(1000);
 	}
 

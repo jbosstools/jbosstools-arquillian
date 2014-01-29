@@ -205,7 +205,7 @@ public class AddMissingTypeRefactoring extends Refactoring {
 		
 		ReturnStatement returnStatement = getReturnStatement(deploymentMethod);
 		if (returnStatement == null) {
-			message = "Cannot a find return statement";
+			message = "Cannot find a return statement";
 			return null;
 		}
 		

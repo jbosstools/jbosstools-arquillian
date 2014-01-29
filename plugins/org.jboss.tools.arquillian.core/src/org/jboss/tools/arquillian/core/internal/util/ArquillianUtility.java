@@ -17,7 +17,6 @@ import static org.eclipse.m2e.core.ui.internal.editing.PomEdits.findChilds;
 import static org.eclipse.m2e.core.ui.internal.editing.PomEdits.format;
 import static org.eclipse.m2e.core.ui.internal.editing.PomEdits.getTextValue;
 import static org.eclipse.m2e.core.ui.internal.editing.PomEdits.setText;
-import static org.eclipse.m2e.core.ui.internal.editing.PomHelper.addOrUpdateDependency;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -31,9 +30,6 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Properties;
-import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -86,24 +82,20 @@ import org.eclipse.jface.viewers.ISelectionProvider;
 import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.m2e.core.MavenPlugin;
 import org.eclipse.m2e.core.embedder.IMaven;
-import org.eclipse.m2e.core.internal.IMavenConstants;
 import org.eclipse.m2e.core.project.IMavenProjectFacade;
 import org.eclipse.m2e.core.project.IProjectConfigurationManager;
 import org.eclipse.m2e.core.project.MavenUpdateRequest;
 import org.eclipse.m2e.core.ui.internal.editing.PomEdits;
-import org.eclipse.m2e.core.ui.internal.editing.PomHelper;
 import org.eclipse.m2e.model.edit.pom.util.PomResourceImpl;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.handlers.IHandlerService;
-import org.eclipse.wst.sse.core.StructuredModelManager;
 import org.eclipse.wst.xml.core.internal.provisional.document.IDOMDocument;
 import org.eclipse.wst.xml.core.internal.provisional.document.IDOMModel;
 import org.jboss.forge.arquillian.container.Container;
 import org.jboss.tools.arquillian.core.ArquillianCoreActivator;
 import org.jboss.tools.arquillian.core.internal.ArquillianConstants;
-import org.jboss.tools.arquillian.core.internal.container.ContainerParser;
 import org.jboss.tools.arquillian.core.internal.container.ProfileGenerator;
 import org.jboss.tools.arquillian.core.internal.natures.ArquillianNature;
 import org.jboss.tools.maven.core.IArtifactResolutionService;
@@ -119,7 +111,7 @@ import org.w3c.dom.Element;
  */
 public class ArquillianUtility {
 	
-	private static final String ARQUILLIAN_VERSION = "version.arquillian_core"; //$NON-NLS-1$
+	public static final String ARQUILLIAN_VERSION = "version.arquillian_core"; //$NON-NLS-1$
 
 	public static final String ARQUILLIAN_CORE_GROUP_ID = "org.jboss.arquillian.core"; //$NON-NLS-1$
 	
@@ -160,6 +152,8 @@ public class ArquillianUtility {
 	
 	public static final String ARQUILLIAN_BUILDER_ID = "org.jboss.tools.arquillian.core.arquillianBuilder"; //$NON-NLS-1$
 		
+	public static final String ARQUILLIAN_BOM_COORDS = ArquillianUtility.ARQUILLIAN_GROUP_ID + ":" + ArquillianUtility.ARQUILLIAN_BOM_ARTIFACT_ID + ":[0,)";  //$NON-NLS-1$ //$NON-NLS-2$
+	
 	public static String getDependencyVersion(MavenProject mavenProject,
 			String gid, String aid) {
 		List<Artifact> artifacts = getArtifacts(mavenProject);
@@ -205,36 +199,6 @@ public class ArquillianUtility {
 		}
 	}
 
-	public static void addArquillianSupport(IProject project)
-			throws CoreException {
-		if (project == null || !project.hasNature(ArquillianNature.ARQUILLIAN_NATURE_ID)) {
-			return;
-		}
-		IFile pomFile = project.getFile(IMavenConstants.POM_FILE_NAME);
-		MavenProject mavenProject = MavenPlugin.getMaven().readProject(
-				pomFile.getLocation().toFile(), new NullProgressMonitor());
-		String version = getDependencyVersion(mavenProject,
-				ARQUILLIAN_CORE_GROUP_ID,
-				ARQUILLIAN_CORE_API_ARTIFACT_ID);
-		if (version == null) {
-			addArtifacts(pomFile, mavenProject);
-			updateProject(project);
-		}
-	}
-
-	private static URL getArquillianProfileUrl() {
-		try {
-			URL url = new URL(ARQUILLIAN_PROFILE_POM_URL);
-			return FileLocator.resolve(url);
-		} catch (MalformedURLException e) {
-			ArquillianCoreActivator.log(e);
-			return null;
-		} catch (IOException e) {
-			ArquillianCoreActivator.log(e);
-			return null;
-		}
-	}
-
 	public static Model getArquilianModel(boolean isJunit) throws CoreException {
 		URL url = getArquillianPomFile(true);
 		InputStream in = null;
@@ -257,104 +221,7 @@ public class ArquillianUtility {
 		}
 	}
 	
-	private static void addArtifacts(IFile pomFile, MavenProject mavenProject)
-			throws CoreException {
-		Model arquillianModel = getArquilianModel(true);
-		mergeModel(pomFile, mavenProject, arquillianModel);
-	}
-
-	private static void mergeModel(IFile pomFile, MavenProject mavenProject, Model arquillianModel) {
-		IDOMModel model = null;
-		try {
-			model = (IDOMModel) StructuredModelManager.getModelManager().getExistingModelForEdit(pomFile);
-			if (model == null) {
-				model = (IDOMModel) StructuredModelManager.getModelManager().getModelForEdit(pomFile);
-			}
-			addProperties(mavenProject, arquillianModel, model);
-			addDependencies(mavenProject, arquillianModel, model);
-			addDependencyManagement(mavenProject, arquillianModel, model);
-			addPlugins(mavenProject, arquillianModel, model);
-			addProfiles(mavenProject, pomFile, model);
-		} catch (Exception e) {
-			ArquillianCoreActivator.log(e);
-		} finally {
-			if (model != null) {
-				try {
-					model.save();
-				} catch (Exception e) {
-					ArquillianCoreActivator.log(e);
-				} 
-				model.releaseFromEdit();
-			}
-		}
-	}
-
-	private static void addProperties(MavenProject mavenProject,
-			Model arquillianModel, IDOMModel model) {
-		Properties properties = arquillianModel.getProperties();
-		if (properties == null || properties.size() <= 0) {
-			return;
-		}
-		Element root = model.getDocument().getDocumentElement();
-		Element propertiesEl = getOrCreateElement(root, PomEdits.PROPERTIES);
-		
-		Set<Entry<Object,Object>> entries = properties.entrySet();
-		for (Entry<Object,Object> entry:entries) {
-			String key = (String) entry.getKey();
-			String value;
-			if (ARQUILLIAN_VERSION.equals(key)) {
-				value = ArquillianUtility.getPreference(ArquillianConstants.ARQUILLIAN_VERSION, ArquillianConstants.ARQUILLIAN_VERSION_DEFAULT);
-			} else {
-				value = (String) entry.getValue();
-			}
-			Element property = findChild(propertiesEl, key);
-			if (property == null) {
-				createElementWithText(propertiesEl, key, value);
-			}
-		}
-		format(propertiesEl);
-	}
-
-	private static void addDependencyManagement(MavenProject mavenProject,
-			Model arquillianModel, IDOMModel model) throws CoreException {
-		DependencyManagement dependencyMgmt = arquillianModel.getDependencyManagement();
-		if (dependencyMgmt == null) {
-			return;
-		}
-		List<Dependency> dependencies = dependencyMgmt.getDependencies();
-		if (dependencies == null || dependencies.size() <= 0) {
-			return;
-		}
-		
-		List<Dependency> allDependencies = new ArrayList<Dependency>();
-		DependencyManagement pdMgmt = mavenProject.getDependencyManagement();
-		if (pdMgmt != null) {
-			List<Dependency> pmd = pdMgmt.getDependencies();
-			if (pmd != null) {
-				allDependencies.addAll(pmd);
-			}
-		}
-		Parent parent = mavenProject.getModel().getParent();
-		if (parent != null) {
-			addManagedDependencies(allDependencies, parent.getGroupId(), parent.getArtifactId(), parent.getVersion());
-		}
-		
-		Element root = model.getDocument().getDocumentElement();
-		Element dependencyMgmtEl = getOrCreateElement(root, PomEdits.DEPENDENCY_MANAGEMENT);
-		Element dependenciesEl = getOrCreateElement(dependencyMgmtEl, PomEdits.DEPENDENCIES);
-		for (Dependency dependency:dependencies) {
-			
-			if (!managedDependencyExists(dependency, allDependencies)) {
-				addOrUpdateDependency(dependenciesEl,
-						dependency.getGroupId(), dependency.getArtifactId(),
-						dependency.getVersion(), dependency.getType(),
-						dependency.getScope(), dependency.getClassifier());
-			}
-		}
-		format(dependencyMgmtEl);
-	}
-
-	private static boolean managedDependencyExists(Dependency dependency,
+	public static boolean managedDependencyExists(Dependency dependency,
 			List<Dependency> allDependencies) {
 		String gid = dependency.getGroupId();
 		String aid = dependency.getArtifactId();
@@ -372,7 +239,7 @@ public class ArquillianUtility {
 		return false;
 	}
 
-	private static void addManagedDependencies(List<Dependency> allDependencies,
+	public static void addManagedDependencies(List<Dependency> allDependencies,
 			String groupId, String artifactId, String version) throws CoreException {
 		Model model = getModel(groupId, artifactId, version);
 	    if (model == null) {
@@ -408,26 +275,8 @@ public class ArquillianUtility {
 		return element;
 	}
 	
-	private static void addPlugins(MavenProject mavenProject,
-			Model arquillianModel, IDOMModel model) throws CoreException {
-		Build build = arquillianModel.getBuild();
-		if (build == null) {
-			return;
-		}
-		List<Plugin> plugins = build.getPlugins();
-		Element root = model.getDocument().getDocumentElement();
-		Element buildEl = getOrCreateElement(root, PomEdits.BUILD);
-		Element pluginsEl = getOrCreateElement(buildEl, PomEdits.PLUGINS);
-		for (Plugin plugin:plugins) {
-			if (!pluginExists(model, plugin)) {
-				PomHelper.createPlugin(pluginsEl, plugin.getGroupId(), plugin.getArtifactId(), plugin.getVersion());
-			}
-		}
-		fixCompilerPlugin(model);
-		format(buildEl);
-	}
 
-	private static boolean pluginExists(IDOMModel model, Plugin plugin) throws CoreException {
+	public static boolean pluginExists(IDOMModel model, Plugin plugin) throws CoreException {
 		if (model == null) {
 			return false;
 		}
@@ -468,51 +317,6 @@ public class ArquillianUtility {
 		return false;
 	}
 
-	private static void addDependencies(MavenProject mavenProject, Model arquillianModel, IDOMModel model) {
-		List<Dependency> dependencies = arquillianModel.getDependencies();
-		if (dependencies == null || dependencies.size() <= 0) {
-			return;
-		}
-		Element root = model.getDocument().getDocumentElement();
-		Element dependenciesEl = getOrCreateElement(root, PomEdits.DEPENDENCIES);
-		for (Dependency dependency:dependencies) {
-			String version = getDependencyVersion(mavenProject, dependency.getGroupId(), dependency.getArtifactId());
-			if (version == null) {
-				addOrUpdateDependency(dependenciesEl,
-						dependency.getGroupId(), dependency.getArtifactId(),
-						dependency.getVersion(), dependency.getType(),
-						dependency.getScope(), dependency.getClassifier());
-			}
-		}
-		format(dependenciesEl);
-	}
-
-	private static void addProfiles(MavenProject mavenProject, IFile pomFile , IDOMModel model) throws CoreException {
-		
-		List<String> selectedProfiles = getProfilesFromPreferences(ArquillianConstants.SELECTED_ARQUILLIAN_PROFILES);
-		if (selectedProfiles == null || selectedProfiles.size() <= 0) {
-			return;
-		}
-		List<Container> selectedContainers = new ArrayList<Container>();
-		Model projectModel = mavenProject.getModel();
-		List<String> allProfiles = getProfiles(projectModel);
-		for(Container container:ContainerParser.getContainers()) {
-			if (selectedProfiles.contains(container.getId()) &&
-					!allProfiles.contains(container.getId())) {
-				selectedContainers.add(container);
-			}
-		}
-		if (selectedContainers.size() <= 0) {
-			return;
-		}
-		
-		//Element root = model.getDocument().getDocumentElement();
-		//Element profiles = getOrCreateElement(root, PomEdits.PROFILES);
-		
-		
-		addProfiles(pomFile, selectedContainers);
-	}
-
 	public static void addProfiles(IFile pomFile,
 			List<Container> selectedContainers) throws CoreException {
 		PomResourceImpl projectResource = MavenCoreActivator.loadResource(pomFile);
@@ -537,7 +341,7 @@ public class ArquillianUtility {
 		}
 	}
 
-	private static List<String> getProfiles(Model projectModel) throws CoreException {
+	public static List<String> getProfiles(Model projectModel) throws CoreException {
 		List<String> allProfiles = new ArrayList<String>();
 		// settings profiles
 		Settings settings = MavenPlugin.getMaven().getSettings();
@@ -592,7 +396,7 @@ public class ArquillianUtility {
 		return model;
 	}
 
-	private static void updateProject(IProject project) {
+	public static void updateProject(IProject project) {
 		if (project != null && project.isAccessible()) {
 			try {
 				project.refreshLocal(IResource.DEPTH_INFINITE,
@@ -605,8 +409,7 @@ public class ArquillianUtility {
 		}
 	}
 	
-	private static void fixCompilerPlugin(IDOMModel model) {
-		Element compiler = getPomPlugin(model, null, MAVEN_COMPILER_ARTIFACT_ID);
+	public static void fixCompilerPlugin(Element compiler) {
 		if (compiler != null) {
 			Element configuration = findChild(compiler, PomEdits.CONFIGURATION);
 			if (configuration == null) {
@@ -795,13 +598,13 @@ public class ArquillianUtility {
 	}
 
 	
-	public static String[] getVersions(String coords, String[] defaultVersions) {
+	public static String[] getVersions(String[] defaultVersions) {
 		List<String> versions = null;
 		try {
 			
 			IArtifactResolutionService artifactResolutionService = MavenCoreActivator.getDefault().getArtifactResolutionService();
 			List<ArtifactRepository> artifactRepositories = MavenPlugin.getMaven().getArtifactRepositories();
-			versions = artifactResolutionService.getAvailableReleasedVersions(coords, artifactRepositories, new NullProgressMonitor());
+			versions = artifactResolutionService.getAvailableReleasedVersions(ARQUILLIAN_BOM_COORDS, artifactRepositories, new NullProgressMonitor());
 		} catch(CoreException e) {
 			ArquillianCoreActivator.log(e);
 		}
@@ -918,7 +721,7 @@ public class ArquillianUtility {
 		}
 	}
 	
-	public static void addArquillianNature(IProject project, boolean updatePom) throws CoreException {
+	public static void addArquillianNature(IProject project) throws CoreException {
 		Assert.isNotNull(project);
 		IProjectDescription description = project.getDescription();
 		String[] prevNatures = description.getNatureIds();
@@ -928,9 +731,6 @@ public class ArquillianUtility {
 		description.setNatureIds(newNatures);
 		project.setDescription(description, new NullProgressMonitor());
 		addBuilder(project);
-		if (updatePom) {
-			addArquillianSupport(project);
-		}
 	}
 	
 	public static void addBuilder(IProject project) {
@@ -1095,4 +895,8 @@ public class ArquillianUtility {
 		}
 	}
 	
+	public static String getArquillianVersion(MavenProject mavenProject) {
+		return getDependencyVersion(mavenProject, ARQUILLIAN_CORE_GROUP_ID,
+				ARQUILLIAN_CORE_API_ARTIFACT_ID);
+	}
 }

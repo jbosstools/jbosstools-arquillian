@@ -24,8 +24,16 @@ import java.util.List;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
+import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Platform;
+import org.eclipse.ltk.core.refactoring.Change;
+import org.eclipse.ltk.core.refactoring.RefactoringStatus;
+import org.jboss.tools.arquillian.core.internal.ArquillianConstants;
+import org.jboss.tools.arquillian.core.internal.natures.ArquillianNature;
+import org.jboss.tools.arquillian.core.internal.util.ArquillianUtility;
+import org.jboss.tools.arquillian.ui.internal.refactoring.AddArquillianSupportRefactoring;
 import org.jboss.tools.project.examples.model.ProjectExample;
 import org.osgi.framework.Bundle;
 
@@ -100,4 +108,25 @@ public class AbstractArquillianTest {
 		return project;
 	}
 
+	public static void addArquillianSupport(IProject project)
+			throws CoreException {
+		if (project == null || project.hasNature(ArquillianNature.ARQUILLIAN_NATURE_ID)) {
+			return;
+		}
+		ArquillianUtility.addArquillianNature(project);
+		AddArquillianSupportRefactoring refactoring = new AddArquillianSupportRefactoring(project);
+		refactoring.setAddProfiles(true);
+		refactoring.setUpdateBuild(true);
+		refactoring.setUpdatePom(true);
+		refactoring.setUpdateDependencies(true);
+		refactoring.setVersion(ArquillianUtility.getPreference(
+				ArquillianConstants.ARQUILLIAN_VERSION,
+				ArquillianConstants.ARQUILLIAN_VERSION_DEFAULT));
+		RefactoringStatus status = refactoring
+				.checkInitialConditions(new NullProgressMonitor());
+		Change change = refactoring.createChange(new NullProgressMonitor());
+		change.initializeValidationData(new NullProgressMonitor());
+		change.perform(new NullProgressMonitor());
+		ArquillianUtility.updateProject(project);
+	}
 }

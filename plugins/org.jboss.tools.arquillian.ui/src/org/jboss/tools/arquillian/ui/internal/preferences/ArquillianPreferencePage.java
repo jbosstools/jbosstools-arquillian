@@ -65,8 +65,6 @@ public class ArquillianPreferencePage extends PreferencePage implements
 	
 	private static final String[] defaultVersions = new String[] {ArquillianConstants.ARQUILLIAN_VERSION_DEFAULT};
 	
-	private static final String COORDS = ArquillianUtility.ARQUILLIAN_GROUP_ID + ":" + ArquillianUtility.ARQUILLIAN_BOM_ARTIFACT_ID + ":[0,)";  //$NON-NLS-1$ //$NON-NLS-2$
-	
 	@Override
 	public void init(IWorkbench workbench) {
 		containers = ContainerParser.getContainers();
@@ -85,7 +83,7 @@ public class ArquillianPreferencePage extends PreferencePage implements
         combo = new Combo(composite, SWT.READ_ONLY);
         gd = new GridData(SWT.FILL, SWT.FILL,true,false);
         combo.setLayoutData(gd);
-        combo.setItems(ArquillianUtility.getVersions(COORDS, defaultVersions));
+        combo.setItems(ArquillianUtility.getVersions(defaultVersions));
         String value = ArquillianUtility.getPreference(ArquillianConstants.ARQUILLIAN_VERSION, ArquillianConstants.ARQUILLIAN_VERSION_DEFAULT);
         combo.setText(value);
         

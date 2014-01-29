@@ -90,6 +90,7 @@ import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.viewers.ViewerCell;
 import org.eclipse.m2e.core.MavenPlugin;
 import org.eclipse.m2e.core.internal.IMavenConstants;
+import org.eclipse.m2e.core.project.IMavenProjectFacade;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.GridData;
@@ -837,9 +838,8 @@ public class ArquillianUIUtil {
 			String arquillianProperties) throws CoreException {
 		IProject project = javaProject.getProject();
 		if (project.hasNature(IMavenConstants.NATURE_ID)) {
-			IFile pomFile = project.getFile(IMavenConstants.POM_FILE_NAME);
-			MavenProject mavenProject = MavenPlugin.getMaven().readProject(
-					pomFile.getLocation().toFile(), new NullProgressMonitor());
+			IMavenProjectFacade facade = MavenPlugin.getMavenProjectRegistry().create(project, new NullProgressMonitor());
+			MavenProject mavenProject = facade.getMavenProject(new NullProgressMonitor());
 			Build build = mavenProject.getBuild();
 			String testDirectory = null;
 			List<Resource> testResources = build.getTestResources();

@@ -37,7 +37,6 @@ import org.jboss.tools.arquillian.core.internal.archives.Archive;
 import org.jboss.tools.arquillian.core.internal.archives.ArchiveLocation;
 import org.jboss.tools.arquillian.core.internal.archives.IEntry;
 import org.jboss.tools.arquillian.core.internal.util.ArquillianSearchEngine;
-import org.jboss.tools.arquillian.core.internal.util.ArquillianUtility;
 import org.jboss.tools.test.util.JobUtils;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -58,7 +57,7 @@ public class ArchivesTest extends AbstractArquillianTest {
 		importMavenProject("projects/archives.zip", TEST_PROJECT_NAME);
 		JobUtils.waitForIdle(1000);
 		IProject project = getProject(TEST_PROJECT_NAME);
-		ArquillianUtility.addArquillianNature(project, true);
+		addArquillianSupport(project);
 		JobUtils.waitForIdle();
 		activateProfile();
 		JobUtils.waitForIdle();

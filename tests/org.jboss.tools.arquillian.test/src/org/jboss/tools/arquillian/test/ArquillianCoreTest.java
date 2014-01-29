@@ -42,7 +42,7 @@ public class ArquillianCoreTest extends AbstractArquillianTest {
 		importMavenProject("projects/testProject.zip", TEST_PROJECT_NAME);
 		JobUtils.waitForIdle(1000);
 		IProject project = getProject(TEST_PROJECT_NAME);
-		ArquillianUtility.addArquillianNature(project, true);
+		addArquillianSupport(project);
 		JobUtils.waitForIdle();
 	}
 

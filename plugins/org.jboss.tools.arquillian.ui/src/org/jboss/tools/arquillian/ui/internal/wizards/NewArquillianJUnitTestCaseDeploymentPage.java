@@ -63,6 +63,7 @@ import org.eclipse.jface.wizard.IWizardPage;
 import org.eclipse.jface.wizard.WizardPage;
 import org.eclipse.m2e.core.MavenPlugin;
 import org.eclipse.m2e.core.internal.IMavenConstants;
+import org.eclipse.m2e.core.project.IMavenProjectFacade;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
@@ -227,8 +228,8 @@ public class NewArquillianJUnitTestCaseDeploymentPage extends WizardPage impleme
 			IFile pomFile = project.getFile(IMavenConstants.POM_FILE_NAME);
 			if (pomFile != null && pomFile.exists()) {
 				try {
-					MavenProject mavenProject = MavenPlugin.getMaven().readProject(
-						pomFile.getLocation().toFile(), new NullProgressMonitor());
+					IMavenProjectFacade facade = MavenPlugin.getMavenProjectRegistry().create(project, new NullProgressMonitor());
+					MavenProject mavenProject = facade.getMavenProject(new NullProgressMonitor());
 					Model model = mavenProject.getModel();
 					String packaging = model.getPackaging();
 					if (ArquillianConstants.WAR.equals(packaging)) {
