@@ -16,6 +16,7 @@ import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IProjectDescription;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.NullProgressMonitor;
+import org.eclipse.jface.dialogs.MessageDialog;
 import org.jboss.tools.arquillian.core.internal.natures.ArquillianNature;
 import org.jboss.tools.arquillian.core.internal.util.ArquillianUtility;
 import org.jboss.tools.arquillian.ui.ArquillianUIActivator;
@@ -32,7 +33,12 @@ public class RemoveArquillianCommandHandler extends ArquillianAbstractHandler {
 		IProject project = getProject(event);
 
 		try {
-			ArquillianUtility.removeArquillianSupport(project);
+			boolean ok = MessageDialog.openQuestion(getShell(), 
+					"Remove the Arquillian nature/builder" , 
+					"Are you sure you want to remove the Arquillian nature/builder?");
+			if (ok) {
+				ArquillianUtility.removeArquillianSupport(project);
+			}
 		} catch (CoreException e) {
 			ArquillianUIActivator.log(e);
 		}

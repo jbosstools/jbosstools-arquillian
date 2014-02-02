@@ -48,7 +48,7 @@ public class ArquillianConstants {
 
 	public static final String ARQUILLIAN_VERSION = "arquillianVersion"; //$NON-NLS-1$
 
-	public static final String ARQUILLIAN_VERSION_DEFAULT = "1.1.1.Final"; //$NON-NLS-1$
+	public static final String ARQUILLIAN_VERSION_DEFAULT = "1.1.2.Final"; //$NON-NLS-1$
 	
 	public static final String MARKER_CLASS_NAME = "markerClassName"; //$NON-NLS-1$
 
