@@ -72,7 +72,6 @@ public class AddArquillianSupportRefactoring extends Refactoring {
 	private boolean addProfiles;
 	private boolean updateBuild;
 	private boolean updateDependencies;
-	private String message;
 
 	/**
 	 * @param project
@@ -107,7 +106,7 @@ public class AddArquillianSupportRefactoring extends Refactoring {
 		if (!isMavenProject) {
 			IStatus status = new Status(IStatus.ERROR,
 					ArquillianUIActivator.PLUGIN_ID,
-					"The project isn't a maven project");
+					"The project is not a valid maven project");
 			return RefactoringStatus.create(status);
 		}
 		return RefactoringStatus.create(Status.OK_STATUS);
@@ -124,11 +123,22 @@ public class AddArquillianSupportRefactoring extends Refactoring {
 	public RefactoringStatus checkFinalConditions(IProgressMonitor pm)
 			throws CoreException, OperationCanceledException {
 		RefactoringStatus status = checkInitialConditions(pm);
-		if (status.isOK() && message != null) {
-			IStatus s = new Status(IStatus.ERROR,
-					ArquillianUIActivator.PLUGIN_ID,
-					message);
-			return RefactoringStatus.create(s);
+		if (!status.isOK()) {
+			return status;
+		}
+		if (isUpdatePom()) {
+			IFile file = getFile();
+			if (file == null || !file.exists()) {
+				IStatus s = new Status(IStatus.ERROR, ArquillianUIActivator.PLUGIN_ID,
+						"The pom.xml file does not exist");
+				return RefactoringStatus.create(s);
+			}
+			IMavenProjectFacade facade = MavenPlugin.getMavenProjectRegistry().create(project, new NullProgressMonitor());
+			if (facade == null) {
+				IStatus s = new Status(IStatus.ERROR, ArquillianUIActivator.PLUGIN_ID,
+						"The project is not a valid maven project");
+				return RefactoringStatus.create(s);
+			}
 		}
 		return status;
 	}
@@ -143,13 +153,10 @@ public class AddArquillianSupportRefactoring extends Refactoring {
 	@Override
 	public Change createChange(IProgressMonitor pm) throws CoreException,
 			OperationCanceledException {
-		IFile file = getFile();
-		if (file == null || !file.exists()) {
-			return new NullChange();
-		}
 		if (!isUpdatePom()) {
 			return new NullChange();
 		}
+		IFile file = getFile();
 		IMavenProjectFacade facade = MavenPlugin.getMavenProjectRegistry().create(project, new NullProgressMonitor());
 		MavenProject mavenProject = facade.getMavenProject(new NullProgressMonitor());
 		String version = ArquillianUtility.getArquillianVersion(mavenProject);
@@ -189,17 +196,10 @@ public class AddArquillianSupportRefactoring extends Refactoring {
 	}
 
 	private IFile getFile() throws CoreException {
-		message = null;
 		if (project == null || !project.hasNature(IMavenConstants.NATURE_ID)) {
-			message = "Invalid project";
 			return null;
 		}
-		IFile file = project.getFile(IMavenConstants.POM_FILE_NAME);
-		if (file == null || !file.exists()) {
-			message = "Cannot find the pom.xml file";
-			return null;
-		}
-		return file;
+		return project.getFile(IMavenConstants.POM_FILE_NAME);
 	}
 
 	public String getVersion() {

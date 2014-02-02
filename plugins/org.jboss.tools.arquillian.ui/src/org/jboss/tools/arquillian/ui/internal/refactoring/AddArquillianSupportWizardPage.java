@@ -17,6 +17,7 @@ import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.IDialogSettings;
 import org.eclipse.jface.preference.PreferenceDialog;
+import org.eclipse.jface.resource.JFaceResources;
 import org.eclipse.ltk.ui.refactoring.UserInputWizardPage;
 import org.eclipse.m2e.core.MavenPlugin;
 import org.eclipse.m2e.core.project.IMavenProjectFacade;
@@ -96,11 +97,11 @@ public class AddArquillianSupportWizardPage extends UserInputWizardPage {
 		
 		updatePomButton = new Button(composite, SWT.CHECK);
 		gd = new GridData(SWT.FILL, SWT.FILL,true,false);
-        gd.horizontalSpan = 2;
-        updatePomButton.setText("Update the pom.xml file");
-        updatePomButton.setLayoutData(gd);
-        
-        dialogSettings = ArquillianUIActivator.getDefault().getDialogSettings();
+		gd.horizontalSpan = 2;
+		updatePomButton.setText("Update the pom.xml file");
+		updatePomButton.setLayoutData(gd);
+
+		dialogSettings = ArquillianUIActivator.getDefault().getDialogSettings();
 		addArquillianSupportSection = dialogSettings.getSection(ADD_ARQUILLIAN_SUPPORT_SECTION);
 		if (addArquillianSupportSection == null) {
 			addArquillianSupportSection = dialogSettings.addNewSection(ADD_ARQUILLIAN_SUPPORT_SECTION);	
@@ -113,14 +114,14 @@ public class AddArquillianSupportWizardPage extends UserInputWizardPage {
 			updatePom = addArquillianSupportSection.getBoolean(UPDATE_POM);
 		}
 		updatePomButton.setSelection(updatePom);
-        
+
 		updateDependenciesButton = new Button(composite, SWT.CHECK);
 		gd = new GridData(SWT.FILL, SWT.FILL,true,false);
-        gd.horizontalSpan = 2;
-        updateDependenciesButton.setText("Update the dependencies section");
-        updateDependenciesButton.setLayoutData(gd);
-        
-        value = addArquillianSupportSection.get(UPDATE_DEPENDENCIES);
+		gd.horizontalSpan = 2;
+		updateDependenciesButton.setText("Update the dependencies section");
+		updateDependenciesButton.setLayoutData(gd);
+
+		value = addArquillianSupportSection.get(UPDATE_DEPENDENCIES);
 		boolean updateDependencies;
 		if (value == null) {
 			updateDependencies = true;
@@ -128,7 +129,7 @@ public class AddArquillianSupportWizardPage extends UserInputWizardPage {
 			updateDependencies = addArquillianSupportSection.getBoolean(UPDATE_DEPENDENCIES);
 		}
 		updateDependenciesButton.setSelection(updateDependencies);
-        
+
 		updateDependenciesButton.addSelectionListener(new SelectionAdapter() {
 
 			@Override
@@ -141,11 +142,11 @@ public class AddArquillianSupportWizardPage extends UserInputWizardPage {
 
 		updateBuildButton = new Button(composite, SWT.CHECK);
 		gd = new GridData(SWT.FILL, SWT.FILL,true,false);
-        gd.horizontalSpan = 2;
-        updateBuildButton.setText("Update the build section");
-        updateBuildButton.setLayoutData(gd);
-        
-        value = addArquillianSupportSection.get(UPDATE_BUILD);
+		gd.horizontalSpan = 2;
+		updateBuildButton.setText("Update the build section");
+		updateBuildButton.setLayoutData(gd);
+
+		value = addArquillianSupportSection.get(UPDATE_BUILD);
 		boolean updateBuild;
 		if (value == null) {
 			updateBuild = true;
@@ -153,7 +154,7 @@ public class AddArquillianSupportWizardPage extends UserInputWizardPage {
 			updateBuild = addArquillianSupportSection.getBoolean(UPDATE_BUILD);
 		}
 		updateBuildButton.setSelection(updateBuild);
-        
+
 		updateBuildButton.addSelectionListener(new SelectionAdapter() {
 
 			@Override
@@ -166,11 +167,11 @@ public class AddArquillianSupportWizardPage extends UserInputWizardPage {
 		
 		addProfilesButton = new Button(composite, SWT.CHECK);
 		gd = new GridData(SWT.FILL, SWT.FILL,true,false);
-        gd.horizontalSpan = 2;
-        addProfilesButton.setText("Add Profiles");
-        addProfilesButton.setLayoutData(gd);
-        
-        value = addArquillianSupportSection.get(ADD_PROFILES);
+		gd.horizontalSpan = 2;
+		addProfilesButton.setText("Add Profiles");
+		addProfilesButton.setLayoutData(gd);
+
+		value = addArquillianSupportSection.get(ADD_PROFILES);
 		boolean addProfiles;
 		if (value == null) {
 			addProfiles = true;
@@ -178,7 +179,7 @@ public class AddArquillianSupportWizardPage extends UserInputWizardPage {
 			addProfiles = addArquillianSupportSection.getBoolean(ADD_PROFILES);
 		}
 		addProfilesButton.setSelection(addProfiles);
-        
+
 		addProfilesButton.addSelectionListener(new SelectionAdapter() {
 
 			@Override
@@ -190,16 +191,16 @@ public class AddArquillianSupportWizardPage extends UserInputWizardPage {
 		});
 		
 		Label label = new Label(composite, SWT.NONE);
-        gd = new GridData(SWT.FILL, SWT.FILL,true,false);
-        label.setLayoutData(gd);
-        label.setText("Arquillian version:");
-        versionCombo = new Combo(composite, SWT.READ_ONLY);
-        gd = new GridData(SWT.FILL, SWT.FILL,false,false);
-        versionCombo.setLayoutData(gd);
-        versionCombo.setItems(ArquillianUtility.getVersions(defaultVersions));
-        value = ArquillianUtility.getPreference(ArquillianConstants.ARQUILLIAN_VERSION, ArquillianConstants.ARQUILLIAN_VERSION_DEFAULT);
-        versionCombo.setText(value);
-        refactoring.setVersion(value);
+		gd = new GridData(SWT.FILL, SWT.FILL,true,false);
+		label.setLayoutData(gd);
+		label.setText("Arquillian version:");
+		versionCombo = new Combo(composite, SWT.READ_ONLY);
+		gd = new GridData(SWT.FILL, SWT.FILL,false,false);
+		versionCombo.setLayoutData(gd);
+		versionCombo.setItems(ArquillianUtility.getVersions(defaultVersions));
+		value = ArquillianUtility.getPreference(ArquillianConstants.ARQUILLIAN_VERSION, ArquillianConstants.ARQUILLIAN_VERSION_DEFAULT);
+		versionCombo.setText(value);
+		refactoring.setVersion(value);
 		versionCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		versionCombo.addModifyListener(new ModifyListener() {
 			
@@ -209,7 +210,7 @@ public class AddArquillianSupportWizardPage extends UserInputWizardPage {
 				validate();
 			}
 		});
-        
+
 		updatePomButton.addSelectionListener(new SelectionAdapter() {
 
 			@Override
@@ -218,6 +219,7 @@ public class AddArquillianSupportWizardPage extends UserInputWizardPage {
 			}
 		
 		});
+		String message = null;
 		try {
 			IProject project = refactoring.getProject();
 			IMavenProjectFacade facade = MavenPlugin.getMavenProjectRegistry().create(project, new NullProgressMonitor());
@@ -227,10 +229,36 @@ public class AddArquillianSupportWizardPage extends UserInputWizardPage {
 				if (version != null) {
 					updatePomButton.setSelection(false);
 					updatePomButton.setEnabled(false);
+					message = "The project already includes Arquillian settings";
 				}
+			} else {
+				updatePomButton.setSelection(false);
+				updatePomButton.setEnabled(false);
+				message = "The project is not a valid maven project";
 			}
 		} catch (CoreException e1) {
-			// ignore
+			updatePomButton.setSelection(false);
+			updatePomButton.setEnabled(false);
+			message = "Some issues encountered.\nCaused by: " + e1.getLocalizedMessage();
+		}
+		if (message != null) {
+			Composite warningComposite = new Composite(composite, SWT.NONE);
+			gd = new GridData(SWT.FILL, SWT.FILL,true,false);
+			gd.horizontalSpan = 2;
+			warningComposite.setLayoutData(gd);
+			warningComposite.setLayout(new GridLayout(2, false));
+			Label emptyLabel = new Label(warningComposite, SWT.NONE);
+			gd = new GridData(SWT.FILL, SWT.FILL,true,true);
+			gd.horizontalSpan = 2;
+			emptyLabel.setLayoutData(gd);
+			Label warningImage = new Label(warningComposite, SWT.NONE);
+			gd = new GridData(SWT.FILL, SWT.LEFT,false,false);
+			warningImage.setLayoutData(gd);
+			warningImage.setImage(JFaceResources.getImage(Dialog.DLG_IMG_MESSAGE_WARNING));
+			Label warningText = new Label(warningComposite, SWT.NONE);
+			gd = new GridData(SWT.FILL, SWT.FILL,true,false);
+			warningText.setLayoutData(gd);
+			warningText.setText(message);
 		}
 		
 		updatePomChanged();

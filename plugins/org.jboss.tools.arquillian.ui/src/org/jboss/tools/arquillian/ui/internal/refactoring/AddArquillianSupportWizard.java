@@ -44,6 +44,9 @@ public class AddArquillianSupportWizard extends RefactoringWizard {
 	@Override
 	public boolean performFinish() {
 		boolean ret = super.performFinish();
+		if (!ret) {
+			return ret;
+		}
 		try {
 			ArquillianUtility.addArquillianNature(refactoring.getProject());
 			ArquillianUtility.updateProject(refactoring.getProject());
