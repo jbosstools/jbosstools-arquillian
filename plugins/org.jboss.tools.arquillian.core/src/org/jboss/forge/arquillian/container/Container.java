@@ -10,7 +10,7 @@ public class Container {
 	private String group_id;
     private String artifact_id;
     private String name;
-    private ContainerType containerType;
+    private ContainerType container_type;
     private List<Dependency> dependencies;
     private Dependency download;
     private List<Configuration> configurations;
@@ -40,12 +40,12 @@ public class Container {
         this.name = name;
     }
 
-    public ContainerType getContainerType() {
-        return containerType;
+    public ContainerType getContainer_type() {
+        return container_type;
     }
 
-    public void setContainerType(ContainerType containerType) {
-        this.containerType = containerType;
+    public void setContainer_type(ContainerType container_type) {
+        this.container_type = container_type;
     }
 
     public List<Dependency> getDependencies() {
