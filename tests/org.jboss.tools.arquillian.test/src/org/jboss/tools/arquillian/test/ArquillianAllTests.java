@@ -27,7 +27,8 @@ import org.junit.runners.Suite;
 	ValidateArchiveNameTest.class,
 	DependentClassesTest.class,
 	WorkspaceProjectsTest.class,
-	ArchivesTest.class
+	ArchivesTest.class,
+	AddArquillianSupportTest.class
 })
 
 @RunWith(Suite.class)
