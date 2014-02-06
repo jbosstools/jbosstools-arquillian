@@ -10,6 +10,8 @@
  ************************************************************************************/
 package org.jboss.tools.arquillian.test;
 
+import static org.junit.Assert.assertTrue;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -23,6 +25,7 @@ import java.util.List;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IWorkspaceRoot;
+import org.eclipse.core.resources.IncrementalProjectBuilder;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
@@ -35,6 +38,7 @@ import org.jboss.tools.arquillian.core.internal.natures.ArquillianNature;
 import org.jboss.tools.arquillian.core.internal.util.ArquillianUtility;
 import org.jboss.tools.arquillian.ui.internal.refactoring.AddArquillianSupportRefactoring;
 import org.jboss.tools.project.examples.model.ProjectExample;
+import org.jboss.tools.test.util.JobUtils;
 import org.osgi.framework.Bundle;
 
 /**
@@ -123,10 +127,17 @@ public class AbstractArquillianTest {
 				ArquillianConstants.ARQUILLIAN_VERSION,
 				ArquillianConstants.ARQUILLIAN_VERSION_DEFAULT));
 		RefactoringStatus status = refactoring
-				.checkInitialConditions(new NullProgressMonitor());
+				.checkFinalConditions(new NullProgressMonitor());
+		assertTrue(status.isOK());
 		Change change = refactoring.createChange(new NullProgressMonitor());
 		change.initializeValidationData(new NullProgressMonitor());
 		change.perform(new NullProgressMonitor());
+		JobUtils.delay(1000);
+		JobUtils.waitForIdle(1000);
 		ArquillianUtility.updateProject(project);
+		JobUtils.delay(1000);
+		JobUtils.waitForIdle(1000);
+		project.build(IncrementalProjectBuilder.FULL_BUILD, new NullProgressMonitor());
+		JobUtils.waitForIdle(1000);
 	}
 }
