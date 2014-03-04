@@ -295,6 +295,9 @@ public class ArquillianCoreActivator implements BundleActivator {
 		JavaCore.removeElementChangedListener(elementChangedListener);
 		ResourcesPlugin.getWorkspace().removeResourceChangeListener(resourceChangeListener);
 		DebugPlugin.getDefault().getLaunchManager().removeLaunchConfigurationListener(launchConfigurationListener);
+		if (preferenceStore != null) {
+			preferenceStore.save();
+		}
 	}
 
 	/**
