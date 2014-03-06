@@ -62,6 +62,7 @@ public class ArquillianPreferencePage extends PreferencePage implements
 	private Button enableButton;
 	private Button addToJUnitTestNGButton;
 	private Button addToExistingButton;
+	private Button allowOSCommandButton;
 	
 	private static final String[] defaultVersions = new String[] {ArquillianConstants.ARQUILLIAN_VERSION_DEFAULT};
 	
@@ -135,6 +136,18 @@ public class ArquillianPreferencePage extends PreferencePage implements
         addToExistingButton.setLayoutData(new GridData(SWT.FILL, SWT.FILL,true,false));
         addToExistingButton.setText("Add the default VM arguments to the existing launch configurations");
         
+        Group securityGroup = new Group(composite, SWT.NONE);
+        securityGroup.setLayout(new GridLayout(1, false));
+        gd = new GridData(SWT.FILL, SWT.FILL,true,false);
+        securityGroup.setLayoutData(gd);
+        securityGroup.setText("security");
+        
+        allowOSCommandButton = new Button(argumentsGroup, SWT.CHECK);
+        allowOSCommandButton.setLayoutData(new GridData(SWT.FILL, SWT.FILL,true,false));
+        allowOSCommandButton.setText("Allow running an OS command when analyzing a deployment method");
+        
+        allowOSCommandButton.setSelection(prefs.getBoolean(ArquillianConstants.ALLOW_OS_COMMAND));
+
 		Group profilesGroup = new Group(composite, SWT.NONE);
         profilesGroup.setLayout(new GridLayout(1, false));
         gd = new GridData(SWT.FILL, SWT.FILL,true,false);
@@ -172,6 +185,9 @@ public class ArquillianPreferencePage extends PreferencePage implements
         prefs.setValue(ArquillianConstants.ADD_DEFAULT_VM_ARGUMENTS_TO_JUNIT_TESTNG, ArquillianConstants.ADD_DEFAULT_VM_ARGUMENTS_TO_JUNIT_TESTNG_VALUE);
         addToJUnitTestNGButton.setSelection(ArquillianConstants.ADD_DEFAULT_VM_ARGUMENTS_TO_JUNIT_TESTNG_VALUE);
         
+        prefs.setValue(ArquillianConstants.ALLOW_OS_COMMAND, ArquillianConstants.ALLOW_OS_COMMAND_VALUE);
+        allowOSCommandButton.setSelection(ArquillianConstants.ALLOW_OS_COMMAND_VALUE);
+        
         prefs.setValue(ArquillianConstants.ARQUILLIAN_VERSION, ArquillianConstants.ARQUILLIAN_VERSION_DEFAULT);
         combo.setText(ArquillianConstants.ARQUILLIAN_VERSION_DEFAULT);
         prefs.setValue(ArquillianConstants.SELECTED_ARQUILLIAN_PROFILES, ArquillianConstants.JBOSS_AS_REMOTE_7_X);
@@ -199,7 +215,8 @@ public class ArquillianPreferencePage extends PreferencePage implements
         prefs.setValue(ArquillianConstants.ENABLE_DEFAULT_VM_ARGUMENTS, enableButton.getSelection());
         prefs.setValue(ArquillianConstants.DEFAULT_VM_ARGUMENTS, argumentsText.getText());
         prefs.setValue(ArquillianConstants.ADD_DEFAULT_VM_ARGUMENTS_TO_JUNIT_TESTNG, addToJUnitTestNGButton.getSelection());
-		StringBuilder aBuilder = new StringBuilder();
+        prefs.setValue(ArquillianConstants.ALLOW_OS_COMMAND, allowOSCommandButton.getSelection());
+        StringBuilder aBuilder = new StringBuilder();
 		StringBuilder sBuilder = new StringBuilder();
 		for (Iterator<Container> iterator = containers.iterator(); iterator.hasNext();) {
 			Container container = (Container) iterator.next();
