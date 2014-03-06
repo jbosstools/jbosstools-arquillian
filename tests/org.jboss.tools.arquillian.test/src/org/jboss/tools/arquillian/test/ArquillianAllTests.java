@@ -28,7 +28,8 @@ import org.junit.runners.Suite;
 	DependentClassesTest.class,
 	WorkspaceProjectsTest.class,
 	ArchivesTest.class,
-	AddArquillianSupportTest.class
+	AddArquillianSupportTest.class,
+	MavenResolverTest.class,
 })
 
 @RunWith(Suite.class)

@@ -19,7 +19,9 @@ import java.net.SocketPermission;
 import java.security.Permission;
 import java.util.PropertyPermission;
 
+import org.eclipse.jface.preference.IPreferenceStore;
 import org.jboss.tools.arquillian.core.ArquillianCoreActivator;
+import org.jboss.tools.arquillian.core.internal.ArquillianConstants;
 
 /**
  * A security manager that always throws an <code>ArquillianSecurityException</code>
@@ -35,6 +37,7 @@ public class ArquillianSecurityManager extends SecurityManager {
 
 	private SecurityManager fSecurityManager= null;
 	private Thread fRestrictedThread= null;
+	private IPreferenceStore arquillianPreferences = null;
 	//ensure that the PropertyPermission class is loaded before we 
 	//start checking permissions: bug 85908
 	private static final PropertyPermission fgPropertyPermission= new PropertyPermission("*", "write"); //$NON-NLS-1$ //$NON-NLS-2$
@@ -42,6 +45,7 @@ public class ArquillianSecurityManager extends SecurityManager {
 	public ArquillianSecurityManager(SecurityManager securityManager, Thread restrictedThread) {
 		fSecurityManager= securityManager;
 		fRestrictedThread= restrictedThread;
+		arquillianPreferences  = ArquillianCoreActivator.getDefault().getPreferenceStore();
 	}
 	
 	/* (non-Javadoc)
@@ -140,7 +144,7 @@ public class ArquillianSecurityManager extends SecurityManager {
 	 * @see java.lang.SecurityManager#checkExec(java.lang.String)
 	 */
 	public void checkExec(String cmd) {
-		if (Thread.currentThread() == fRestrictedThread) {
+		if (!arquillianPreferences.getBoolean(ArquillianConstants.ALLOW_OS_COMMAND) && Thread.currentThread() == fRestrictedThread) {
 			throw new ArquillianSecurityException("SecurityException: Exec denied.");
 		}
 		if (fSecurityManager != null) {

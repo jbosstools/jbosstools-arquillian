@@ -39,6 +39,9 @@ public class ArquillianConstants {
 	
 	public static final String DEFAULT_VM_ARGUMENTS_VALUE = "-Darquillian.debug=true";  //$NON-NLS-1$
 	
+	public static final String ALLOW_OS_COMMAND = "allowOSCommand";   //$NON-NLS-1$
+	
+	public static final boolean ALLOW_OS_COMMAND_VALUE = true;
 	
 	public static final String SEVERITY_ERROR = "Error";
 	public static final String SEVERITY_WARNING = "Warning";

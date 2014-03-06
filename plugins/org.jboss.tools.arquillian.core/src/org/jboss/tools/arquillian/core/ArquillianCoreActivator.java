@@ -343,8 +343,7 @@ public class ArquillianCoreActivator implements BundleActivator {
 			String projectName = javaProject.getProject().getName();
 			ClassLoader loader = loaders.get(projectName);
 			if (loader == null) {
-				loader = new ArquillianClassLoader(this.getClass()
-						.getClassLoader(), javaProject);
+				loader = new ArquillianClassLoader(ClassLoader.getSystemClassLoader(), javaProject);
 				loaders.put(projectName, (ArquillianClassLoader) loader);
 			}
 			return loader;

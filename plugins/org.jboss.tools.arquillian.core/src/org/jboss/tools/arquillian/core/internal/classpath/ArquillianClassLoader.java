@@ -439,7 +439,7 @@ public class ArquillianClassLoader extends ClassLoader implements
 		}
 		if (sourceLoader != null) {
 			result = sourceLoader.getResources(name);
-			if (result != null)
+			if (result != null && result.hasMoreElements())
 				return result;
 		}
 		// FIXME find all resources
@@ -720,7 +720,7 @@ public class ArquillianClassLoader extends ClassLoader implements
 
 		public ArrayEnumeration(Object object) {
 			this.array = new Object[1];
-			System.arraycopy(array, 0, this.array, 0, this.array.length);
+			array[0] = object;
 		}
 
 		public boolean hasMoreElements() {
