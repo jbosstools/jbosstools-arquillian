@@ -84,6 +84,7 @@ public class AddArquillianSupportWizardPage extends UserInputWizardPage {
 		Link link = new Link(composite, SWT.NONE);
 		link.setText("<a>Arquillian Settings</a>");
 		GridData gd = new GridData(SWT.FILL, GridData.FILL, true, false);
+		gd.horizontalSpan = 2;
 		link.setLayoutData(gd);
 		link.addSelectionListener(new SelectionAdapter() {
 
@@ -93,6 +94,27 @@ public class AddArquillianSupportWizardPage extends UserInputWizardPage {
 				preferenceDialog.open();
 			}
 			
+		});
+		
+		Label label = new Label(composite, SWT.NONE);
+		gd = new GridData(SWT.FILL, SWT.FILL,true,false);
+		label.setLayoutData(gd);
+		label.setText("Arquillian version:");
+		versionCombo = new Combo(composite, SWT.READ_ONLY);
+		gd = new GridData(SWT.FILL, SWT.FILL,false,false);
+		versionCombo.setLayoutData(gd);
+		versionCombo.setItems(ArquillianUtility.getVersions(defaultVersions));
+		String value = ArquillianUtility.getPreference(ArquillianConstants.ARQUILLIAN_VERSION, ArquillianConstants.ARQUILLIAN_VERSION_DEFAULT);
+		versionCombo.setText(value);
+		refactoring.setVersion(value);
+		versionCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		versionCombo.addModifyListener(new ModifyListener() {
+			
+			@Override
+			public void modifyText(ModifyEvent e) {
+				refactoring.setVersion(versionCombo.getText());
+				validate();
+			}
 		});
 		
 		updatePomButton = new Button(composite, SWT.CHECK);
@@ -106,7 +128,7 @@ public class AddArquillianSupportWizardPage extends UserInputWizardPage {
 		if (addArquillianSupportSection == null) {
 			addArquillianSupportSection = dialogSettings.addNewSection(ADD_ARQUILLIAN_SUPPORT_SECTION);	
 		}
-		String value = addArquillianSupportSection.get(UPDATE_POM);
+		value = addArquillianSupportSection.get(UPDATE_POM);
 		boolean updatePom;
 		if (value == null) {
 			updatePom = true;
@@ -189,29 +211,9 @@ public class AddArquillianSupportWizardPage extends UserInputWizardPage {
 			}
 			
 		});
-		
-		Label label = new Label(composite, SWT.NONE);
-		gd = new GridData(SWT.FILL, SWT.FILL,true,false);
-		label.setLayoutData(gd);
-		label.setText("Arquillian version:");
-		versionCombo = new Combo(composite, SWT.READ_ONLY);
-		gd = new GridData(SWT.FILL, SWT.FILL,false,false);
-		versionCombo.setLayoutData(gd);
-		versionCombo.setItems(ArquillianUtility.getVersions(defaultVersions));
-		value = ArquillianUtility.getPreference(ArquillianConstants.ARQUILLIAN_VERSION, ArquillianConstants.ARQUILLIAN_VERSION_DEFAULT);
-		versionCombo.setText(value);
-		refactoring.setVersion(value);
-		versionCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-		versionCombo.addModifyListener(new ModifyListener() {
-			
-			@Override
-			public void modifyText(ModifyEvent e) {
-				refactoring.setVersion(versionCombo.getText());
-				validate();
-			}
-		});
 
 		updatePomButton.addSelectionListener(new SelectionAdapter() {
+			
 
 			@Override
 			public void widgetSelected(SelectionEvent e) {
