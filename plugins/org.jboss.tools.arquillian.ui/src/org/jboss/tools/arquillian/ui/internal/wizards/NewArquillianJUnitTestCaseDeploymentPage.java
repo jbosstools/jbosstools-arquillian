@@ -43,6 +43,7 @@ import org.eclipse.jdt.internal.junit.util.LayoutUtil;
 import org.eclipse.jdt.internal.ui.javaeditor.ASTProvider;
 import org.eclipse.jdt.ui.JavaElementLabels;
 import org.eclipse.jface.dialogs.Dialog;
+import org.eclipse.jface.dialogs.IMessageProvider;
 import org.eclipse.jface.viewers.ColumnLabelProvider;
 import org.eclipse.jface.viewers.ColumnViewerEditor;
 import org.eclipse.jface.viewers.ColumnViewerEditorActivationEvent;
@@ -337,7 +338,7 @@ public class NewArquillianJUnitTestCaseDeploymentPage extends WizardPage impleme
 		if (!archiveName.isEmpty()) {
 			String extension = "." + archiveTypeCombo.getText(); //$NON-NLS-1$
 			if (!archiveName.endsWith(extension) || archiveName.trim().length() <= 4) {
-				setErrorMessage("Invalid archive name");
+				setMessage("Invalid archive name", IMessageProvider.WARNING);
 			}
 		}
 	}
