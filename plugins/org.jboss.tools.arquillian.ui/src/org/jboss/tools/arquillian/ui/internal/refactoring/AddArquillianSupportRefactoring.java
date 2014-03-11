@@ -18,6 +18,7 @@ import static org.eclipse.m2e.core.ui.internal.editing.PomEdits.getTextValue;
 import static org.eclipse.m2e.core.ui.internal.editing.PomEdits.performOnDOMDocument;
 import static org.eclipse.m2e.core.ui.internal.editing.PomEdits.setText;
 import static org.eclipse.m2e.core.ui.internal.editing.PomHelper.addOrUpdateDependency;
+import static org.eclipse.m2e.core.ui.internal.editing.PomEdits.createElement;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -547,7 +548,7 @@ public class AddArquillianSupportRefactoring extends Refactoring {
 				return;
 			}
 			String id = container.getId();
-			Element profile = getChild(profiles, PomEdits.PROFILE);
+			Element profile = createElement(profiles, PomEdits.PROFILE);
 			Element idEl = getChild(profile, PomEdits.ID);
 			setText(idEl, id);
 			Element dependencies = getChild(profile, PomEdits.DEPENDENCIES);
