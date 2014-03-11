@@ -236,7 +236,7 @@ public class ArquillianSecurityManager extends SecurityManager {
 	 * @see java.lang.SecurityManager#checkPermission(java.security.Permission)
 	 */
 	public void checkPermission(Permission perm) {
-		if (fgPropertyPermission.implies(perm) && fRestrictedThread == Thread.currentThread()) {
+		if (!arquillianPreferences.getBoolean(ArquillianConstants.ALLOW_SP_COMMAND) && fgPropertyPermission.implies(perm) && fRestrictedThread == Thread.currentThread()) {
 			//attempting to write a system property
 			throw new ArquillianSecurityException("SecurityException: Writing a system property is not allowed.");
 		}
