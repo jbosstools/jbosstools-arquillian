@@ -63,6 +63,7 @@ public class ArquillianPreferencePage extends PreferencePage implements
 	private Button addToJUnitTestNGButton;
 	private Button addToExistingButton;
 	private Button allowOSCommandButton;
+	private Button allowSPCommandButton;
 	
 	private static final String[] defaultVersions = new String[] {ArquillianConstants.ARQUILLIAN_VERSION_DEFAULT};
 	
@@ -148,6 +149,12 @@ public class ArquillianPreferencePage extends PreferencePage implements
         
         allowOSCommandButton.setSelection(prefs.getBoolean(ArquillianConstants.ALLOW_OS_COMMAND));
 
+        allowSPCommandButton = new Button(argumentsGroup, SWT.CHECK);
+        allowSPCommandButton.setLayoutData(new GridData(SWT.FILL, SWT.FILL,true,false));
+        allowSPCommandButton.setText("Allow setting a system propery when analyzing a deployment method");
+        
+        allowSPCommandButton.setSelection(prefs.getBoolean(ArquillianConstants.ALLOW_SP_COMMAND));
+
 		Group profilesGroup = new Group(composite, SWT.NONE);
         profilesGroup.setLayout(new GridLayout(1, false));
         gd = new GridData(SWT.FILL, SWT.FILL,true,false);
@@ -188,6 +195,9 @@ public class ArquillianPreferencePage extends PreferencePage implements
         prefs.setValue(ArquillianConstants.ALLOW_OS_COMMAND, ArquillianConstants.ALLOW_OS_COMMAND_VALUE);
         allowOSCommandButton.setSelection(ArquillianConstants.ALLOW_OS_COMMAND_VALUE);
         
+        prefs.setValue(ArquillianConstants.ALLOW_SP_COMMAND, ArquillianConstants.ALLOW_SP_COMMAND_VALUE);
+        allowSPCommandButton.setSelection(ArquillianConstants.ALLOW_SP_COMMAND_VALUE);
+        
         prefs.setValue(ArquillianConstants.ARQUILLIAN_VERSION, ArquillianConstants.ARQUILLIAN_VERSION_DEFAULT);
         combo.setText(ArquillianConstants.ARQUILLIAN_VERSION_DEFAULT);
         prefs.setValue(ArquillianConstants.SELECTED_ARQUILLIAN_PROFILES, ArquillianConstants.JBOSS_AS_REMOTE_7_X);
@@ -216,6 +226,7 @@ public class ArquillianPreferencePage extends PreferencePage implements
         prefs.setValue(ArquillianConstants.DEFAULT_VM_ARGUMENTS, argumentsText.getText());
         prefs.setValue(ArquillianConstants.ADD_DEFAULT_VM_ARGUMENTS_TO_JUNIT_TESTNG, addToJUnitTestNGButton.getSelection());
         prefs.setValue(ArquillianConstants.ALLOW_OS_COMMAND, allowOSCommandButton.getSelection());
+        prefs.setValue(ArquillianConstants.ALLOW_SP_COMMAND, allowSPCommandButton.getSelection());
         StringBuilder aBuilder = new StringBuilder();
 		StringBuilder sBuilder = new StringBuilder();
 		for (Iterator<Container> iterator = containers.iterator(); iterator.hasNext();) {
