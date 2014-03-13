@@ -1,5 +1,5 @@
 /*************************************************************************************
- * Copyright (c) 2008-2013 Red Hat, Inc. and others.
+ * Copyright (c) 2008-2014 Red Hat, Inc. and others.
  * All rights reserved. This program and the accompanying materials 
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -87,6 +87,8 @@ import org.eclipse.m2e.core.project.IProjectConfigurationManager;
 import org.eclipse.m2e.core.project.MavenUpdateRequest;
 import org.eclipse.m2e.core.ui.internal.editing.PomEdits;
 import org.eclipse.m2e.model.edit.pom.util.PomResourceImpl;
+import org.eclipse.m2e.profiles.core.internal.MavenProfilesCoreActivator;
+import org.eclipse.m2e.profiles.core.internal.ProfileData;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.PlatformUI;
@@ -100,8 +102,6 @@ import org.jboss.tools.arquillian.core.internal.container.ProfileGenerator;
 import org.jboss.tools.arquillian.core.internal.natures.ArquillianNature;
 import org.jboss.tools.maven.core.IArtifactResolutionService;
 import org.jboss.tools.maven.core.MavenCoreActivator;
-import org.jboss.tools.maven.profiles.core.MavenProfilesCoreActivator;
-import org.jboss.tools.maven.profiles.core.profiles.ProfileStatus;
 import org.w3c.dom.Element;
 
 /**
@@ -684,20 +684,20 @@ public class ArquillianUtility {
 	
 	public static List<String> getProfiles(IProject project) {
 		List<String> profiles = new ArrayList<String>();
-		List<ProfileStatus> profileStatuses = getProfileStatuses(project);
+		List<ProfileData> profileStatuses = getProfileStatuses(project);
 		if (profileStatuses != null) {
-			for(ProfileStatus profileStatus:profileStatuses) {
+			for(ProfileData profileStatus:profileStatuses) {
 				profiles.add(profileStatus.getId());
 			}
 		}
 		return profiles;
 	}
 
-	public static List<ProfileStatus> getProfileStatuses(IProject project) {
+	public static List<ProfileData> getProfileStatuses(IProject project) {
 		IMavenProjectFacade facade = MavenPlugin.getMavenProjectRegistry().getProject(project);
-		List<ProfileStatus> profileStatuses = null;
+		List<ProfileData> profileStatuses = null;
 		try {
-			profileStatuses = MavenProfilesCoreActivator.getDefault().getProfileManager().getProfilesStatuses(facade, new NullProgressMonitor());
+			profileStatuses = MavenProfilesCoreActivator.getDefault().getProfileManager().getProfileDatas(facade, new NullProgressMonitor());
 		} catch (CoreException e) {
 			ArquillianCoreActivator.log(e);
 		}
