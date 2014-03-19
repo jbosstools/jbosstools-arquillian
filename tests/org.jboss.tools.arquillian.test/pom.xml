@@ -21,6 +21,18 @@
 				<configuration>
 					<testSuite>org.jboss.tools.arquillian.test</testSuite>
 					<testClass>org.jboss.tools.arquillian.test.ArquillianAllTests</testClass>
+          			<dependencies>
+            			<dependency>
+              				<type>eclipse-plugin</type>
+              				<artifactId>org.eclipse.sapphire.osgi.fragment</artifactId>
+              				<version>0.0.0</version>
+            			</dependency>
+            			<dependency>
+							<type>eclipse-feature</type>
+							<artifactId>org.eclipse.e4.rcp</artifactId>
+							<version>0.0.0</version>
+						</dependency>
+          			</dependencies>
 				</configuration>
 			</plugin>
 		</plugins>
