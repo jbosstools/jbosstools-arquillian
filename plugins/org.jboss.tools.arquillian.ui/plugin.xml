@@ -400,7 +400,7 @@
          </triggerPoints>
          <possibleChildren>
             <or>
-               <instanceof value="org.jboss.tools.arquillian.ui.internal.model.ArquillianArchiveEntry"/>  
+               <instanceof value="org.jboss.tools.arquillian.core.internal.archives.IEntry"/>  
             </or>
          </possibleChildren>
       </navigatorContent>
@@ -452,5 +452,46 @@
      	class="org.jboss.tools.arquillian.ui.internal.markers.AddMissingTypeResolutionGenerator"
      	markerType="org.jboss.tools.arquillian.core.problem.class"/>
    </extension>
+   
+   <extension point="org.eclipse.ui.editors">
+    <editor
+      id="org.jboss.tools.arquillian.editor.arquillianXmlEditor"
+      name="Arquillian XML Editor"
+      icon="/icons/arquillian_icon16.png"
+      default="true">
+      <contentTypeBinding contentTypeId="org.jboss.tools.arquillian.ui.arquillianxml"/>
+      <class class="org.eclipse.sapphire.ui.swt.xml.editor.SapphireEditorForXml">
+        <parameter name="sdef" value="org.jboss.tools.arquillian.editor.internal.model.ArquillianXmlEditor"/>
+      </class>
+    </editor>
+  </extension>
+  
+  <extension point="org.eclipse.wst.xml.core.catalogContributions">
+    <catalogContribution>
+      <system
+        systemId="http://jboss.org/schema/arquillian/arquillian_1_0.xsd"
+        uri="schemas/arquillian_1_0.xsd"/>
+    </catalogContribution>
+  </extension>
+  
+  <extension
+         point="org.eclipse.core.contenttype.contentTypes">
+      <content-type
+            base-type="org.eclipse.core.runtime.xml"
+            default-charset="UTF-8"
+            file-extensions="xml"
+            file-names="arquillian.xml"
+            id="arquillianxml"
+            name="Arquillian XML file"
+            priority="high">
+         <describer
+               class="org.eclipse.core.runtime.content.XMLRootElementContentDescriber">
+            <parameter
+                  name="element"
+                  value="arquillian">
+            </parameter>
+         </describer>
+      </content-type>
+  </extension>
    
 </plugin>

@@ -30,6 +30,7 @@ import org.junit.runners.Suite;
 	ArchivesTest.class,
 	AddArquillianSupportTest.class,
 	MavenResolverTest.class,
+	ArquillianXmlEditorTest.class,
 })
 
 @RunWith(Suite.class)

@@ -1,0 +1,272 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+/*************************************************************************************
+ * Copyright (c) 2014 Red Hat, Inc. and others.
+ * All rights reserved. This program and the accompanying materials 
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
+ * 
+ * Contributors:
+ *     JBoss by Red Hat - Initial implementation.
+ ************************************************************************************/
+-->
+<definition>
+    <import>
+        <package>org.jboss.tools.arquillian.editor.internal.model</package>
+        <package>org.jboss.tools.arquillian.editor.internal.actions</package>
+    </import>
+    
+    <editor-page>
+        <id>design</id>
+        <page-name>Design</page-name>
+        <page-header-text>Arquillian XML editor</page-header-text>
+        <documentation>
+            <title>Arquillian XML editor</title>
+            <content></content>
+        </documentation>
+        <action>
+            <id>Arquillian.OpenPomXmlFile</id>
+            <label>Open pom.xml</label>
+            <tooltip>Open pom.xml (Ctrl+Alt+Shift+P)</tooltip>
+            <key-binding>CONTROL+ALT+SHIFT+p</key-binding>
+            <key-binding-behavior>propagated</key-binding-behavior>
+            <image>icons/xpl/editor-pom.gif</image>
+            <context>Sapphire.EditorPage</context>
+            <group>Arquillian.OpenPomXmlFile</group>
+            <location>after:Sapphire.Outline.Hide</location>
+            <hint>
+                <name>style</name>
+                <value>image</value>
+            </hint>
+        </action>
+        <action-handler>
+            <action>Arquillian.OpenPomXmlFile</action>
+            <id>Arquillian.OpenPomXmlFile</id>
+            <label>Open pom.xml</label>
+            <impl>OpenPomXmlFileActionHandler</impl>
+        </action-handler>
+        <page-header-image>icons/arquillian_icon16.png</page-header-image>
+        <action>
+            <id>Arquillian.ShowInSource</id>
+            <label>Show in Source</label>
+            <hint>
+                <name>style</name>
+                <value>image+text</value>
+            </hint>
+            <context>Sapphire.EditorPage.Outline.Node</context>
+        </action>
+        <element-type>Arquillian</element-type>
+        <root-node>
+            <node>
+            	<label>General</label>
+            	<section>
+            		<label>Default Protocol</label>
+            		<content>
+            			<with>
+            				<path>DefaultProtocol</path>
+            				<case>
+            					<content>
+                                    <property-editor>
+                                        <property>Type</property>
+                                        <hint>
+                                          <name>assist.contributors</name>
+                                          <value>AddDependenciesActionContributor</value>
+                                        </hint>
+                                    </property-editor>
+                        			<property-editor>
+                            			<visible-when>${ Type != null }</visible-when>
+                        				<property>Property</property>
+                        				<child-property>Name</child-property>
+                            			<child-property>Value</child-property>
+                        			</property-editor>
+                        		</content>
+                        	</case>
+                        </with>
+                    </content>
+            	</section>
+            	<section>
+            		<label>Engine</label>
+            		<content>
+                        <with>
+                        	<path>Engine</path>
+                        	<case>
+                        		<content>
+                        			<property-editor>
+                            			<property>Property</property>
+                        				<child-property>Name</child-property>
+                            			<child-property>Value</child-property>
+                        			</property-editor>
+                        		</content>
+                        	</case>
+                        </with>
+                    </content>
+            	</section>
+            </node>
+            <node>
+            	<label>Containers</label>
+            	<section>
+            		<content>
+            			<actuator>
+                			<action-id>Sapphire.Add</action-id>
+                    		<label>add a container</label>
+                		</actuator>
+                	</content>
+                </section>
+            	<node-include>ContainerList</node-include>
+            </node>
+            <node>
+            	<label>Groups</label>
+            	<section>
+            		<content>
+            			<actuator>
+                			<action-id>Sapphire.Add</action-id>
+                    		<label>add a group</label>
+                		</actuator>
+                	</content>
+                </section>
+            	<node-factory>
+    				<id>GroupList</id>
+            		<property>Group</property>
+            		<case>
+            			<label>${ Qualifier == null ? "&lt;qualifier&gt;" : Qualifier }</label>
+            			<section>
+            				<label>General</label>
+            				<content>
+            					<property-editor>Qualifier</property-editor>
+                                <property-editor>
+                                    <hint>
+                                        <name>checkbox.layout</name>
+                                        <value>leading.label</value>
+                                    </hint>
+                                    <property>Default</property>
+                                </property-editor>
+            				</content>
+            				<collapsible>true</collapsible>
+            			</section>
+            			<section>
+            				<content>
+            					<actuator>
+                					<action-id>Sapphire.Add</action-id>
+                    				<label>add a container</label>
+                				</actuator>
+                			</content>
+                		</section>
+            			<node-include>ContainerList</node-include>
+            		</case>
+            	</node-factory>
+            </node>
+            <node>
+            	<label>Extensions</label>
+            	<section>
+            		<content>
+            			<actuator>
+                			<action-id>Sapphire.Add</action-id>
+                    		<label>add an extension</label>
+                		</actuator>
+                	</content>
+                </section>
+            	<node-factory>
+    				<id>ExtensionList</id>
+            		<property>Extension</property>
+            		<case>
+            			<label>${ Qualifier == null ? "&lt;qualifier&gt;" : Qualifier }</label>
+            			<section>
+            				<label>General</label>
+            				<content>
+            					<property-editor>Qualifier</property-editor>
+            					<property-editor>
+                            		<visible-when>${ Qualifier != null }</visible-when>
+                        			<property>Property</property>
+                        			<child-property>Name</child-property>
+                            		<child-property>Value</child-property>
+                        		</property-editor>
+            				</content>
+            				<collapsible>true</collapsible>
+            			</section>
+            		</case>
+            	</node-factory>
+            </node>
+            
+        </root-node>
+    </editor-page>
+    <node-factory>
+    	<id>ContainerList</id>
+        <property>Container</property>
+        <case>
+        	<label>${ Qualifier == null ? "&lt;qualifier&gt;" : Qualifier }</label>
+        	<section>
+        		<label>General</label>
+        		<content>
+        			<property-editor>
+        				<property>Qualifier</property>
+        				<hint>
+        					<name>assist.contributors</name>
+                        	<value>AddProfilesActionContributor</value>
+                        </hint>
+        			</property-editor>
+                    <property-editor>
+                        <hint>
+                           <name>checkbox.layout</name>
+                           <value>leading.label</value>
+                        </hint>
+                        <property>Default</property>
+                    </property-editor>
+            		<property-editor>Mode</property-editor>
+            	</content>
+            	<collapsible>true</collapsible>
+            </section>
+            <section>
+            	<label>Configuration</label>
+            	<content>
+               		<with>
+              			<path>Configuration</path>
+               			<case>
+               				<content>
+               					<property-editor>
+                   					<property>Property</property>
+               						<child-property>Name</child-property>
+                   					<child-property>Value</child-property>
+               					</property-editor>
+               				</content>
+               			</case>
+               		</with>
+            	</content>
+            	<collapsible>true</collapsible>
+            	<collapsed-initially>true</collapsed-initially>
+            </section>
+            <section>
+            	<content>
+            		<actuator>
+                		<action-id>Sapphire.Add</action-id>
+                		<label>add a protocol</label>
+                	</actuator>
+                </content>
+            </section>
+      		<node-factory>
+      			<property>Protocol</property>
+            	<case>
+            		<label>${ Type == null ? "&lt;type&gt;" : Type }</label>
+            		<section>
+            			<label>Protocol</label>
+            			<content>
+            				<property-editor>
+            					<property>Type</property>
+            					<hint>
+                               		<name>assist.contributors</name>
+                               		<value>AddDependenciesActionContributor</value>
+                            	</hint>
+                            </property-editor>
+                       		<property-editor>
+                       			<visible-when>${ Type != null }</visible-when>
+                       			<property>Property</property>
+                       			<child-property>Name</child-property>
+                       			<child-property>Value</child-property>
+                       		</property-editor>
+                       	</content>
+                       </section>
+                </case>
+            </node-factory>
+        </case>
+    </node-factory>
+</definition>

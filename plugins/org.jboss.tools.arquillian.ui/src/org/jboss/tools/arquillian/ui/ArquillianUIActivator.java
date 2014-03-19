@@ -77,6 +77,11 @@ public class ArquillianUIActivator extends AbstractUIPlugin {
 				.getLocalizedMessage(), e);
 		plugin.getLog().log(status);
 	}
+	
+	public static void logWarning(String message) {
+		IStatus status = new Status(IStatus.WARNING, PLUGIN_ID, message);
+		plugin.getLog().log(status);
+	}
 
 	public static Image getImage(ImageDescriptor descriptor) {
 		if (images == null) {
