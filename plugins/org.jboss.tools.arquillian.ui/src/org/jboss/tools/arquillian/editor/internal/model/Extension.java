@@ -18,7 +18,7 @@ import org.eclipse.sapphire.Value;
 import org.eclipse.sapphire.ValueProperty;
 import org.eclipse.sapphire.modeling.annotations.Enablement;
 import org.eclipse.sapphire.modeling.annotations.Label;
-import org.eclipse.sapphire.modeling.annotations.NoDuplicates;
+import org.eclipse.sapphire.Unique;
 import org.eclipse.sapphire.modeling.annotations.Required;
 import org.eclipse.sapphire.modeling.annotations.Type;
 import org.eclipse.sapphire.modeling.xml.annotations.XmlBinding;
@@ -36,7 +36,7 @@ public interface Extension extends Element {
 	@Label(standard = "Qualifier")
 	@XmlBinding(path = "@qualifier")
 	@Required
-	@NoDuplicates
+	@Unique
 	ValueProperty PROP_QUALIFIER = new ValueProperty(TYPE, "Qualifier"); //$NON-NLS-1$
 
 	Value<String> getQualifier();

@@ -15,7 +15,7 @@ import org.eclipse.sapphire.ElementType;
 import org.eclipse.sapphire.Value;
 import org.eclipse.sapphire.ValueProperty;
 import org.eclipse.sapphire.modeling.annotations.Label;
-import org.eclipse.sapphire.modeling.annotations.NoDuplicates;
+import org.eclipse.sapphire.Unique;
 import org.eclipse.sapphire.modeling.annotations.Required;
 import org.eclipse.sapphire.modeling.annotations.Service;
 import org.eclipse.sapphire.modeling.annotations.Services;
@@ -34,7 +34,7 @@ public interface Property extends Element {
 	@Label(standard = "Name")
 	@XmlBinding(path = "@name")
 	@Required
-	@NoDuplicates
+	@Unique
 	@Services ({
 		@Service( impl = PropertyNamePossibleValuesService.class ),
 	})
