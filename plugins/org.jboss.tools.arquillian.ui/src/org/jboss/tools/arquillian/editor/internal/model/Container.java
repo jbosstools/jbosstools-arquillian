@@ -20,7 +20,7 @@ import org.eclipse.sapphire.ValueProperty;
 import org.eclipse.sapphire.modeling.annotations.CountConstraint;
 import org.eclipse.sapphire.modeling.annotations.DefaultValue;
 import org.eclipse.sapphire.modeling.annotations.Label;
-import org.eclipse.sapphire.modeling.annotations.NoDuplicates;
+import org.eclipse.sapphire.Unique;
 import org.eclipse.sapphire.modeling.annotations.Required;
 import org.eclipse.sapphire.modeling.annotations.Service;
 import org.eclipse.sapphire.modeling.annotations.Services;
@@ -42,7 +42,7 @@ public interface Container extends Element {
 	@Label(standard = "Qualifier")
 	@XmlBinding(path = "@qualifier")
 	@Required
-	@NoDuplicates
+	@Unique
 	@Services ( {
 		@Service( impl = ContainerQualifierPossibleValuesService.class ),
 		@Service( impl = ContainerProfilesService.class )
