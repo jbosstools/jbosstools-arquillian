@@ -338,7 +338,7 @@ public class NewArquillianJUnitTestCaseDeploymentPage extends WizardPage impleme
 		if (!archiveName.isEmpty()) {
 			String extension = "." + archiveTypeCombo.getText(); //$NON-NLS-1$
 			if (!archiveName.endsWith(extension) || archiveName.trim().length() <= 4) {
-				setMessage("Invalid archive name", IMessageProvider.WARNING);
+				setMessage("Invalid archive name extension (expected " + extension + ")", IMessageProvider.WARNING);
 			}
 		}
 	}
