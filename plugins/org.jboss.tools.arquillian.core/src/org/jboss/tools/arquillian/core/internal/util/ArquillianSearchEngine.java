@@ -737,11 +737,11 @@ public class ArquillianSearchEngine {
 		} catch (UnknownError e) {
 			throw new UnknownError(e.getLocalizedMessage());
 		} catch (Throwable e) {
-			String message = e.getClass().getName() + ": " + e.getLocalizedMessage() + "(project=" + javaProject.getProject().getName() + ")"; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+			String message = getText(e) + "(project=" + javaProject.getProject().getName() + ")"; //$NON-NLS-1$ //$NON-NLS-2$
 			Throwable cause = e.getCause();
 			int i = 0;
 			while (cause != null && i++ < 5) {
-				message = cause.getClass().getName() + ": " + cause.getLocalizedMessage() + "(project=" + javaProject.getProject().getName() + ")"; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+				message = getText(cause) + "(project=" + javaProject.getProject().getName() + ")"; //$NON-NLS-1$ //$NON-NLS-2$
 				cause = cause.getCause();
 			}
 			ArquillianCoreActivator.logWarning(message);
@@ -758,6 +758,16 @@ public class ArquillianSearchEngine {
 			Thread.currentThread().setContextClassLoader(oldLoader);
 		}
 		return null;
+	}
+
+	private static String getText(Throwable e) {
+		String text;
+		if (e.getLocalizedMessage() == null || e.getLocalizedMessage().isEmpty()) {
+			text = e.getClass().getName() + ": "; //$NON-NLS-1$
+		} else {
+			text = e.getLocalizedMessage();
+		}
+		return text;
 	}
 
 	private static void createProblem(String message, IType type,
