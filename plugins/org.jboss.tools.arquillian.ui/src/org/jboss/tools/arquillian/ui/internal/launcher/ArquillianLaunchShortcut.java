@@ -94,7 +94,6 @@ import org.eclipse.ui.dialogs.ElementListSelectionDialog;
 import org.eclipse.ui.dialogs.PreferencesUtil;
 import org.jboss.tools.arquillian.core.ArquillianCoreActivator;
 import org.jboss.tools.arquillian.core.internal.ArquillianConstants;
-import org.jboss.tools.arquillian.core.internal.classpath.ArquillianRuntimeClasspathProvider;
 import org.jboss.tools.arquillian.core.internal.util.ArquillianSearchEngine;
 import org.jboss.tools.arquillian.core.internal.util.ArquillianUtility;
 import org.jboss.tools.common.jdt.debug.RemoteDebugActivator;
@@ -106,10 +105,12 @@ import org.jboss.tools.common.jdt.debug.RemoteDebugActivator;
  */
 public class ArquillianLaunchShortcut extends JUnitLaunchShortcut {
 
+	private static final String LAUNCH_GROUP_RUN = "org.eclipse.debug.ui.launchGroup.run"; //$NON-NLS-1$
+	private static final String RUN_MODE = "run"; //$NON-NLS-1$
 	private static final String LAUNCHING_OF_ARQILLIAN_J_UNIT_TESTS_FAILED = "Launching of Arqillian JUnit tests unexpectedly failed. Check log for details.";
 	private static final String ARQUILLIAN_J_UNIT_LAUNCH = "Arquillian JUnit Launch";
 	private static final String EMPTY_STRING= ""; //$NON-NLS-1$
-
+	
 	@Override
 	protected ILaunchConfigurationWorkingCopy createLaunchConfiguration(
 			IJavaElement element) throws CoreException {
@@ -274,12 +275,12 @@ public class ArquillianLaunchShortcut extends JUnitLaunchShortcut {
 			// no existing found: create a new one
 			config= temparary.doSave();
 		}
-		if (preLaunchCheck(config)) {
+		if (preLaunchCheck(config, mode)) {
 			DebugUITools.launch(config, mode);
 		}
 	}
 	
-	protected boolean preLaunchCheck(final ILaunchConfiguration configuration) throws CoreException {
+	protected boolean preLaunchCheck(final ILaunchConfiguration configuration, final String mode) throws CoreException {
 		final IStatus[] statuses= new IStatus[2];
 		statuses[0] = ArquillianSearchEngine.validateDeployableContainer(getJavaProject(configuration));
 		if (!statuses[0].isOK()) {
@@ -288,7 +289,7 @@ public class ArquillianLaunchShortcut extends JUnitLaunchShortcut {
 				@Override
 				public void run() {
 					try {
-						statuses[1] = fixArquillianLaunch(configuration, statuses[0]);
+						statuses[1] = fixArquillianLaunch(configuration, statuses[0], mode);
 					} catch (CoreException e) {
 						ArquillianCoreActivator.log(e);
 					}
@@ -422,7 +423,7 @@ public class ArquillianLaunchShortcut extends JUnitLaunchShortcut {
 		throw new InterruptedException(); // cancelled by user
 	}
 
-	private IStatus fixArquillianLaunch(ILaunchConfiguration configuration, IStatus status) throws CoreException {
+	private IStatus fixArquillianLaunch(ILaunchConfiguration configuration, IStatus status, String mode) throws CoreException {
 		ClasspathFixProposal[] fixProposals;
 		if (status.getCode() == ArquillianSearchEngine.CONTAINER_DEPLOYABLE_CONTAINER_NOT_EXISTS) {
 			fixProposals = new ClasspathFixProposal[1];
@@ -443,7 +444,7 @@ public class ArquillianLaunchShortcut extends JUnitLaunchShortcut {
 				ArquillianUtility.getShell(),
 				configuration,
 				ArquillianUtility.getJavaProject(configuration),
-				status.getMessage(), fixProposals);
+				status.getMessage(), fixProposals, mode);
 		if (dialog.open() == Window.CANCEL) {
 			return Status.CANCEL_STATUS;
 		}
@@ -490,13 +491,15 @@ public class ArquillianLaunchShortcut extends JUnitLaunchShortcut {
 		private IResourceChangeListener resourceChangeListener;
 		
 		private ILaunchConfiguration fConfiguration;
+		private String mode;
 		
-		public LaunchFixSelectionDialog(Shell parent, ILaunchConfiguration configuration, IJavaProject project, String message, ClasspathFixProposal[] fixProposals) {
+		public LaunchFixSelectionDialog(Shell parent, ILaunchConfiguration configuration, IJavaProject project, String message, ClasspathFixProposal[] fixProposals, String mode) {
 			super(parent, "Arquillian JUnit test", null, message, MessageDialog.QUESTION, new String[] { IDialogConstants.OK_LABEL, IDialogConstants.CANCEL_LABEL }, 0);
 			fConfiguration = configuration;
 			fProject= project;
 			this.fixProposals= fixProposals;
 			selectedFix= null;
+			this.mode = mode;
 		}
 
 		@Override
@@ -612,7 +615,7 @@ public class ArquillianLaunchShortcut extends JUnitLaunchShortcut {
 						return;
 					}
 				} else if (fOpenLaunchConfiguration.getSelection()) {
-					openLaunchConfiguration(fConfiguration);
+					openLaunchConfiguration(fConfiguration, mode);
 					setReturnCode(CANCEL);
 					close();
 				} else if (fFixSelectionTable != null) {
@@ -713,12 +716,19 @@ public class ArquillianLaunchShortcut extends JUnitLaunchShortcut {
 		}
 	}
 	
-	private static void openLaunchConfiguration(ILaunchConfiguration configuration) {
+	private static void openLaunchConfiguration(ILaunchConfiguration configuration, String mode) {
 		LaunchConfigurationManager lcManager = DebugUIPlugin.getDefault().getLaunchConfigurationManager();
-		LaunchGroupExtension group = lcManager.getLaunchGroup(RemoteDebugActivator.LAUNCH_CATEGORY);
-		LaunchConfigurationsDialog dialog = new LaunchConfigurationsDialog(ArquillianUtility.getShell(), group);
+		IStructuredSelection selection = null;
+		String category = RemoteDebugActivator.LAUNCH_CATEGORY;
+		if (RUN_MODE.equals(mode)) {
+			category = LAUNCH_GROUP_RUN;
+		}
 		if (configuration != null) {
-			IStructuredSelection selection = new StructuredSelection(configuration);
+			selection = new StructuredSelection(configuration);
+		}
+		LaunchGroupExtension group = lcManager.getLaunchGroup(category);
+		LaunchConfigurationsDialog dialog = new LaunchConfigurationsDialog(ArquillianUtility.getShell(), group);
+		if (selection != null) {
 			dialog.setInitialSelection(selection);
 			dialog.setOpenMode(LaunchConfigurationsDialog.LAUNCH_CONFIGURATION_DIALOG_OPEN_ON_SELECTION);
 		} else {
