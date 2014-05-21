@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import org.eclipse.core.commands.ExecutionException;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IResourceChangeEvent;
@@ -64,6 +65,7 @@ import org.eclipse.jface.viewers.TableViewerFocusCellManager;
 import org.eclipse.jface.viewers.TextCellEditor;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.viewers.ViewerCell;
+import org.eclipse.m2e.profiles.ui.internal.actions.ProfileSelectionHandler;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.BusyIndicator;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -301,16 +303,7 @@ public class ArquillianTab extends AbstractLaunchConfigurationTab {
 			
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				IProject project = null;
-				try {
-					IJavaProject javaProject = ArquillianUtility.getJavaProject(configuration);
-					
-					if (javaProject != null) {
-						project = javaProject.getProject();
-					}
-				} catch (CoreException e1) {
-					ArquillianUIActivator.log(e1);
-				}
+				IProject project = getProject();
 				new AddArquillianProfilesCommandHandler().execute(project);
 			}
 		});
@@ -321,7 +314,12 @@ public class ArquillianTab extends AbstractLaunchConfigurationTab {
 				
 				@Override
 				public void widgetSelected(SelectionEvent e) {
-					ArquillianUtility.runAction(configuration, ArquillianConstants.SELECT_MAVEN_PROFILES_COMMAND, true);
+					IProject project = getProject();
+					try {
+						new ProfileSelectionHandler().execute(getShell(), project);
+					} catch (ExecutionException e1) {
+						ArquillianUIActivator.log(e1);
+					}
 				}
 			});
 			selectProfilesButton.setEnabled(isArquillianProject(configuration));
@@ -1030,6 +1028,20 @@ public class ArquillianTab extends AbstractLaunchConfigurationTab {
 	@Override
 	public Image getImage() {
 		return image;
+	}
+
+	private IProject getProject() {
+		IProject project = null;
+		try {
+			IJavaProject javaProject = ArquillianUtility.getJavaProject(configuration);
+			
+			if (javaProject != null) {
+				project = javaProject.getProject();
+			}
+		} catch (CoreException e1) {
+			ArquillianUIActivator.log(e1);
+		}
+		return project;
 	}
 	
 }
