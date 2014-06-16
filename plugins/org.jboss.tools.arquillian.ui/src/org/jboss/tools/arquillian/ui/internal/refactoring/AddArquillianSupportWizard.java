@@ -10,7 +10,6 @@
  ************************************************************************************/
 package org.jboss.tools.arquillian.ui.internal.refactoring;
 
-import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.ltk.ui.refactoring.RefactoringWizard;
 import org.jboss.tools.arquillian.core.internal.util.ArquillianUtility;

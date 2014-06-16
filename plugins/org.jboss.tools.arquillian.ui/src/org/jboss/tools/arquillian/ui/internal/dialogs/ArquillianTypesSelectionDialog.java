@@ -16,7 +16,6 @@ import java.util.List;
 
 import org.apache.maven.model.Build;
 import org.apache.maven.project.MavenProject;
-import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;

@@ -11,6 +11,7 @@
 package org.jboss.tools.arquillian.ui.internal.refactoring;
 
 import static org.eclipse.m2e.core.ui.internal.editing.PomEdits.PROPERTIES;
+import static org.eclipse.m2e.core.ui.internal.editing.PomEdits.createElement;
 import static org.eclipse.m2e.core.ui.internal.editing.PomEdits.findChild;
 import static org.eclipse.m2e.core.ui.internal.editing.PomEdits.format;
 import static org.eclipse.m2e.core.ui.internal.editing.PomEdits.getChild;
@@ -18,7 +19,6 @@ import static org.eclipse.m2e.core.ui.internal.editing.PomEdits.getTextValue;
 import static org.eclipse.m2e.core.ui.internal.editing.PomEdits.performOnDOMDocument;
 import static org.eclipse.m2e.core.ui.internal.editing.PomEdits.setText;
 import static org.eclipse.m2e.core.ui.internal.editing.PomHelper.addOrUpdateDependency;
-import static org.eclipse.m2e.core.ui.internal.editing.PomEdits.createElement;
 
 import java.util.ArrayList;
 import java.util.List;
