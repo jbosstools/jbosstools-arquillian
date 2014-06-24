@@ -147,6 +147,13 @@ public class ArquillianTab extends AbstractLaunchConfigurationTab {
 
 						@Override
 						public void run() {
+							if (propertiesViewer == null || propertiesViewer.getControl() == null) {
+								return;
+							}
+							if (propertiesViewer.getControl().isDisposed()) {
+								dispose();
+								return;
+							}
 							properties = null;
 							initializeFrom(configuration);
 							ILaunchConfigurationTab[] tabs = getLaunchConfigurationDialog().getTabs();
@@ -189,8 +196,6 @@ public class ArquillianTab extends AbstractLaunchConfigurationTab {
 	
 	public ArquillianTab() {
 		image = ArquillianUIActivator.imageDescriptorFromPlugin(ArquillianUIActivator.PLUGIN_ID, "icons/arquillian_icon16.png").createImage(); //$NON-NLS-1$
-		ResourcesPlugin.getWorkspace().addResourceChangeListener(
-				resourceChangeListener, IResourceChangeEvent.POST_BUILD);
 	}
 
 	/* (non-Javadoc)
@@ -444,6 +449,8 @@ public class ArquillianTab extends AbstractLaunchConfigurationTab {
 				
 			}
 		});
+		ResourcesPlugin.getWorkspace().addResourceChangeListener(
+				resourceChangeListener, IResourceChangeEvent.POST_BUILD);
 		
 	}
 
@@ -634,7 +641,7 @@ public class ArquillianTab extends AbstractLaunchConfigurationTab {
 	 */
 	@Override
 	public void initializeFrom(ILaunchConfiguration configuration) {
-		if (propertiesViewer != null && isArquillianProject(configuration)) {
+		if (propertiesViewer != null && propertiesViewer.getControl() != null && !propertiesViewer.getControl().isDisposed() && isArquillianProject(configuration)) {
 			properties = ArquillianUIUtil
 					.getArquillianProperties(configuration);
 			propertiesViewer.setInput(properties);

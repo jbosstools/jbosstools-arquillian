@@ -525,7 +525,16 @@ public class ArquillianUIUtil {
             		Object containerObject = null;
             		try {
 						containerObject = ArquillianUtility.newInstance(javaProject, subType.getFullyQualifiedName());
-					} catch (Exception e) {
+					} catch (ClassNotFoundException e) {
+						ArquillianUIActivator.log(e);
+						return;
+					} catch (InstantiationException e) {
+						ArquillianUIActivator.log(e);
+						return;
+					} catch (IllegalAccessException e) {
+						ArquillianUIActivator.log(e);
+						return;
+					} catch (NoClassDefFoundError e) {
 						ArquillianUIActivator.log(e);
 						return;
 					}

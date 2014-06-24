@@ -89,6 +89,7 @@ import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.IEditorPart;
+import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.dialogs.ElementListSelectionDialog;
 import org.eclipse.ui.dialogs.PreferencesUtil;
@@ -185,8 +186,18 @@ public class ArquillianLaunchShortcut extends JUnitLaunchShortcut {
 		MessageDialog.openInformation(getShell(), ARQUILLIAN_J_UNIT_LAUNCH, "No Arquillian JUnit tests found");
 	}
 
-	private Shell getShell() {
-		return PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell();
+	private static Shell getShell() {
+		IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
+		if (window == null) {
+			IWorkbenchWindow[] windows = PlatformUI.getWorkbench().getWorkbenchWindows();
+			if (windows.length > 0) {
+				return windows[0].getShell();
+			}
+		}
+		else {
+			return window.getShell();
+		}
+		return null;
 	}
 	
 	private void launch(Object[] elements, String mode) {
@@ -727,7 +738,7 @@ public class ArquillianLaunchShortcut extends JUnitLaunchShortcut {
 			selection = new StructuredSelection(configuration);
 		}
 		LaunchGroupExtension group = lcManager.getLaunchGroup(category);
-		LaunchConfigurationsDialog dialog = new LaunchConfigurationsDialog(ArquillianUtility.getShell(), group);
+		LaunchConfigurationsDialog dialog = new LaunchConfigurationsDialog(getShell(), group);
 		if (selection != null) {
 			dialog.setInitialSelection(selection);
 			dialog.setOpenMode(LaunchConfigurationsDialog.LAUNCH_CONFIGURATION_DIALOG_OPEN_ON_SELECTION);
