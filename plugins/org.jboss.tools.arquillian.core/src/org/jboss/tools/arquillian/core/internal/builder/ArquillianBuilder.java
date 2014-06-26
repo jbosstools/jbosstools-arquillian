@@ -517,7 +517,7 @@ public class ArquillianBuilder extends IncrementalProjectBuilder {
 	}
 
 	private CompilationUnit getAST(final ICompilationUnit unit, IJavaProject project) {
-		ASTParser parser= ASTParser.newParser(AST.JLS4);
+		ASTParser parser= ASTParser.newParser(AST.JLS8);
 		parser.setSource(unit);
 		parser.setResolveBindings(true);
 		parser.setKind(ASTParser.K_COMPILATION_UNIT);

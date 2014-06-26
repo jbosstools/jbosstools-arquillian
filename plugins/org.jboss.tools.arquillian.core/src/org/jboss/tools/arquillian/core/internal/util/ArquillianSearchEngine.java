@@ -288,7 +288,7 @@ public class ArquillianSearchEngine {
 
 	private static ITypeBinding getTypeBinding(IType type)
 			throws JavaModelException {
-		ASTParser parser= ASTParser.newParser(AST.JLS4);
+		ASTParser parser= ASTParser.newParser(AST.JLS8);
 		
 		if (type.getCompilationUnit() != null) {
 			parser.setSource(type.getCompilationUnit());

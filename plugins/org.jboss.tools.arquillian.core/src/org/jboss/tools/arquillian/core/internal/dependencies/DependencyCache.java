@@ -133,7 +133,7 @@ public class DependencyCache {
 	}
 	
 	private static CompilationUnit getAST(ICompilationUnit cu) {
-		ASTParser parser= ASTParser.newParser(AST.JLS4);
+		ASTParser parser= ASTParser.newParser(AST.JLS8);
 		parser.setSource(cu);
 		parser.setResolveBindings(true);
 		parser.setKind(ASTParser.K_COMPILATION_UNIT);
