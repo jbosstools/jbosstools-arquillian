@@ -10,7 +10,7 @@
  ************************************************************************************/
 package org.jboss.tools.arquillian.core;
 
-import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -61,8 +61,6 @@ import org.osgi.framework.BundleContext;
 import org.osgi.util.tracker.ServiceTracker;
 
 public class ArquillianCoreActivator implements BundleActivator {
-
-	private static final String ARQUILLIAN_CLASSLOADER = "arquillianClassLoader"; //$NON-NLS-1$
 
 	// The plug-in ID
 	public static final String PLUGIN_ID = "org.jboss.tools.arquillian.core"; //$NON-NLS-1$
@@ -341,10 +339,10 @@ public class ArquillianCoreActivator implements BundleActivator {
 				return null;
 			}
 			String projectName = javaProject.getProject().getName();
-			ClassLoader loader = loaders.get(projectName);
+			ArquillianClassLoader loader = loaders.get(projectName);
 			if (loader == null) {
-				loader = new ArquillianClassLoader(ClassLoader.getSystemClassLoader(), javaProject);
-				loaders.put(projectName, (ArquillianClassLoader) loader);
+				loader = new ArquillianClassLoader(javaProject);
+				loaders.put(projectName, loader);
 			}
 			return loader;
 		}
@@ -355,30 +353,15 @@ public class ArquillianCoreActivator implements BundleActivator {
 			String projectName = project.getName();
 			ArquillianClassLoader loader = loaders.get(projectName);
 			if (loader != null) {
-				loader.clear();
+				try {
+					loader.close();
+				} catch (IOException e) {
+					log(e);
+				}
 				loaders.remove(projectName);
 			}
-			File loaderFile = getLoaderDirectory((IProject) project);
-			ArquillianUtility.deleteFile(loaderFile);
-			Bundle bundle = Platform.getBundle(ArquillianCoreActivator.PLUGIN_ID);
-			IPath stateLocation = Platform.getStateLocation(bundle);
-			IPath location = stateLocation.append(projectName);
-			File file = location.toFile();
-			ArquillianUtility.deleteFile(file);
+			
 		}
-	}
-
-	public static File getLoaderDirectory(IProject project) {
-		File base = getLoaderBase();
-		String name = project.getName();
-		return new File(base, name);
-	}
-
-	public static File getLoaderBase() {
-		IPath stateLocation = getDefault().getStateLocation();
-		File rootFile = stateLocation.toFile();
-		File base = new File(rootFile, ARQUILLIAN_CLASSLOADER);
-		return base;
 	}
 	
 	public IPreferenceStore getPreferenceStore() {

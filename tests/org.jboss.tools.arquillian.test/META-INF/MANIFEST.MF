@@ -2,13 +2,13 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: %BundleName
 Bundle-SymbolicName: org.jboss.tools.arquillian.test
-Bundle-Version: 1.1.1.qualifier
+Bundle-Version: 1.1.2.qualifier
 Bundle-Activator: org.jboss.tools.arquillian.test.ArquillianTestActivator
 Require-Bundle: org.eclipse.ui,
  org.eclipse.core.runtime,
  org.junit;bundle-version="4.8.1",
- org.jboss.tools.arquillian.core;bundle-version="1.0.4",
- org.jboss.tools.arquillian.ui;bundle-version="1.0.4",
+ org.jboss.tools.arquillian.core;bundle-version="1.1.2",
+ org.jboss.tools.arquillian.ui;bundle-version="1.1.2",
  org.jboss.tools.project.examples;bundle-version="1.5.0",
  org.jboss.tools.tests;bundle-version="3.5.0",
  org.jboss.tools.maven.project.examples;bundle-version="1.5.0",
@@ -41,7 +41,7 @@ Require-Bundle: org.eclipse.ui,
  org.eclipse.jdt.core,
  org.eclipse.jdt.launching,
  org.eclipse.sapphire.osgi
-Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ActivationPolicy: lazy
 Bundle-Vendor: %BundleVendor
 Bundle-Localization: plugin

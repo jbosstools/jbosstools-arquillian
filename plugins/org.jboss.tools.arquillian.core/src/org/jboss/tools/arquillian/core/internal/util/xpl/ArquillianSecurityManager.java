@@ -130,10 +130,7 @@ public class ArquillianSecurityManager extends SecurityManager {
 	 */
 	public void checkDelete(String file) {
 		if (Thread.currentThread() == fRestrictedThread) {
-			File base = ArquillianCoreActivator.getLoaderBase();
-			if (!file.startsWith(base.getAbsolutePath())) {
-				throw new ArquillianSecurityException("SecurityException: Deleting a file is not allowed.");
-			}
+			throw new ArquillianSecurityException("SecurityException: Deleting a file is not allowed.");
 		}
 		if (fSecurityManager != null) {
 			fSecurityManager.checkDelete(file);
