@@ -44,6 +44,7 @@ import org.eclipse.m2e.core.ui.internal.UpdateMavenProjectJob;
 import org.jboss.tools.maven.ui.Activator;
 import org.jboss.tools.project.examples.ProjectExamplesActivator;
 import org.jboss.tools.project.examples.model.ProjectExample;
+import org.jboss.tools.project.examples.model.ProjectExampleWorkingCopy;
 
 /**
  * @author snjeza
@@ -51,7 +52,7 @@ import org.jboss.tools.project.examples.model.ProjectExample;
  */
 public class ImportMavenProject {
 
-	public boolean importProject(ProjectExample projectDescription, File file,
+	public boolean importProject(ProjectExampleWorkingCopy projectDescription, File file,
 			Map<String, Object> propertiesMap, IPath rootPath) throws Exception {
 		List<ProjectExample> projects = new ArrayList<ProjectExample>();
 		projects.add(projectDescription);

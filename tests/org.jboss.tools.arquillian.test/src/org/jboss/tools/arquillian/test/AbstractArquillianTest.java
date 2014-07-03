@@ -38,6 +38,7 @@ import org.jboss.tools.arquillian.core.internal.natures.ArquillianNature;
 import org.jboss.tools.arquillian.core.internal.util.ArquillianUtility;
 import org.jboss.tools.arquillian.ui.internal.refactoring.AddArquillianSupportRefactoring;
 import org.jboss.tools.project.examples.model.ProjectExample;
+import org.jboss.tools.project.examples.model.ProjectExampleWorkingCopy;
 import org.jboss.tools.test.util.JobUtils;
 import org.osgi.framework.Bundle;
 
@@ -55,7 +56,7 @@ public class AbstractArquillianTest {
 	protected static void importMavenProject(String zipEntry, String projectName, IPath location) throws Exception {
 		File zipFile = createFile(zipEntry, projectName);
 		zipFile.deleteOnExit();
-		ProjectExample projectExample = new ProjectExample();
+		ProjectExampleWorkingCopy projectExample = new ProjectExampleWorkingCopy();
 		projectExample.setImportType("maven");
 		projectExample.setName(projectName);
 		projectExample.setUrl(zipFile.toURI().toURL().toString());
