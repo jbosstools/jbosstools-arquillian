@@ -57,7 +57,7 @@ public final class AddDependenciesActionContributor extends
 						}
 					}
 				});
-				PropertyEditorAssistSection section = context.getSection(SECTION_ID_ACTIONS);
+				PropertyEditorAssistSection section = context.getSection(SECTION_ID_PROBLEMS);
 				section.addContribution(contribution.create());
 			}
 		}
