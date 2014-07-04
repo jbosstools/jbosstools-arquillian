@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-import org.eclipse.core.commands.ExecutionException;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IResourceChangeEvent;
@@ -65,7 +64,6 @@ import org.eclipse.jface.viewers.TableViewerFocusCellManager;
 import org.eclipse.jface.viewers.TextCellEditor;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.viewers.ViewerCell;
-import org.eclipse.m2e.profiles.ui.internal.actions.ProfileSelectionHandler;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.BusyIndicator;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -310,18 +308,13 @@ public class ArquillianTab extends AbstractLaunchConfigurationTab {
 		addProfilesButton.setEnabled(isArquillianProject(configuration));
 		if (mavenProfileExists()) {
 			selectProfilesButton = createButton(propertiesButtonComposite, ArquillianConstants.SELECT_MAVEN_PROFILES);
-			selectProfilesButton.addSelectionListener(new SelectionAdapter() {
-				
+			selectProfilesButton.addSelectionListener(new SelectionAdapter() {	
 				@Override
 				public void widgetSelected(SelectionEvent e) {
-					IProject project = getProject();
-					try {
-						new ProfileSelectionHandler().execute(getShell(), project);
-					} catch (ExecutionException e1) {
-						ArquillianUIActivator.log(e1);
-					}
+					ArquillianUtility.runAction(configuration, ArquillianConstants.SELECT_MAVEN_PROFILES_COMMAND, true);
 				}
 			});
+				
 			selectProfilesButton.setEnabled(isArquillianProject(configuration));
 		} else {
 			new Label(propertiesButtonComposite, SWT.NONE);
