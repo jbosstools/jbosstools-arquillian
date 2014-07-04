@@ -428,7 +428,7 @@ public class ArquillianTab extends AbstractLaunchConfigurationTab {
 
 					@Override
 					protected IStatus run(IProgressMonitor monitor) {
-						server.stop(true);
+						server.stop(false);
 						return Status.OK_STATUS;
 					}
 					
