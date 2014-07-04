@@ -11,6 +11,8 @@
 package org.jboss.tools.arquillian.ui.internal.dialogs;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import org.eclipse.core.resources.IFile;
@@ -83,6 +85,33 @@ public class AddArquillianProfilesDialog extends TitleAreaDialog {
         profilesGroup.setText("Profiles");
 		
         containers = ContainerParser.getContainers();
+        Collections.sort(containers, new Comparator<Container>() {
+
+			@Override
+			public int compare(Container c1, Container c2) {
+				if (c1 == null && c2 == null) {
+					return 0;
+				}
+				if (c1 == null) {
+					return -1;
+				}
+				if (c2 == null) {
+					return 1;
+				}
+				String n1 = c1.getId();
+				String n2 = c2.getId();
+				if (n1 == null && n2 == null) {
+					return 0;
+				}
+				if (n1 == null) {
+					return -1;
+				}
+				if (n2 == null) {
+					return 1;
+				}
+				return n1.compareTo(n2);
+			}
+		});
 		viewer = ArquillianUIUtil.createProfilesViewer(profilesGroup, containers, 400);
 		profiles = ArquillianUtility.getProfiles(project);
 		viewer.addSelectionChangedListener(new ISelectionChangedListener() {
