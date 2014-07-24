@@ -18,6 +18,7 @@ import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.JavaCore;
+import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.viewers.ViewerFilter;
 import org.jboss.tools.arquillian.core.internal.archives.IEntry;
@@ -49,8 +50,13 @@ public class ArquillianFilter extends ViewerFilter {
 			} catch (CoreException e) {
 				// ignore
 			}
-		}
-		if (element instanceof IJavaElement) {
+		} else if (element instanceof IPackageFragment) {
+			try {
+				return ((IPackageFragment)element).hasSubpackages() || hasDeployments((IPackageFragment) element);
+			} catch (JavaModelException e) {
+				ArquillianUIActivator.log(e);
+			}
+		} else if (element instanceof IJavaElement) {
 			return hasDeployments((IJavaElement) element);
 		}
 		return false;
