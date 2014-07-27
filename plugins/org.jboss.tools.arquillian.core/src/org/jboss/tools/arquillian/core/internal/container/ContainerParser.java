@@ -71,12 +71,24 @@ public class ContainerParser {
 				containers = objectMapper.readValue(url,
 						new TypeReference<List<Container>>() {
 						});
+			} catch (Exception e) {
+				ArquillianCoreActivator.log(e);
+			}
+		}
+		if (containers == null || containers.size() == 0) {
+			try {
+				containers = objectMapper.readValue(getUrlFromBundle(),
+						new TypeReference<List<Container>>() {
+						});
 				return containers;
 			} catch (Exception e) {
 				ArquillianCoreActivator.log(e);
 			}
 		}
-		return Collections.emptyList();
+		if (containers == null) {
+			return Collections.emptyList();
+		}
+		return containers;
 	}
 
 	private static URL getUrl() {
