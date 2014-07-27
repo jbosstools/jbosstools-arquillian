@@ -122,7 +122,7 @@ public class AddArquillianProfilesDialog extends TitleAreaDialog {
 				validate();
 			}
 		});
-		
+		setChecked(false);
 		initializeViewer();
 		
 		return area;
@@ -137,7 +137,7 @@ public class AddArquillianProfilesDialog extends TitleAreaDialog {
 				Container container = (Container) data;
 				if (profiles.contains(container.getId())) {
 					item.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_GRAY));
-					viewer.setChecked(container, false);
+					viewer.setChecked(container, true);
 				}
 			}
 		}
@@ -213,12 +213,12 @@ public class AddArquillianProfilesDialog extends TitleAreaDialog {
 
 	private void deselectAllPressed() {
 		setChecked(false);
+		initializeViewer();
 	}
 
 	private void setChecked(boolean checked) {
 		for (Container container:containers) {
 			viewer.setChecked(container, checked);
-			
 		}
 		viewer.refresh();
 	}
