@@ -86,11 +86,11 @@ public class NewArquillianJUnitTestWizard extends ArquillianWizard {
 	public void addPages() {
 		super.addPages();
 		newArquillianJUnitTestCasePageTwo = new NewArquillianJUnitTestCasePageTwo();
-		newArquillianJUnitTestCasePageOne = new NewArquillianJUnitTestCasePageOne(newArquillianJUnitTestCasePageTwo);
+		newArquillianJUnitTestCaseDeploymentPage = new NewArquillianJUnitTestCaseDeploymentPage();
+		newArquillianJUnitTestCasePageOne = new NewArquillianJUnitTestCasePageOne(newArquillianJUnitTestCasePageTwo, newArquillianJUnitTestCaseDeploymentPage);
 		addPage(newArquillianJUnitTestCasePageOne);
 		newArquillianJUnitTestCasePageOne.init(getSelection());
 		addPage(newArquillianJUnitTestCasePageTwo);
-		newArquillianJUnitTestCaseDeploymentPage = new NewArquillianJUnitTestCaseDeploymentPage();
 		addPage(newArquillianJUnitTestCaseDeploymentPage);
 	}
 

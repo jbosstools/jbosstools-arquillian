@@ -141,6 +141,7 @@ public class NewArquillianJUnitTestCasePageOne extends NewTypeWizardPage {
 	private final static int IDX_DEPLOYMENT= 4;
 
 	private NewTestCaseWizardPageTwo fPage2;
+	private NewArquillianJUnitTestCaseDeploymentPage fPage3;
 	private MethodStubsSelectionButtonGroup fMethodStubsButtons;
 
 	private String fClassUnderTestText; // model
@@ -161,9 +162,10 @@ public class NewArquillianJUnitTestCasePageOne extends NewTypeWizardPage {
 	 *
 	 * @since 3.1
 	 */
-	public NewArquillianJUnitTestCasePageOne(NewTestCaseWizardPageTwo page2) {
+	public NewArquillianJUnitTestCasePageOne(NewTestCaseWizardPageTwo page2, NewArquillianJUnitTestCaseDeploymentPage page3) {
 		super(true, PAGE_NAME);
 		fPage2= page2;
+		fPage3 = page3;
 
 		setTitle("Arquillian JUnit Test Case");
 		setDescription("Select the name of the new Arquillian JUnit test case.");
@@ -590,6 +592,7 @@ public class NewArquillianJUnitTestCasePageOne extends NewTypeWizardPage {
 			}
 			fClassUnderTest= type;
 			fPage2.setClassUnderTest(fClassUnderTest);
+			fPage3.setClassUnderTest(fClassUnderTest);
 		} catch (JavaModelException e) {
 			status.setError(WizardMessages.NewTestCaseWizardPageOne_error_class_to_test_not_valid);
 		}
