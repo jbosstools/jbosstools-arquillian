@@ -509,7 +509,6 @@ public class ArquillianUIUtil {
 			Set<ArquillianProperty> properties, String qualifier) {
 		IStatus status = ArquillianSearchEngine.validateDeployableContainer(javaProject);
 		if (!status.isOK()) {
-			ArquillianUIActivator.getDefault().getLog().log(status);
 			return;
 		}
 		try {
