@@ -97,6 +97,7 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.text.edits.TextEdit;
+import org.eclipse.ui.IEditorInput;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPage;
@@ -167,6 +168,13 @@ public class ArquillianUIUtil {
 		IEditorPart editor = page.getActiveEditor();
 		if (editor instanceof CompilationUnitEditor) {
 			CompilationUnitEditor cue = (CompilationUnitEditor) editor;
+			IEditorInput editorInput = cue.getEditorInput();
+			if (editorInput == null) {
+				return null;
+			}
+			IJavaElement javaElement = (IJavaElement)editorInput.getAdapter(IJavaElement.class);
+			if (javaElement != null && !javaElement.exists())
+				return null;
 			try {
 				IJavaElement element = SelectionConverter.getElementAtOffset(cue);
 				if (element == null) {
