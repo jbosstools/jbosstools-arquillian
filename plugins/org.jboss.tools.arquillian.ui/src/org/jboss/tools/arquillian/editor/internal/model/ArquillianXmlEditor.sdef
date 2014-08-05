@@ -21,10 +21,6 @@
         <id>design</id>
         <page-name>Design</page-name>
         <page-header-text>Arquillian XML editor</page-header-text>
-        <documentation>
-            <title>Arquillian XML editor</title>
-            <content></content>
-        </documentation>
         <action>
             <id>Arquillian.OpenPomXmlFile</id>
             <label>Open pom.xml</label>
@@ -46,6 +42,27 @@
             <label>Open pom.xml</label>
             <impl>OpenPomXmlFileActionHandler</impl>
         </action-handler>
+        <action>
+            <id>Arquillian.OpenArquillianReferenceGuide</id>
+            <label>Arquillian Reference Guide</label>
+            <tooltip>Arquillian Reference Guide (Ctrl+Alt+Shift+R)</tooltip>
+            <key-binding>CONTROL+ALT+SHIFT+r</key-binding>
+            <key-binding-behavior>propagated</key-binding-behavior>
+            <image>icons/xpl/help.gif</image>
+            <context>Sapphire.EditorPage</context>
+            <group>Arquillian.OpenArquillianReferenceGuide</group>
+            <location>after:Sapphire.Outline.Hide</location>
+            <hint>
+                <name>style</name>
+                <value>image</value>
+            </hint>
+        </action>
+        <action-handler>
+            <action>Arquillian.OpenArquillianReferenceGuide</action>
+            <id>Arquillian.OpenArquillianReferenceGuide</id>
+            <label>Arquillian Reference Guide</label>
+            <impl>OpenArquillianReferenceGuideHandler</impl>
+        </action-handler>
         <page-header-image>icons/arquillian_icon16.png</page-header-image>
         <action>
             <id>Arquillian.ShowInSource</id>
@@ -62,6 +79,7 @@
             	<label>General</label>
             	<section>
             		<label>Default Protocol</label>
+            		<description>Define a default protocol to be used to negotiate execution of the test</description>
             		<content>
             			<with>
             				<path>DefaultProtocol</path>
@@ -106,6 +124,7 @@
             <node>
             	<label>Containers</label>
             	<section>
+            		<description>Define a target environment for Arquillian tests</description>
             		<content>
             			<actuator>
                 			<action-id>Sapphire.Add</action-id>
@@ -118,6 +137,7 @@
             <node>
             	<label>Groups</label>
             	<section>
+            		<description>Define multiple containers</description>
             		<content>
             			<actuator>
                 			<action-id>Sapphire.Add</action-id>
@@ -133,7 +153,13 @@
             			<section>
             				<label>General</label>
             				<content>
-            					<property-editor>Qualifier</property-editor>
+                                <property-editor>
+                                    <property>Qualifier</property>
+        							<hint>
+        								<name>assist.contributors</name>
+                        				<value>AddProfilesActionContributor</value>
+                        			</hint>
+                                </property-editor>
                                 <property-editor>
                                     <hint>
                                         <name>checkbox.layout</name>
@@ -159,6 +185,7 @@
             <node>
             	<label>Extensions</label>
             	<section>
+            		<description>Define an Arquillian extension</description>
             		<content>
             			<actuator>
                 			<action-id>Sapphire.Add</action-id>

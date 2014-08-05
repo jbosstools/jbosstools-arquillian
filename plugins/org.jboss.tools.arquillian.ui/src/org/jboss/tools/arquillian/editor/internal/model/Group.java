@@ -19,6 +19,8 @@ import org.eclipse.sapphire.Value;
 import org.eclipse.sapphire.ValueProperty;
 import org.eclipse.sapphire.modeling.annotations.CountConstraint;
 import org.eclipse.sapphire.modeling.annotations.DefaultValue;
+import org.eclipse.sapphire.modeling.annotations.Fact;
+import org.eclipse.sapphire.modeling.annotations.Facts;
 import org.eclipse.sapphire.modeling.annotations.Label;
 import org.eclipse.sapphire.modeling.annotations.Required;
 import org.eclipse.sapphire.modeling.annotations.Type;
@@ -36,6 +38,10 @@ public interface Group extends Element {
 
 	@Label(standard = "Qualifier")
 	@XmlBinding(path = "@qualifier")
+	@Facts ( {
+		@Fact (statement = "Must be unique between containers and groups."),
+		@Fact (statement = "Used to select which container to run.")
+	})
 	@Required
 	@Unique
 	ValueProperty PROP_QUALIFIER = new ValueProperty(TYPE, "Qualifier"); //$NON-NLS-1$

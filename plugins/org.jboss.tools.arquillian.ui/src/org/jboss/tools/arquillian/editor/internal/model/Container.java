@@ -20,6 +20,8 @@ import org.eclipse.sapphire.Value;
 import org.eclipse.sapphire.ValueProperty;
 import org.eclipse.sapphire.modeling.annotations.CountConstraint;
 import org.eclipse.sapphire.modeling.annotations.DefaultValue;
+import org.eclipse.sapphire.modeling.annotations.Fact;
+import org.eclipse.sapphire.modeling.annotations.Facts;
 import org.eclipse.sapphire.modeling.annotations.Label;
 import org.eclipse.sapphire.modeling.annotations.Required;
 import org.eclipse.sapphire.modeling.annotations.Service;
@@ -40,6 +42,10 @@ public interface Container extends Element {
 	ElementType TYPE = new ElementType(Container.class);
 
 	@Label(standard = "Qualifier")
+	@Facts ( {
+		@Fact (statement = "Must be unique between containers and groups."),
+		@Fact (statement = "Used to select which container to run.")
+	})
 	@XmlBinding(path = "@qualifier")
 	@Required
 	@Unique
