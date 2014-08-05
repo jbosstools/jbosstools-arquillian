@@ -64,6 +64,7 @@ import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.OperationCanceledException;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.Status;
+import org.eclipse.core.runtime.SubProgressMonitor;
 import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.core.runtime.preferences.DefaultScope;
 import org.eclipse.core.runtime.preferences.IEclipsePreferences;
@@ -317,28 +318,41 @@ public class ArquillianUtility {
 		return false;
 	}
 
-	public static void addProfiles(IFile pomFile,
-			List<Container> selectedContainers) throws CoreException {
-		PomResourceImpl projectResource = MavenCoreActivator.loadResource(pomFile);
-		//PomResourceImpl profileResource = MavenCoreActivator.loadResource(getArquillianProfileUrl());
-		EList<org.eclipse.m2e.model.edit.pom.Profile> profiles = projectResource.getModel().getProfiles();
-		boolean save = false;
-		for (Container container:selectedContainers) {
-			org.eclipse.m2e.model.edit.pom.Profile profile = ProfileGenerator.getProfile(container);
-			profiles.add(EcoreUtil.copy(profile));
-			save = true;
+	public static IStatus addProfiles(IFile pomFile,
+			List<Container> selectedContainers, IProgressMonitor monitor) throws CoreException {
+		if (monitor.isCanceled()) {
+			return Status.CANCEL_STATUS;
 		}
-		if (save) {
-			try {
+		PomResourceImpl projectResource = MavenCoreActivator.loadResource(pomFile);
+		try {
+			EList<org.eclipse.m2e.model.edit.pom.Profile> profiles = projectResource.getModel().getProfiles();
+			boolean save = false;
+			if (monitor.isCanceled()) {
+				return Status.CANCEL_STATUS;
+			}
+			monitor.beginTask("Add profiles...", selectedContainers.size());
+			for (Container container:selectedContainers) {
+				if (monitor.isCanceled()) {
+					return Status.CANCEL_STATUS;
+				}
+				monitor.subTask("Add profile: " + container.getName());
+				monitor.worked(1);
+				org.eclipse.m2e.model.edit.pom.Profile profile = ProfileGenerator.getProfile(container);
+				profiles.add(EcoreUtil.copy(profile));
+				save = true;
+			}
+			if (save) {
 				Map<String,String> options = new HashMap<String,String>();
 				options.put(XMIResource.OPTION_ENCODING, MavenCoreActivator.ENCODING);
 				projectResource.save(options);
-			} catch (IOException e) {
-				MavenCoreActivator.log(e);
-			} finally {
-				projectResource.unload();
 			}
+		} catch (IOException e) {
+			MavenCoreActivator.log(e);
+		} finally {
+			projectResource.unload();
 		}
+		monitor.done();
+		return Status.OK_STATUS;
 	}
 
 	public static List<String> getProfiles(Model projectModel) throws CoreException {

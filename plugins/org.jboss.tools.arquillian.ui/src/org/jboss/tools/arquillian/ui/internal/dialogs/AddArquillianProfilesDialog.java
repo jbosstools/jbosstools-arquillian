@@ -19,6 +19,10 @@ import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.Assert;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.Status;
+import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.dialogs.TitleAreaDialog;
 import org.eclipse.jface.viewers.CheckboxTableViewer;
@@ -160,8 +164,25 @@ public class AddArquillianProfilesDialog extends TitleAreaDialog {
 	
 	@Override
 	protected void okPressed() {
-		IFile pomFile = project.getFile(IMavenConstants.POM_FILE_NAME);
-		Object[] checkedElements = viewer.getCheckedElements();
+		final IFile pomFile = project.getFile(IMavenConstants.POM_FILE_NAME);
+		final Object[] checkedElements = viewer.getCheckedElements();
+		Job job = new Job("Add profiles...") {
+
+			@Override
+			protected IStatus run(IProgressMonitor monitor) {
+				return addProfiles(pomFile, checkedElements, monitor);
+			}
+			
+		};
+		
+		job.setPriority(Job.DECORATE);
+		job.setUser(true);
+		job.setSystem(false);
+		job.schedule();
+		super.okPressed();
+	}
+
+	private IStatus addProfiles(IFile pomFile, Object[] checkedElements, IProgressMonitor monitor) {
 		List<Container> checkedContainers = new ArrayList<Container>();
 		for (Object element:checkedElements) {
 			if (element instanceof Container) {
@@ -174,12 +195,12 @@ public class AddArquillianProfilesDialog extends TitleAreaDialog {
 		}
 		if (pomFile != null && checkedContainers.size() > 0) {
 			try {
-				ArquillianUtility.addProfiles(pomFile, checkedContainers);
+				return ArquillianUtility.addProfiles(pomFile, checkedContainers, monitor);
 			} catch (CoreException e) {
 				ArquillianUIActivator.log(e);
 			}
 		}
-		super.okPressed();
+		return Status.OK_STATUS;
 	}
 	
 	@Override
