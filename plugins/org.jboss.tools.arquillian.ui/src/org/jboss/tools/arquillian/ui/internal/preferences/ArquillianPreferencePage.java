@@ -141,15 +141,15 @@ public class ArquillianPreferencePage extends PreferencePage implements
         securityGroup.setLayout(new GridLayout(1, false));
         gd = new GridData(SWT.FILL, SWT.FILL,true,false);
         securityGroup.setLayoutData(gd);
-        securityGroup.setText("security");
+        securityGroup.setText("Security");
         
-        allowOSCommandButton = new Button(argumentsGroup, SWT.CHECK);
+        allowOSCommandButton = new Button(securityGroup, SWT.CHECK);
         allowOSCommandButton.setLayoutData(new GridData(SWT.FILL, SWT.FILL,true,false));
         allowOSCommandButton.setText("Allow running an OS command when analyzing a deployment method");
         
         allowOSCommandButton.setSelection(prefs.getBoolean(ArquillianConstants.ALLOW_OS_COMMAND));
 
-        allowSPCommandButton = new Button(argumentsGroup, SWT.CHECK);
+        allowSPCommandButton = new Button(securityGroup, SWT.CHECK);
         allowSPCommandButton.setLayoutData(new GridData(SWT.FILL, SWT.FILL,true,false));
         allowSPCommandButton.setText("Allow setting a system propery when analyzing a deployment method");
         

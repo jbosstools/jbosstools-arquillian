@@ -462,14 +462,14 @@ public class ArquillianUIUtil {
 			String qualifier = arquillianXmlProperties.getProperty(QUALIFIER, null);
 			if (qualifier == null) {
 				qualifier = UNKNOWN;
-				IFile file = getFile(javaProject, ARQUILLIAN_XML);
-				if (file == null) {
-					file = getNewFile(javaProject, ARQUILLIAN_XML);
-					String s = "<arquillian xmlns=\"http://jboss.org/schema/arquillian\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n" //$NON-NLS-1$
-		                    + "            xsi:schemaLocation=\"http://jboss.org/schema/arquillian http://jboss.org/schema/arquillian/arquillian_1_0.xsd\">\n" //$NON-NLS-1$
-		                    + "</arquillian>"; //$NON-NLS-1$
-					file.create(new ByteArrayInputStream(s.getBytes()), true,null);
-				}
+//				IFile file = getFile(javaProject, ARQUILLIAN_XML);
+//				if (file == null) {
+//					file = getNewFile(javaProject, ARQUILLIAN_XML);
+//					String s = "<arquillian xmlns=\"http://jboss.org/schema/arquillian\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n" //$NON-NLS-1$
+//		                    + "            xsi:schemaLocation=\"http://jboss.org/schema/arquillian http://jboss.org/schema/arquillian/arquillian_1_0.xsd\">\n" //$NON-NLS-1$
+//		                    + "</arquillian>"; //$NON-NLS-1$
+//					file.create(new ByteArrayInputStream(s.getBytes()), true,null);
+//				}
 //				InputStream is = null;
 //				try {
 //					is = file.getContents();
@@ -494,7 +494,7 @@ public class ArquillianUIUtil {
 				String key = (String) keys.nextElement();
 				String value = arquillianXmlProperties.getProperty(key);
 				ArquillianProperty property = new ArquillianProperty(key, value, ARQUILLIAN_XML, false);
-				properties.remove(property);;
+				properties.remove(property);
 				properties.add(property);
 			}
 			String fileName = vmProperties.getProperty(ARQUILLIAN_PROPERTIES, ARQUILLIAN_PROPERTIES);
