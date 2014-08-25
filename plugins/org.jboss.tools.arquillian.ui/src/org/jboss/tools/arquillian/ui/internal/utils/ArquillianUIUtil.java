@@ -127,6 +127,8 @@ import org.xml.sax.SAXException;
  */
 public class ArquillianUIUtil {
 
+	private static final String DEFAULT = "default"; //$NON-NLS-1$
+	private static final String JBOSSTOOLS_QUALIFIER = "jbosstools"; //$NON-NLS-1$
 	private static final String UNKNOWN = "Unknown"; //$NON-NLS-1$
 	private static final String CONFIGURATION = "configuration"; //$NON-NLS-1$
 	private static final String ARQ_PREFIX = "arq"; //$NON-NLS-1$
@@ -487,6 +489,20 @@ public class ArquillianUIUtil {
 //				}
 			}
 			arquillianXmlProperties.remove(QUALIFIER);
+			if (UNKNOWN.equals(qualifier)) {
+				qualifier = JBOSSTOOLS_QUALIFIER;
+				StringBuffer buf = new StringBuffer();
+				buf.append(ARQ_PREFIX);
+				buf.append(PERIOD);
+				buf.append(CONTAINER);
+				buf.append(PERIOD);
+				buf.append(qualifier);
+				buf.append(PERIOD);
+				buf.append(DEFAULT);
+				ArquillianProperty property = new ArquillianProperty(buf.toString(), "", ARQUILLIAN_PROPERTIES, true); //$NON-NLS-1$
+				property.setChanged(true);
+				properties.add(property);
+			}
 			addContainerProperties(javaProject, properties, qualifier);
 			
 			Enumeration<Object> keys = arquillianXmlProperties.keys();
@@ -502,6 +518,12 @@ public class ArquillianUIUtil {
 			keys = arquillianProperties.keys();
 			while (keys.hasMoreElements()) {
 				String key = (String) keys.nextElement();
+				if (key != null && key.startsWith(ARQ_PREFIX + "." + CONTAINER) && key.endsWith(DEFAULT)) {
+					String[] elements = key.split(".");
+					if (elements.length == 4) {
+						continue;
+					}
+				}
 				String value = arquillianProperties.getProperty(key);
 				ArquillianProperty property = new ArquillianProperty(key, value, ARQUILLIAN_PROPERTIES, false);
 				properties.remove(property);;
@@ -765,7 +787,7 @@ public class ArquillianUIUtil {
 						return container;
 					}
 				} else {
-					String defaultString = container.getAttribute("default"); //$NON-NLS-1$
+					String defaultString = container.getAttribute(DEFAULT); //$NON-NLS-1$
 					if ("true".equals(defaultString)) { //$NON-NLS-1$
 						return container;
 					}
