@@ -39,7 +39,7 @@ public class AddArquillianProfilesCommandHandler extends ArquillianAbstractHandl
 	public void execute(IProject project) {
 		try {
 			if (project == null || !project.hasNature(ArquillianNature.ARQUILLIAN_NATURE_ID)) {
-				Shell shell = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell();
+				Shell shell = PlatformUI.getWorkbench().getModalDialogShellProvider().getShell();
 				String message;
 				if (project != null) {
 					message = "The '" + project.getName() + "' project is not an Arquillian project";
