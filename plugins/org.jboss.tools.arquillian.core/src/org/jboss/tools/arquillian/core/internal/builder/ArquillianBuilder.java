@@ -46,6 +46,7 @@ import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.ToolFactory;
 import org.eclipse.jdt.core.compiler.CategorizedProblem;
 import org.eclipse.jdt.core.compiler.CharOperation;
+import org.eclipse.jdt.core.compiler.IProblem;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.ASTVisitor;
@@ -385,7 +386,24 @@ public class ArquillianBuilder extends IncrementalProjectBuilder {
 	private boolean hasErrors(IProject project) {
 		try {
 			IMarker[] markers = project.findMarkers(IJavaModelMarker.BUILDPATH_PROBLEM_MARKER, true, IResource.DEPTH_INFINITE);
-			return markers != null && markers.length > 0;
+			if (markers != null && markers.length > 0) {
+				return true;
+			}
+			markers = project.findMarkers(IJavaModelMarker.JAVA_MODEL_PROBLEM_MARKER, true, IResource.DEPTH_INFINITE);
+			for (IMarker marker:markers) {
+				if (marker == null || marker.getAttribute(IMarker.SEVERITY,
+						IMarker.SEVERITY_ERROR) != IMarker.SEVERITY_ERROR) {
+					continue;
+				}
+				Object object = marker.getAttribute(IJavaModelMarker.ID);
+				if (object instanceof Integer) {
+					Integer id = (Integer) object;
+					if (id.intValue() == IProblem.ConflictingImport) {
+						return true;
+					}
+				}
+			}
+			return false;
 		} catch (CoreException e) {
 			ArquillianCoreActivator.log(e);
 			return true;
