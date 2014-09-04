@@ -851,7 +851,11 @@ public class NewArquillianJUnitTestCasePageOne extends NewTypeWizardPage {
 		
 		ISourceRange typeSourceRange= type.getSourceRange();
 		int pos= typeSourceRange.getOffset() + typeSourceRange.getLength() - 1;
-		buffer.append('@').append(imports.addImport(JUNIT4_ANNOTATION_NAME, pos)).append(getLineDelimiter());
+		if ("Test".equals(type.getElementName())) {
+			buffer.append('@').append(JUNIT4_ANNOTATION_NAME).append(getLineDelimiter());
+		} else {
+			buffer.append('@').append(imports.addImport(JUNIT4_ANNOTATION_NAME, pos)).append(getLineDelimiter());
+		}
 		
 
 		buffer.append("public ");//$NON-NLS-1$
