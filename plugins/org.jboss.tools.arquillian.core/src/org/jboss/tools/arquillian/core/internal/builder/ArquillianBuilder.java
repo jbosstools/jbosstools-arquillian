@@ -145,6 +145,7 @@ public class ArquillianBuilder extends IncrementalProjectBuilder {
 							cu = (ICompilationUnit) element;
 						}
 						if (cu != null) {
+							cleanupMarkers(cu.getUnderlyingResource());
 							if (units.contains(cu)) {
 								DependencyCache.getDependencies().remove(cu);
 								return false;
@@ -411,6 +412,9 @@ public class ArquillianBuilder extends IncrementalProjectBuilder {
 	}
 
 	private void cleanupMarkers(IResource resource) {
+		if (resource == null) {
+			return;
+		}
 		try {
 			resource.deleteMarkers(ArquillianConstants.MARKER_CLASS_ID, false, IResource.DEPTH_INFINITE);
 			resource.deleteMarkers(ArquillianConstants.MARKER_RESOURCE_ID, false, IResource.DEPTH_INFINITE);
