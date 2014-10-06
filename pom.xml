@@ -9,7 +9,7 @@
 	<groupId>org.jboss.tools</groupId>
 	<artifactId>arquillian</artifactId>
 	<version>1.1.2-SNAPSHOT</version>
-	<name>arquillian.all</name>	
+	<name>jbosstools-arquillian</name>	
 	<packaging>pom</packaging>
 	<properties>
 		<tycho.scmUrl>scm:git:https://github.com/jbosstools/jbosstools-arquillian.git</tycho.scmUrl>
