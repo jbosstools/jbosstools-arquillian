@@ -50,6 +50,7 @@ public class ArquillianValidatorConfigurationBlock extends OptionsConfigurationB
 	private static final Key DEPLOYMENT_ARCHIVE_CANNOT_BE_CREATED = getKey(ArquillianCoreActivator.PLUGIN_ID, ArquillianConstants.DEPLOYMENT_ARCHIVE_CANNOT_BE_CREATED);
 	private static final Key ENABLE_ARQUILLIAN_VALIDATOR = getKey(ArquillianCoreActivator.PLUGIN_ID, ArquillianConstants.ENABLE_ARQUILLIAN_VALIDATOR);
 	private static final Key TEST_ARQUILLIAN_CONTAINER = getKey(ArquillianCoreActivator.PLUGIN_ID, ArquillianConstants.TEST_ARQUILLIAN_CONTAINER);
+	private static final Key DEPLOYMENT_METHOD_HAS_TO_BE_STATIC_AND_PUBLIC = getKey(ArquillianCoreActivator.PLUGIN_ID, ArquillianConstants.DEPLOYMENT_METHOD_HAS_TO_BE_STATIC_AND_PUBLIC);
 	
 	private static final String ERROR= JavaCore.ERROR;
 	private static final String WARNING= JavaCore.WARNING;
@@ -78,7 +79,8 @@ public class ArquillianValidatorConfigurationBlock extends OptionsConfigurationB
 				IMPORT_IS_NOT_INCLUDED_IN_ANY_DEPLOYMENT,
 				DEPLOYMENT_ARCHIVE_CANNOT_BE_CREATED,
 				ENABLE_ARQUILLIAN_VALIDATOR,
-				TEST_ARQUILLIAN_CONTAINER
+				TEST_ARQUILLIAN_CONTAINER,
+				DEPLOYMENT_METHOD_HAS_TO_BE_STATIC_AND_PUBLIC,
 			};
 	}
 
@@ -189,6 +191,9 @@ public class ArquillianValidatorConfigurationBlock extends OptionsConfigurationB
 		label = "Invalid archive name";
 		fFilteredPrefTree.addComboBox(inner, label, INVALID_ARCHIVE_NAME, errorWarningIgnore, errorWarningIgnoreLabels, defaultIndent, section);
 		
+		label = "Deployment method has to be public and static";
+		fFilteredPrefTree.addComboBox(inner, label, DEPLOYMENT_METHOD_HAS_TO_BE_STATIC_AND_PUBLIC, errorWarningIgnore, errorWarningIgnoreLabels, defaultIndent, section);
+		
 		IDialogSettings settingsSection= ArquillianUIActivator.getDefault().getDialogSettings().getSection(SETTINGS_SECTION_NAME);
 		restoreSectionExpansionStates(settingsSection);
 
@@ -251,6 +256,7 @@ public class ArquillianValidatorConfigurationBlock extends OptionsConfigurationB
 		setComboEnabled(TYPE_IS_NOT_INCLUDED_IN_ANY_DEPLOYMENT, enabled);
 		setComboEnabled(IMPORT_IS_NOT_INCLUDED_IN_ANY_DEPLOYMENT, enabled);
 		setComboEnabled(DEPLOYMENT_ARCHIVE_CANNOT_BE_CREATED, enabled);
+		setComboEnabled(DEPLOYMENT_METHOD_HAS_TO_BE_STATIC_AND_PUBLIC, enabled);
 	}
 
 }

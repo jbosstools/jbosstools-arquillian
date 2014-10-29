@@ -69,6 +69,8 @@ public class ArquillianConstants {
 
 	public static final String MARKER_INVALID_ARCHIVE_NAME_ID = "org.jboss.tools.arquillian.core.problem.invalidArchiveName";  //$NON-NLS-1$
 
+	public static final String MARKER_INVALID_DEPLOYMENT_METHOD_ID = "org.jboss.tools.arquillian.core.problem.invalidDeploymentMethod";  //$NON-NLS-1$
+
     public final static String[] ARQUILLIAN_PROBLEM_MARKER_ATTRIBUTE_NAMES = {
     	IMarker.MESSAGE,
     	IMarker.SEVERITY,
@@ -96,6 +98,8 @@ public class ArquillianConstants {
 	
 	public static final String DEPLOYMENT_ARCHIVE_CANNOT_BE_CREATED = ArquillianCoreActivator.PLUGIN_ID + ".deploymentArchiveCannotBeCreated"; //$NON-NLS-1$
 	
+	public static final String DEPLOYMENT_METHOD_HAS_TO_BE_STATIC_AND_PUBLIC = ".deploymentMethodHasToBeStaticAndPublic"; //$NON-NLS-1$
+
 	public static final String SELECTED_ARQUILLIAN_PROFILES = "selectedArquillianProfiles"; //$NON-NLS-1$
 	
 	public static final String ACTIVATED_ARQUILLIAN_PROFILES = "activatedArquillianProfiles"; //$NON-NLS-1$
@@ -132,5 +136,10 @@ public class ArquillianConstants {
 	public static final String RAR = "rar"; //$NON-NLS-1$
 
 	public static final String FIRST_START = "firstStart"; //$NON-NLS-1$
+	
+	public static final int MODIFIER_TYPE_UNKNOWN = 3;
+	public static final String MODIFIER_TYPE = "modifierType"; //$NON-NLS-1$
+
+	public static final String METHOD_NAME = "methodName"; //$NON-NLS-1$
 
 }

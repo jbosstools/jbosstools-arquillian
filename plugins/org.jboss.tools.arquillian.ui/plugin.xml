@@ -443,6 +443,12 @@
    
    <extension point="org.eclipse.ui.ide.markerResolution">
   	  <markerResolutionGenerator
+     	class="org.jboss.tools.arquillian.ui.internal.markers.FixInvalidDeploymentMethodResolutionGenerator"
+     	markerType="org.jboss.tools.arquillian.core.problem.invalidDeploymentMethod"/>
+   </extension>
+   
+   <extension point="org.eclipse.ui.ide.markerResolution">
+  	  <markerResolutionGenerator
      	class="org.jboss.tools.arquillian.ui.internal.markers.FixArchiveNameResolutionGenerator"
      	markerType="org.jboss.tools.arquillian.core.problem.invalidArchiveName"/>
    </extension>
