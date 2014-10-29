@@ -107,6 +107,14 @@
 	<super type="org.jboss.tools.arquillian.core.problem"/>
 	<persistent value="true"/>
   </extension>
+  
+  <extension 
+  		id="org.jboss.tools.arquillian.core.problem.invalidDeploymentMethod"
+  		point="org.eclipse.core.resources.markers"
+  		name="Arquillian Resource Problem">
+	<super type="org.jboss.tools.arquillian.core.problem"/>
+	<persistent value="true"/>
+  </extension>
 
   <!--
   <extension

@@ -602,6 +602,18 @@ public class ArquillianSearchEngine {
 			return false;
 		}
 	}
+	
+	public static boolean hasInvalidDeploymentMethod(IType type) {
+		if (type == null) {
+			return false;
+		}
+		try {
+			return getDeploymentMethods(type).size() > 0;
+		} catch (JavaModelException e) {
+			ArquillianCoreActivator.log(e);
+			return false;
+		}
+	}
 
 	public static boolean hasTestMethod(IType type) {
 		try {
@@ -855,15 +867,44 @@ public class ArquillianSearchEngine {
 		return methodBindings;
 	}
 	
-	public static boolean isDeploymentMethod(IMethodBinding methodBinding) {
+	public static List<IMethodBinding> getInvalidDeploymentMethods(IType type) throws JavaModelException {
+		List<IMethodBinding> methodBindings = new ArrayList<IMethodBinding>();
+		if (type == null) {
+			return methodBindings;
+		}
+		ITypeBinding binding = getTypeBinding(type);
+		while (binding != null) {
+			IMethodBinding[] declaredMethods= binding.getDeclaredMethods();
+			for (IMethodBinding curr:declaredMethods) {
+				if (isDeploymentMethod(curr, false)) {
+					int modifiers = curr.getModifiers();
+					if ( !((modifiers & Modifier.PUBLIC) != 0 &&
+							(modifiers & Modifier.STATIC) != 0) ) {
+						methodBindings.add(curr);
+					}
+				}
+			}
+			binding = binding.getSuperclass();
+		}
+		return methodBindings;
+	}
+	
+	public static boolean isDeploymentMethod(IMethodBinding methodBinding, boolean testModifiers) {
 		if (methodBinding == null) {
 			return false;
 		}
-		if (annotates(methodBinding.getAnnotations(), ArquillianUtility.ORG_JBOSS_ARQUILLIAN_CONTAINER_TEST_API_DEPLOYMENT, null)) {
+		if (annotates(methodBinding.getAnnotations(), 
+				ArquillianUtility.ORG_JBOSS_ARQUILLIAN_CONTAINER_TEST_API_DEPLOYMENT, null)) {
+			boolean condition;
 			int modifiers = methodBinding.getModifiers();
-			if ( (modifiers & Modifier.PUBLIC) != 0 &&
-					(modifiers & Modifier.STATIC) != 0 &&
-					methodBinding.getParameterTypes().length == 0) {
+			if (testModifiers) {
+				condition = (modifiers & Modifier.PUBLIC) != 0 &&
+						(modifiers & Modifier.STATIC) != 0 &&
+						methodBinding.getParameterTypes().length == 0;
+			} else {
+				condition = methodBinding.getParameterTypes().length == 0;
+			}
+			if (condition) {
 				ITypeBinding returnType = methodBinding.getReturnType();
 				if (isArchiveType(returnType)) {
 					return true;
@@ -871,6 +912,10 @@ public class ArquillianSearchEngine {
 			}
 		}
 		return false;
+	}
+	
+	public static boolean isDeploymentMethod(IMethodBinding methodBinding) {
+		return isDeploymentMethod(methodBinding, true);
 	}
 
 	public static boolean isArchiveType(ITypeBinding returnType) {

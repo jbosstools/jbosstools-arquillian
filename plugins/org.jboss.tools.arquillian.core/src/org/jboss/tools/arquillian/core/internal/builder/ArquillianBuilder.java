@@ -37,6 +37,7 @@ import org.eclipse.jdt.core.IJavaModelMarker;
 import org.eclipse.jdt.core.IJavaModelStatusConstants;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IMember;
+import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.ISourceRange;
@@ -56,6 +57,7 @@ import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
+import org.eclipse.jdt.core.dom.Modifier;
 import org.eclipse.jdt.core.dom.QualifiedName;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.StringLiteral;
@@ -262,6 +264,63 @@ public class ArquillianBuilder extends IncrementalProjectBuilder {
 					ArquillianCoreActivator.log(e);
 				}
         	}
+        	preference = ArquillianUtility.getPreference(ArquillianConstants.DEPLOYMENT_METHOD_HAS_TO_BE_STATIC_AND_PUBLIC, project);
+        	if (!JavaCore.IGNORE.equals(preference)) {
+        		try {
+        			List<IMethodBinding> invalidDeploymentMethods = ArquillianSearchEngine.getInvalidDeploymentMethods(primaryType);
+        			for (IMethodBinding binding:invalidDeploymentMethods) {
+        				Integer severity = ArquillianUtility.getSeverity(preference);
+        				String message = "Arquilian deployment method has to be ";
+        				int modifiers = binding.getModifiers();
+        				int modifierType = Modifier.PUBLIC & Modifier.STATIC;
+    					if ( ((modifiers & Modifier.PUBLIC) == 0 &&
+    							(modifiers & Modifier.STATIC) == 0) ) {
+    						message = message + "public and static";
+    					} else if ( (modifiers & Modifier.PUBLIC) == 0) {
+    						message = message + "public";
+    						modifierType = Modifier.PUBLIC;
+    					} else  if ( (modifiers & Modifier.STATIC) == 0) {
+    						message = message + "static";
+    						modifierType = Modifier.STATIC;
+    					} else {
+    						message = "Arquilian deployment method is invalid";
+    						modifierType = ArquillianConstants.MODIFIER_TYPE_UNKNOWN;
+    					}
+    					IMarker marker = storeProblem(unit, message, severity, ArquillianConstants.MARKER_INVALID_DEPLOYMENT_METHOD_ID);
+    					if (marker != null) {
+    						IJavaElement element = binding.getJavaElement();
+    						if (element instanceof IMethod) {
+    							IMethod method = (IMethod) element;
+    							String source = method.getSource();
+    							ISourceRange range = method.getSourceRange();
+    							int start;
+								if (range != null && source != null) {
+    								start = range.getOffset();
+    								String name = method.getElementName();
+    								int index = source.indexOf(name);
+    								if (index > 0) {
+    									marker.setAttribute(IMarker.CHAR_START, start + index);
+    									marker.setAttribute(IMarker.CHAR_END, start + index + name.length());
+    									StringBuilder buffer = new StringBuilder();
+    									buffer.append("'"); //$NON-NLS-1$
+    									buffer.append(name);
+    									buffer.append("'"); //$NON-NLS-1$
+    									marker.setAttribute(ArquillianConstants.METHOD_NAME, buffer.toString());
+    								} else {
+    									marker.setAttribute(IMarker.CHAR_START, start);
+    									marker.setAttribute(IMarker.CHAR_END, start);
+    								}
+    								marker.setAttribute(ArquillianConstants.MODIFIER_TYPE, modifierType);
+    								
+    							}
+    						}
+						}
+        			}
+				} catch (CoreException e) {
+					ArquillianCoreActivator.log(e);
+				}
+        	}
+        	
         	checkCancel(monitor);
         	preference = ArquillianUtility.getPreference(ArquillianConstants.MISSING_TEST_METHOD, project.getProject());
         	if (!JavaCore.IGNORE.equals(preference) && !ArquillianSearchEngine.hasTestMethod(primaryType)) {
@@ -416,10 +475,7 @@ public class ArquillianBuilder extends IncrementalProjectBuilder {
 			return;
 		}
 		try {
-			resource.deleteMarkers(ArquillianConstants.MARKER_CLASS_ID, false, IResource.DEPTH_INFINITE);
-			resource.deleteMarkers(ArquillianConstants.MARKER_RESOURCE_ID, false, IResource.DEPTH_INFINITE);
-			resource.deleteMarkers(ArquillianConstants.MARKER_MISSING_DEPLOYMENT_METHOD_ID, false, IResource.DEPTH_INFINITE);
-			resource.deleteMarkers(ArquillianConstants.MARKER_INVALID_ARCHIVE_NAME_ID, false, IResource.DEPTH_INFINITE);
+			resource.deleteMarkers(ArquillianConstants.MARKER_BASE_ID, true, IResource.DEPTH_INFINITE);
 		} catch (CoreException e) {
 			ArquillianCoreActivator.log(e);
 		}
