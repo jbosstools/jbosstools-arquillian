@@ -187,6 +187,7 @@ public class NewArquillianJUnitTestCasePageOne extends NewTypeWizardPage {
 			protected void doWidgetSelected(SelectionEvent e) {
 				super.doWidgetSelected(e);
 				saveWidgetValues();
+				getContainer().updateButtons();
 			}
 		};
 		fMethodStubsButtons.setLabelText(WizardMessages.NewTestCaseWizardPageOne_method_Stub_label);
@@ -316,20 +317,6 @@ public class NewArquillianJUnitTestCasePageOne extends NewTypeWizardPage {
 		createSeparator(composite, nColumns);
 		createClassUnderTestControls(composite, nColumns);
 		createBuildPathConfigureControls(composite, nColumns);
-
-		fMethodStubsButtons.getSelectionButton(IDX_DEPLOYMENT).addSelectionListener(new SelectionAdapter() {
-
-			@Override
-			public void widgetDefaultSelected(SelectionEvent e) {
-				getContainer().updateButtons();
-			}
-
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				getContainer().updateButtons();
-			}
-		
-		});
 		
 		setControl(composite);
 
@@ -1073,14 +1060,14 @@ public class NewArquillianJUnitTestCasePageOne extends NewTypeWizardPage {
 	@Override
 	public boolean canFlipToNextPage() {
 		return super.canFlipToNextPage() &&
-				(getClassUnderTest() != null || fMethodStubsButtons.getSelectionButton(IDX_DEPLOYMENT).getSelection() );
+				(getClassUnderTest() != null || fMethodStubsButtons.isSelected(IDX_DEPLOYMENT) );
 	}
 
 	@Override
 	public IWizardPage getNextPage() {
 		if (getClassUnderTest() != null) {
 			super.getNextPage();
-		} else if (fMethodStubsButtons.getSelectionButton(IDX_DEPLOYMENT).getSelection()) {
+		} else if (fMethodStubsButtons.isSelected(IDX_DEPLOYMENT)) {
 			IWizard wizard = getWizard();
 			if (wizard instanceof NewArquillianJUnitTestWizard) {
 				return ((NewArquillianJUnitTestWizard) wizard).getNewArquillianJUnitTestCaseDeploymentPage();
@@ -1159,6 +1146,6 @@ public class NewArquillianJUnitTestCasePageOne extends NewTypeWizardPage {
 	}
 
 	public boolean isGenerateDeploymentMethod() {
-		return fMethodStubsButtons.getSelectionButton(IDX_DEPLOYMENT).getSelection();
+		return fMethodStubsButtons.isSelected(IDX_DEPLOYMENT);
 	}
 }
