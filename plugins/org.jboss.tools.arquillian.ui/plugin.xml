@@ -35,6 +35,11 @@
 			name="%addArquillianProfiles"
 			categoryId="org.jboss.tools.arquillian.category"
 			defaultHandler="org.jboss.tools.arquillian.ui.internal.commands.AddArquillianProfilesCommandHandler"/>
+		<command
+			id="org.jboss.tools.arquillian.ui.action.exportArchive"
+			name="%exportArchive"
+			categoryId="org.jboss.tools.arquillian.category"
+			defaultHandler="org.jboss.tools.arquillian.ui.internal.commands.ExportArchiveCommandHandler"/>
 			
 		<category
 			id="org.jboss.tools.arquillian.category"
@@ -227,6 +232,21 @@
 										property="org.eclipse.core.resources.projectNature" 
 										value="org.jboss.tools.arquillian.core.arquillianNature"/>
 								</and>
+							</adapt>
+						</iterate>
+					</and>
+				</visibleWhen>
+         </command>
+      </menuContribution>
+      <menuContribution locationURI="popup:org.eclipse.ui.popup.any?after=additions">
+         <command
+               commandId="org.jboss.tools.arquillian.ui.action.exportArchive"
+               style="push">
+            <visibleWhen checkEnabled="false">
+					<and>
+						<count value="1"/>
+						<iterate ifEmpty="false">
+							<adapt type="org.jboss.tools.arquillian.core.internal.archives.Archive">
 							</adapt>
 						</iterate>
 					</and>

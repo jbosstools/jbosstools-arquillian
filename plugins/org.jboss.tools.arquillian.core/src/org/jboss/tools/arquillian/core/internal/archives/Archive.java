@@ -298,4 +298,8 @@ public class Archive implements IEntry {
 		
 	}
 
+	public String getInternalName() {
+		return name;
+	}
+
 }
