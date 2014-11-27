@@ -22,15 +22,12 @@ import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IncrementalProjectBuilder;
 import org.eclipse.core.resources.ProjectScope;
 import org.eclipse.core.runtime.CoreException;
-import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.preferences.IEclipsePreferences;
-import org.eclipse.ltk.core.refactoring.Change;
-import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 import org.jboss.tools.arquillian.core.ArquillianCoreActivator;
 import org.jboss.tools.arquillian.core.internal.ArquillianConstants;
 import org.jboss.tools.arquillian.core.internal.util.ArquillianUtility;
+import org.jboss.tools.arquillian.ui.internal.markers.FixArchiveFileLocationMarkerResolution;
 import org.jboss.tools.arquillian.ui.internal.markers.FixInvalidDeploymentMethodMarkerResolution;
-import org.jboss.tools.arquillian.ui.internal.refactoring.FixArchiveNameRefactoring;
 import org.jboss.tools.test.util.JobUtils;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -69,12 +66,35 @@ public class InvalidDeploymentMethodTest extends AbstractArquillianTest {
 				ArquillianConstants.MARKER_INVALID_DEPLOYMENT_METHOD_ID, true, IResource.DEPTH_INFINITE);
 		assertTrue("Arquillian markers aren't created", projectMarkers.length > 0);
 		
-		FixInvalidDeploymentMethodMarkerResolution resolution = new FixInvalidDeploymentMethodMarkerResolution(projectMarkers[0]);
+		FixInvalidDeploymentMethodMarkerResolution resolution = new FixInvalidDeploymentMethodMarkerResolution(projectMarkers[0], true);
 		resolution.run(projectMarkers[0]);
 		
 		project.build(IncrementalProjectBuilder.FULL_BUILD, null);
 		JobUtils.waitForIdle(1000);
-		projectMarkers = resource.findMarkers(ArquillianConstants.MARKER_INVALID_ARCHIVE_NAME_ID, true,
+		projectMarkers = resource.findMarkers(ArquillianConstants.MARKER_INVALID_DEPLOYMENT_METHOD_ID, true,
+				IResource.DEPTH_INFINITE);
+		assertTrue("An invalid marker is created.", projectMarkers.length == 0);
+	}
+	
+	@Test
+	public void testFileLocation() throws CoreException, IOException {
+		IProject project = getProject(TEST_PROJECT_NAME);
+		IResource resource = project.findMember("/src/test/java/org/jboss/tools/arquillian/test/ArchiveFileLocationTest.java");
+		assertNotNull(resource);
+		assertTrue(resource instanceof IFile);
+		
+		project.build(IncrementalProjectBuilder.FULL_BUILD, null);
+		JobUtils.waitForIdle(1000);
+		IMarker[] projectMarkers = resource.findMarkers(
+				ArquillianConstants.MARKER_INVALID_ARCHIVE_FILE_LOCATION_ID, true, IResource.DEPTH_INFINITE);
+		assertTrue("Arquillian markers aren't created", projectMarkers.length > 0);
+		
+		FixArchiveFileLocationMarkerResolution resolution = new FixArchiveFileLocationMarkerResolution(projectMarkers[0], true);
+		resolution.run(projectMarkers[0]);
+		
+		project.build(IncrementalProjectBuilder.FULL_BUILD, null);
+		JobUtils.waitForIdle(1000);
+		projectMarkers = resource.findMarkers(ArquillianConstants.MARKER_INVALID_ARCHIVE_FILE_LOCATION_ID, true,
 				IResource.DEPTH_INFINITE);
 		assertTrue("An invalid marker is created.", projectMarkers.length == 0);
 	}

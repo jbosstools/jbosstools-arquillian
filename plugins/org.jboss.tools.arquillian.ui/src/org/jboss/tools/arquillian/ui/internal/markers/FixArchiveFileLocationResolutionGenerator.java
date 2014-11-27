@@ -26,7 +26,7 @@ import org.jboss.tools.arquillian.core.internal.ArquillianConstants;
  * @author snjeza
  *
  */
-public class FixInvalidDeploymentMethodResolutionGenerator implements
+public class FixArchiveFileLocationResolutionGenerator implements
 		IMarkerResolutionGenerator2 {
 
 	/* (non-Javadoc)
@@ -41,7 +41,7 @@ public class FixInvalidDeploymentMethodResolutionGenerator implements
 		IJavaElement element = JavaCore.create(resource);
 		if (element != null ) {
 			return new IMarkerResolution[] {
-				new FixInvalidDeploymentMethodMarkerResolution(marker, false)	
+				new FixArchiveFileLocationMarkerResolution(marker, false)
 			};
 		}
 		
@@ -54,10 +54,7 @@ public class FixInvalidDeploymentMethodResolutionGenerator implements
 	@Override
 	public boolean hasResolutions(IMarker marker) {
 		try {
-			return ArquillianConstants.MARKER_INVALID_DEPLOYMENT_METHOD_ID.equals(marker.getType())
-					&& marker.getAttribute(ArquillianConstants.MODIFIER_TYPE,
-							ArquillianConstants.MODIFIER_TYPE_UNKNOWN) != ArquillianConstants.MODIFIER_TYPE_UNKNOWN;
-
+			return ArquillianConstants.MARKER_INVALID_ARCHIVE_FILE_LOCATION_ID.equals(marker.getType());
 		} catch (CoreException e) {
 			return false;
 		}

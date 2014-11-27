@@ -343,6 +343,17 @@ public class ArquillianBuilder extends IncrementalProjectBuilder {
 				}
         	}
         	checkCancel(monitor);
+        	preference = ArquillianUtility.getPreference(ArquillianConstants.INVALID_ARCHIVE_FILE_LOCATION, project.getProject());
+        	if (!JavaCore.IGNORE.equals(preference)) {
+        		try {
+        			Integer severity = ArquillianUtility.getSeverity(preference);
+        			IJavaProject javaProject = JavaCore.create(project);
+        			validateArchiveFileLocation(unit, javaProject, severity);
+				} catch (CoreException e) {
+					ArquillianCoreActivator.log(e);
+				}
+        	}
+        	checkCancel(monitor);
         	preference = ArquillianUtility.getPreference(ArquillianConstants.TYPE_IS_NOT_INCLUDED_IN_ANY_DEPLOYMENT, project.getProject());
         	if (!JavaCore.IGNORE.equals(preference)) {
 				DependencyCache.getDependencies().remove(unit);
@@ -603,11 +614,9 @@ public class ArquillianBuilder extends IncrementalProjectBuilder {
 		return (CompilationUnit) parser.createAST(null);
 	}
 	
-	private void validateArchiveName(final ICompilationUnit unit, IJavaProject project, final Integer severity) throws CoreException {
-		CompilationUnit rootAst = getAST(unit, project);
+	private List<MethodDeclaration> getDeploymentMethods(final CompilationUnit root) {
 		final List<MethodDeclaration> deploymentMethods = new ArrayList<MethodDeclaration>();
-		final CompilationUnit root = rootAst;
-		rootAst.accept(new ASTVisitor() {
+		root.accept(new ASTVisitor() {
 
 			@Override
 			public boolean visit(MethodDeclaration node) {
@@ -619,6 +628,166 @@ public class ArquillianBuilder extends IncrementalProjectBuilder {
 			}
 		
 		});
+		return deploymentMethods;
+	}
+	
+	private void validateArchiveFileLocation(final ICompilationUnit unit, IJavaProject project, final Integer severity) throws CoreException {
+		final CompilationUnit root = getAST(unit, project);
+		final List<MethodDeclaration> deploymentMethods = getDeploymentMethods(root);
+		final List<String> fileNames = new ArrayList<String>();
+		fileNames.add(ArquillianConstants.WEB_XML);
+		fileNames.add(ArquillianConstants.WEB_FRAGMENT_XML);
+		fileNames.add(ArquillianConstants.BEANS_XML);
+		fileNames.add(ArquillianConstants.PERSISTENCE_XML);
+		fileNames.add(ArquillianConstants.EJB_JAR_XML);
+		fileNames.add(ArquillianConstants.APPLICATION_XML);
+		for (MethodDeclaration methodDeclaration:deploymentMethods) {
+			methodDeclaration.accept(new ASTVisitor() {
+
+				@Override
+				public boolean visit(MethodInvocation node) {
+					boolean isAddAsManifestMethod = false;
+					StringLiteral manifestFileName = null;
+					boolean isAddAsWebInfMethod = false;
+					StringLiteral webInfFileName = null;
+					if (node.getName() != null && ArquillianConstants.ADD_AS_MANIFEST_RESOURCE.equals(node.getName().getIdentifier()) ) { //$NON-NLS-1$
+						List arguments = node.arguments();
+						if (arguments.size() == 2) {
+							Object o = arguments.get(1);
+							if (o instanceof StringLiteral) {
+								StringLiteral literal = (StringLiteral) o;
+								if (fileNames.contains(literal.getLiteralValue())) {
+									manifestFileName = literal;
+									isAddAsManifestMethod = true;
+								}
+							}
+						}
+						
+					}
+					if (node.getName() != null && ArquillianConstants.ADD_AS_WEB_INF_RESOURCE.equals(node.getName().getIdentifier()) ) { //$NON-NLS-1$
+						List arguments = node.arguments();
+						if (arguments.size() == 2) {
+							Object o = arguments.get(1);
+							if (o instanceof StringLiteral) {
+								StringLiteral literal = (StringLiteral) o;
+								if (fileNames.contains(literal.getLiteralValue())) {
+									webInfFileName = literal;
+									isAddAsWebInfMethod = true;
+								}
+							}
+						}
+						
+					}
+					if ( (isAddAsManifestMethod && manifestFileName != null) || (isAddAsWebInfMethod && webInfFileName != null)) {
+						IMethodBinding binding = node.resolveMethodBinding();
+						ITypeBinding archiveType = binding.getReturnType();
+						if (archiveType != null) {
+							if (ArquillianUtility.ORG_JBOSS_SHRINKWRAP_API_SPEC_WEB_ARCHIVE.equals(archiveType.getBinaryName())) {
+								// web.xml -> /WEB-INF/
+								// web-fragment.xml -> Not supported ?
+								// beans.xml -> /WEB-INF/
+								// persistence.xml -> /WEB-INF/classes/META-INF/
+								// ejb-jar.xml -> /WEB-INF/classes/META-INF/
+								if (manifestFileName != null) {
+									String fileName = manifestFileName.getLiteralValue();
+									if (ArquillianConstants.WEB_XML.equals(fileName)
+											|| ArquillianConstants.BEANS_XML.equals(fileName)) {
+										try {
+											IMarker marker = storeProblem(unit, fileName + " should be placed in the WEB-INF directory.",
+													severity,
+													ArquillianConstants.MARKER_INVALID_ARCHIVE_FILE_LOCATION_ID);
+											if (marker != null) {
+												configureMarker(marker, node, root);
+												marker.setAttribute(ArquillianConstants.NEW_METHOD_NAME, ArquillianConstants.ADD_AS_WEB_INF_RESOURCE);
+												marker.setAttribute(ArquillianConstants.OLD_METHOD_NAME, ArquillianConstants.ADD_AS_MANIFEST_RESOURCE);
+											}
+										} catch (CoreException e) {
+											ArquillianCoreActivator.log(e);
+										}
+									}
+								}
+								if (webInfFileName != null) {
+									String fileName = webInfFileName.getLiteralValue();
+									if (ArquillianConstants.PERSISTENCE_XML.equals(fileName)
+											|| ArquillianConstants.EJB_JAR_XML.equals(fileName)) {
+										try {
+											IMarker marker = storeProblem(unit, fileName + " should be placed in the META-INF directory.",
+													severity,
+													ArquillianConstants.MARKER_INVALID_ARCHIVE_FILE_LOCATION_ID);
+											if (marker != null) {
+												configureMarker(marker, node, root);
+												marker.setAttribute(ArquillianConstants.NEW_METHOD_NAME, ArquillianConstants.ADD_AS_MANIFEST_RESOURCE);
+												marker.setAttribute(ArquillianConstants.OLD_METHOD_NAME, ArquillianConstants.ADD_AS_WEB_INF_RESOURCE);
+											}
+										} catch (CoreException e) {
+											ArquillianCoreActivator.log(e);
+										}
+									}
+								}
+							}
+							if (ArquillianUtility.ORG_JBOSS_SHRINKWRAP_API_SPEC_JAVA_ARCHIVE.equals(archiveType.getBinaryName())) {
+								// web.xml -> Not supported
+								// web-fragment.xml -> /META-INF/
+								// beans.xml -> /META-INF/
+								// persistence.xml -> /META-INF/
+								// ejb-jar.xml -> /META-INF/
+								if (webInfFileName != null) {
+									String fileName = webInfFileName.getLiteralValue();
+									if (ArquillianConstants.PERSISTENCE_XML.equals(fileName)
+											|| ArquillianConstants.EJB_JAR_XML.equals(fileName)
+											|| ArquillianConstants.WEB_FRAGMENT_XML.equals(fileName)
+											|| ArquillianConstants.BEANS_XML.equals(fileName)) {
+										try {
+											IMarker marker = storeProblem(unit, fileName + " should be placed in the META-INF directory.",
+													severity,
+													ArquillianConstants.MARKER_INVALID_ARCHIVE_FILE_LOCATION_ID);
+											if (marker != null) {
+												configureMarker(marker, node, root);
+												marker.setAttribute(ArquillianConstants.NEW_METHOD_NAME, ArquillianConstants.ADD_AS_MANIFEST_RESOURCE);
+												marker.setAttribute(ArquillianConstants.OLD_METHOD_NAME, ArquillianConstants.ADD_AS_WEB_INF_RESOURCE);
+											}
+										} catch (CoreException e) {
+											ArquillianCoreActivator.log(e);
+										}
+									}
+								}
+							}
+							if (ArquillianUtility.ORG_JBOSS_SHRINKWRAP_API_SPEC_ENTERPRISE_ARCHIVE.equals(archiveType.getBinaryName())) {
+								// beans.xml -> Not supported
+								// persistence.xml -> Not supported
+								// ejb-jar.xml -> Not supported
+								// application.xml -> /META-INF/
+								if (webInfFileName != null) {
+									String fileName = webInfFileName.getLiteralValue();
+									if (ArquillianConstants.APPLICATION_XML.equals(fileName)) {
+										try {
+											IMarker marker = storeProblem(unit, fileName + " should be placed in the META-INF directory.",
+													severity,
+													ArquillianConstants.MARKER_INVALID_ARCHIVE_FILE_LOCATION_ID);
+											if (marker != null) {
+												configureMarker(marker, node, root);
+												marker.setAttribute(ArquillianConstants.NEW_METHOD_NAME, ArquillianConstants.ADD_AS_MANIFEST_RESOURCE);
+												marker.setAttribute(ArquillianConstants.OLD_METHOD_NAME, ArquillianConstants.ADD_AS_WEB_INF_RESOURCE);
+											}
+										} catch (CoreException e) {
+											ArquillianCoreActivator.log(e);
+										}
+									}
+								}
+							}
+						}
+					}
+					return true;
+				}
+				
+			});
+		}
+		
+	}
+	
+	private void validateArchiveName(final ICompilationUnit unit, IJavaProject project, final Integer severity) throws CoreException {
+		final CompilationUnit root = getAST(unit, project);
+		final List<MethodDeclaration> deploymentMethods = getDeploymentMethods(root);
 		for (MethodDeclaration methodDeclaration:deploymentMethods) {
 			methodDeclaration.accept(new ASTVisitor() {
 
@@ -699,6 +868,17 @@ public class ArquillianBuilder extends IncrementalProjectBuilder {
 			});
 		}
 		
+	}
+
+	private void configureMarker(IMarker marker, MethodInvocation node,
+			final CompilationUnit root) throws CoreException {
+		SimpleName nodeName = node.getName();
+		int start = nodeName.getStartPosition();
+		int end = start + nodeName.getLength();
+		int lineNumber = root.getLineNumber(start);
+		marker.setAttribute(IMarker.CHAR_START, start);
+		marker.setAttribute(IMarker.CHAR_END, end);
+		marker.setAttribute(IMarker.LINE_NUMBER, lineNumber);
 	}
 
 }

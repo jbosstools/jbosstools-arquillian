@@ -581,6 +581,11 @@ public class ArquillianUtility {
 		return !JavaCore.IGNORE.equals(preference);
 	}
 	
+	public static boolean validateArchiveFileLocation(IProject project) {
+		String preference = getPreference(ArquillianConstants.INVALID_ARCHIVE_FILE_LOCATION, project);
+		return !JavaCore.IGNORE.equals(preference);
+	}
+	
 	public static boolean validateTestMethod(IProject project) {
 		String preference = getPreference(ArquillianConstants.MISSING_TEST_METHOD, project);
 		return !JavaCore.IGNORE.equals(preference);

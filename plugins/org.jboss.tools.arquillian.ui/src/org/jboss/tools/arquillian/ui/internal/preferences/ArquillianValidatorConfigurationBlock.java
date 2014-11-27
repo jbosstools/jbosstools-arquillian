@@ -43,6 +43,8 @@ public class ArquillianValidatorConfigurationBlock extends OptionsConfigurationB
 
 	private static final Key MISSING_DEPLOYMENT_METHOD = getKey(ArquillianCoreActivator.PLUGIN_ID, ArquillianConstants.MISSING_DEPLOYMENT_METHOD);
 	private static final Key INVALID_ARCHIVE_NAME = getKey(ArquillianCoreActivator.PLUGIN_ID, ArquillianConstants.INVALID_ARCHIVE_NAME);
+	private static final Key INVALID_ARCHIVE_FILE_LOCATION = getKey(ArquillianCoreActivator.PLUGIN_ID, ArquillianConstants.INVALID_ARCHIVE_FILE_LOCATION);
+	
 	
 	private static final Key MISSING_TEST_METHOD = getKey(ArquillianCoreActivator.PLUGIN_ID, ArquillianConstants.MISSING_TEST_METHOD);
 	private static final Key TYPE_IS_NOT_INCLUDED_IN_ANY_DEPLOYMENT = getKey(ArquillianCoreActivator.PLUGIN_ID, ArquillianConstants.TYPE_IS_NOT_INCLUDED_IN_ANY_DEPLOYMENT);
@@ -81,6 +83,7 @@ public class ArquillianValidatorConfigurationBlock extends OptionsConfigurationB
 				ENABLE_ARQUILLIAN_VALIDATOR,
 				TEST_ARQUILLIAN_CONTAINER,
 				DEPLOYMENT_METHOD_HAS_TO_BE_STATIC_AND_PUBLIC,
+				INVALID_ARCHIVE_FILE_LOCATION,
 			};
 	}
 
@@ -194,6 +197,9 @@ public class ArquillianValidatorConfigurationBlock extends OptionsConfigurationB
 		label = "Deployment method has to be public and static";
 		fFilteredPrefTree.addComboBox(inner, label, DEPLOYMENT_METHOD_HAS_TO_BE_STATIC_AND_PUBLIC, errorWarningIgnore, errorWarningIgnoreLabels, defaultIndent, section);
 		
+		label = "Invalid archive file location";
+		fFilteredPrefTree.addComboBox(inner, label, INVALID_ARCHIVE_FILE_LOCATION, errorWarningIgnore, errorWarningIgnoreLabels, defaultIndent, section);
+		
 		IDialogSettings settingsSection= ArquillianUIActivator.getDefault().getDialogSettings().getSection(SETTINGS_SECTION_NAME);
 		restoreSectionExpansionStates(settingsSection);
 
@@ -257,6 +263,7 @@ public class ArquillianValidatorConfigurationBlock extends OptionsConfigurationB
 		setComboEnabled(IMPORT_IS_NOT_INCLUDED_IN_ANY_DEPLOYMENT, enabled);
 		setComboEnabled(DEPLOYMENT_ARCHIVE_CANNOT_BE_CREATED, enabled);
 		setComboEnabled(DEPLOYMENT_METHOD_HAS_TO_BE_STATIC_AND_PUBLIC, enabled);
+		setComboEnabled(INVALID_ARCHIVE_FILE_LOCATION, enabled);
 	}
 
 }

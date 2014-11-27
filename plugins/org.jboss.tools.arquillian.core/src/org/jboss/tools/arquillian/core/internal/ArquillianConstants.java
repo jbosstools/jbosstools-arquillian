@@ -69,6 +69,8 @@ public class ArquillianConstants {
 
 	public static final String MARKER_INVALID_ARCHIVE_NAME_ID = "org.jboss.tools.arquillian.core.problem.invalidArchiveName";  //$NON-NLS-1$
 
+	public static final String MARKER_INVALID_ARCHIVE_FILE_LOCATION_ID = "org.jboss.tools.arquillian.core.problem.invalidArchiveFileLocation";  //$NON-NLS-1$
+
 	public static final String MARKER_INVALID_DEPLOYMENT_METHOD_ID = "org.jboss.tools.arquillian.core.problem.invalidDeploymentMethod";  //$NON-NLS-1$
 
     public final static String[] ARQUILLIAN_PROBLEM_MARKER_ATTRIBUTE_NAMES = {
@@ -100,6 +102,8 @@ public class ArquillianConstants {
 	
 	public static final String DEPLOYMENT_METHOD_HAS_TO_BE_STATIC_AND_PUBLIC = ".deploymentMethodHasToBeStaticAndPublic"; //$NON-NLS-1$
 
+	public static final String INVALID_ARCHIVE_FILE_LOCATION = ".invalidArchiveFileLocation"; //$NON-NLS-1$
+
 	public static final String SELECTED_ARQUILLIAN_PROFILES = "selectedArquillianProfiles"; //$NON-NLS-1$
 	
 	public static final String ACTIVATED_ARQUILLIAN_PROFILES = "activatedArquillianProfiles"; //$NON-NLS-1$
@@ -127,6 +131,10 @@ public class ArquillianConstants {
 	public static final String TESTNG_LAUNCHCONFIG_TYPE_ID = "org.testng.eclipse.launchconfig"; //$NON-NLS-1$
 
 	public static final String OLD_ARCHIVE_NAME = "oldArchiveName"; //$NON-NLS-1$
+	
+	public static final String OLD_METHOD_NAME = "oldMethodName"; //$NON-NLS-1$
+	
+	public static final String NEW_METHOD_NAME = "newMethodName"; //$NON-NLS-1$
 
 	public static final String ARCHIVE_EXTENSION = "archiveExtension"; //$NON-NLS-1$
 	
@@ -141,5 +149,16 @@ public class ArquillianConstants {
 	public static final String MODIFIER_TYPE = "modifierType"; //$NON-NLS-1$
 
 	public static final String METHOD_NAME = "methodName"; //$NON-NLS-1$
+	
+	public static final String APPLICATION_XML = "application.xml"; //$NON-NLS-1$
+	public static final String EJB_JAR_XML = "ejb-jar.xml"; //$NON-NLS-1$
+	public static final String PERSISTENCE_XML = "persistence.xml"; //$NON-NLS-1$
+	public static final String BEANS_XML = "beans.xml"; //$NON-NLS-1$
+	public static final String WEB_FRAGMENT_XML = "web-fragment.xml"; //$NON-NLS-1$
+	public static final String WEB_XML = "web.xml"; //$NON-NLS-1$
+	
+	public static final String ADD_AS_WEB_INF_RESOURCE = "addAsWebInfResource"; //$NON-NLS-1$
+	public static final String ADD_AS_MANIFEST_RESOURCE = "addAsManifestResource";  //$NON-NLS-1$
+	
 
 }

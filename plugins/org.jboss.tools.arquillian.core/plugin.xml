@@ -115,6 +115,14 @@
 	<super type="org.jboss.tools.arquillian.core.problem"/>
 	<persistent value="true"/>
   </extension>
+  
+  <extension 
+  		id="org.jboss.tools.arquillian.core.problem.invalidArchiveFileLocation"
+  		point="org.eclipse.core.resources.markers"
+  		name="Invalid Archive File Location Problem">
+	<super type="org.jboss.tools.arquillian.core.problem"/>
+	<persistent value="true"/>
+  </extension>
 
   <!--
   <extension

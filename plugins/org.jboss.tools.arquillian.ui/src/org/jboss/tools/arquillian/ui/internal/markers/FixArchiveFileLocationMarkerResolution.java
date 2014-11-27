@@ -18,19 +18,17 @@ import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.JavaCore;
-import org.eclipse.jdt.core.ToolFactory;
+import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
-import org.eclipse.jdt.core.dom.Modifier;
+import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
-import org.eclipse.jdt.core.formatter.CodeFormatter;
-import org.eclipse.jdt.internal.corext.dom.ModifierRewrite;
 import org.eclipse.jface.text.BadLocationException;
+import org.eclipse.jface.text.Document;
 import org.eclipse.jface.text.IDocument;
-import org.eclipse.jface.text.TextUtilities;
 import org.eclipse.text.edits.MalformedTreeException;
 import org.eclipse.text.edits.TextEdit;
 import org.eclipse.ui.IMarkerResolution;
@@ -45,16 +43,17 @@ import org.jboss.tools.arquillian.ui.ArquillianUIActivator;
  * @author Snjeza
  *
  */
-public class FixInvalidDeploymentMethodMarkerResolution implements
+public class FixArchiveFileLocationMarkerResolution implements
 		IMarkerResolution {
 	
 	private IMarker marker;
-	protected MethodDeclaration deploymentMethod;
 	private IFile file;
 	private ICompilationUnit icu;
+	private MethodDeclaration deploymentMethod;
+	private SimpleName oldName;
 	private boolean save;
 
-	public FixInvalidDeploymentMethodMarkerResolution(IMarker marker, boolean save) {
+	public FixArchiveFileLocationMarkerResolution(IMarker marker, boolean save) {
 		this.marker = marker;
 		this.save = save;
 	}
@@ -64,20 +63,10 @@ public class FixInvalidDeploymentMethodMarkerResolution implements
 	 */
 	@Override
 	public String getLabel() {
-		int modifier = marker.getAttribute(ArquillianConstants.MODIFIER_TYPE, ArquillianConstants.MODIFIER_TYPE_UNKNOWN);
-		String name = marker.getAttribute(ArquillianConstants.METHOD_NAME, "");
-		switch (modifier) {
-		case Modifier.PUBLIC:
-			return "Change " + name + " to public";
-
-		case Modifier.STATIC:
-			return "Change " + name + " to static";
-
-		case Modifier.STATIC & Modifier.PUBLIC:
-			return "Change " + name + " to public static";
-
-		default:
-			break;
+		String newMethodName = marker.getAttribute(ArquillianConstants.NEW_METHOD_NAME, null);
+		String oldMethodName = marker.getAttribute(ArquillianConstants.OLD_METHOD_NAME, null);
+		if (newMethodName != null && oldMethodName != null) {
+			return "Change '" + oldMethodName + "' to '" + newMethodName + "'";
 		}
 		return "";
 	}
@@ -90,8 +79,11 @@ public class FixInvalidDeploymentMethodMarkerResolution implements
 		CompilationUnit root = getAST();
 		final int markerStart = marker.getAttribute(IMarker.CHAR_START, 0);
 		final int markerEnd = marker.getAttribute(IMarker.CHAR_END, 0);
-		
-		if (root == null || markerStart <= 0 || markerEnd <= markerStart) {
+
+		final String newMethodName = marker.getAttribute(ArquillianConstants.NEW_METHOD_NAME, null);
+
+		if (root == null || markerStart <= 0 || markerEnd <= markerStart
+				|| newMethodName == null) {
 			ArquillianUIActivator.logWarning("Invalid Deployment method resolution");
 			return;
 		}
@@ -101,7 +93,8 @@ public class FixInvalidDeploymentMethodMarkerResolution implements
 			public boolean visit(MethodDeclaration node) {
 				int startPosition = node.getStartPosition();
 				int length = node.getLength();
-				if (markerStart >= startPosition && markerEnd <= startPosition + length) {
+				if (markerStart >= startPosition
+						&& markerEnd <= startPosition + length) {
 					deploymentMethod = node;
 					node.resolveBinding();
 					return false;
@@ -114,38 +107,54 @@ public class FixInvalidDeploymentMethodMarkerResolution implements
 			ArquillianUIActivator.logWarning("Invalid Deployment method resolution");
 			return;
 		}
-		ASTRewrite rewriter = ASTRewrite.create(deploymentMethod.getAST());
-		MethodDeclaration newMethodDeclaration = (MethodDeclaration) rewriter.createCopyTarget(deploymentMethod);
-		ModifierRewrite listRewrite= ModifierRewrite.create(rewriter, deploymentMethod);
-		listRewrite.setModifiers(Modifier.PUBLIC|Modifier.STATIC, Modifier.PRIVATE|Modifier.PROTECTED, null);
-		rewriter.replace(deploymentMethod, newMethodDeclaration, null);
-		
+
+		deploymentMethod.accept(new ASTVisitor() {
+
+			@Override
+			public boolean visit(SimpleName node) {
+				int startPosition = node.getStartPosition();
+				int length = node.getLength();
+				if (markerStart == startPosition
+						&& markerEnd == startPosition + length) {
+					oldName = node;
+					node.resolveBinding();
+					return false;
+				}
+				return true;
+			}
+		});
+
+		if (oldName == null) {
+			ArquillianUIActivator.logWarning("Invalid Deployment method resolution");
+			return;
+		}
+
 		IDocumentProvider provider = new TextFileDocumentProvider();
 		try {
 			provider.connect(file);
 			IDocument doc = provider.getDocument(file);
-			TextEdit edits = rewriter.rewriteAST(doc , icu.getJavaProject().getOptions(true));
+			ASTRewrite rewrite = ASTRewrite.create(root.getAST());
+
+			SimpleName newName = root.getAST().newSimpleName(newMethodName);
+			rewrite.replace(oldName, newName, null);
 			
-	        edits.apply(doc);
-	        
-	        CodeFormatter formatter = ToolFactory.createCodeFormatter(icu.getJavaProject().getOptions(true));
-	        
-			TextEdit formatEdits = formatter.format(CodeFormatter.K_COMPILATION_UNIT, doc.get(),
-					edits.getOffset(), edits.getLength(), 1, TextUtilities.getDefaultLineDelimiter(doc));
-	
-			formatEdits.apply(doc);
-	        
+			TextEdit edits = rewrite.rewriteAST(doc, icu.getJavaProject()
+					.getOptions(true));
+			edits.apply(doc);
+			
 			icu.save(new NullProgressMonitor(), true);
 			if (save) {
 				provider.saveDocument(new NullProgressMonitor(), file, doc, false);
 			}
-	    } catch (IllegalArgumentException e) {
+		} catch (JavaModelException e) {
+			ArquillianUIActivator.log(e);
+		} catch (IllegalArgumentException e) {
 			ArquillianUIActivator.log(e);
 		} catch (MalformedTreeException e) {
 			ArquillianUIActivator.log(e);
-		} catch (CoreException e) {
-			ArquillianUIActivator.log(e);
 		} catch (BadLocationException e) {
+			ArquillianUIActivator.log(e);
+		} catch (CoreException e) {
 			ArquillianUIActivator.log(e);
 		} finally {
 			provider.disconnect(file);
