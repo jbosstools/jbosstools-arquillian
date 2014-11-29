@@ -55,7 +55,7 @@ public class ArquillianPropertyTester extends PropertyTester {
 						return ArquillianSearchEngine.isArquillianJUnitTest(types[0], false, false, false);
 					}
 				} catch (JavaModelException e) {
-					ArquillianUIActivator.log(e);
+					return false;
 				}
 			}
 			if (receiver instanceof ITextSelection) {

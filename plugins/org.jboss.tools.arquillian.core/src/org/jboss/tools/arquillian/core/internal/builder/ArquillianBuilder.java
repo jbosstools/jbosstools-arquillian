@@ -147,7 +147,15 @@ public class ArquillianBuilder extends IncrementalProjectBuilder {
 							cu = (ICompilationUnit) element;
 						}
 						if (cu != null) {
-							cleanupMarkers(cu.getUnderlyingResource());
+							IResource resource = null;
+							try {
+								resource = cu.getUnderlyingResource();
+							} catch (Exception e) {
+								// ignore
+							}
+							if (resource != null) {
+								cleanupMarkers(resource);
+							}
 							if (units.contains(cu)) {
 								DependencyCache.getDependencies().remove(cu);
 								return false;
