@@ -15,5 +15,6 @@
 	<modules>
 		<module>org.jboss.tools.arquillian.core</module>
 		<module>org.jboss.tools.arquillian.ui</module>
+		<module>org.jboss.tools.arquillian.maven.configurator</module>
 	</modules>
 </project>

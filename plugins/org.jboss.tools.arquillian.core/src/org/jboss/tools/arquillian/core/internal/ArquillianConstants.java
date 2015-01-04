@@ -159,6 +159,10 @@ public class ArquillianConstants {
 	
 	public static final String ADD_AS_WEB_INF_RESOURCE = "addAsWebInfResource"; //$NON-NLS-1$
 	public static final String ADD_AS_MANIFEST_RESOURCE = "addAsManifestResource";  //$NON-NLS-1$
+
+	public static final boolean CONFIGURE_ARQUILLIAN_VALUE = false;
+
+	public static final String CONFIGURE_ARQUILLIAN = "configureArquillian";
 	
 
 }

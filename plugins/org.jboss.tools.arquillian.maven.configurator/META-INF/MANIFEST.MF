@@ -1,0 +1,15 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: %Bundle-Name
+Bundle-SymbolicName: org.jboss.tools.arquillian.maven.configurator;singleton:=true
+Bundle-Version: 1.2.0.qualifier
+Bundle-Activator: org.jboss.tools.arquillian.maven.configurator.Activator
+Require-Bundle: org.eclipse.core.runtime,
+ org.jboss.tools.maven.core,
+ org.jboss.tools.maven.ui,
+ org.jboss.tools.arquillian.core,
+ org.eclipse.jface
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-ActivationPolicy: lazy
+Bundle-Vendor: %Bundle-Vendor
+Bundle-Localization: plugin

@@ -32,6 +32,7 @@ import org.junit.runners.Suite;
 	MavenResolverTest.class,
 	ArquillianXmlEditorTest.class,
 	InvalidDeploymentMethodTest.class,
+	ArquillianConfiguratorTest.class,
 })
 
 @RunWith(Suite.class)

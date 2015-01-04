@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+
+	<extension
+         point="org.eclipse.m2e.core.lifecycleMappingMetadataSource">
+   </extension>
+   
+   <extension
+         point="org.eclipse.m2e.core.lifecycleMappings">
+      <lifecycleMapping
+            class="org.jboss.tools.arquillian.maven.configurator.ArquillianLifecycleMapping"
+            id="org.jboss.tools.arquillian.maven.configurator.arquillianLifecycleMapping"
+            name="Arquillian Lifecycle mapping">
+      </lifecycleMapping>
+   </extension>
+   
+	<extension point="org.eclipse.m2e.core.projectConfigurators">
+      <configurator 
+          id="org.jboss.tools.arquillian.maven.configurator"
+          class="org.jboss.tools.arquillian.maven.configurator.ArquillianProjectConfigurator"
+          name="Arquillian Project Configurator" 
+          secondaryTo="org.eclipse.m2e.jdt.javaConfigurator"/>
+    </extension>
+    
+    <extension point="org.eclipse.ui.editors.templates">
+    <template id="org.jboss.tools.arquillian.maven.configurator.xml.templates.arquillianActivationProperty"
+         contextTypeId="org.eclipse.m2e.editor.xml.templates.contextType.properties"
+         name="m2e-arquillian activation" 
+         description="Enable or disable automatic Arquillian configuration">
+      <pattern>&lt;m2e.arquillian.activation&gt;${cursor}${false}&lt;/m2e.arquillian.activation&gt;</pattern>
+    </template>
+   </extension> 
+</plugin>

@@ -14,6 +14,8 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.preferences.DefaultScope;
+import org.eclipse.core.runtime.preferences.IEclipsePreferences;
 import org.eclipse.debug.core.DebugPlugin;
 import org.eclipse.debug.core.ILaunchConfiguration;
 import org.eclipse.debug.core.ILaunchConfigurationType;
@@ -64,6 +66,7 @@ public class ArquillianPreferencePage extends PreferencePage implements
 	private Button addToExistingButton;
 	private Button allowOSCommandButton;
 	private Button allowSPCommandButton;
+	private Button configureArquillianButton;
 	
 	private static final String[] defaultVersions = new String[] {ArquillianConstants.ARQUILLIAN_VERSION_DEFAULT};
 	
@@ -89,7 +92,16 @@ public class ArquillianPreferencePage extends PreferencePage implements
         String value = ArquillianUtility.getPreference(ArquillianConstants.ARQUILLIAN_VERSION, ArquillianConstants.ARQUILLIAN_VERSION_DEFAULT);
         combo.setText(value);
         
-        Font font = parent.getFont();
+        configureArquillianButton = new Button(composite, SWT.CHECK);
+        gd = new GridData(SWT.FILL, SWT.FILL,true,false);
+        gd.horizontalSpan = 2;
+        configureArquillianButton.setLayoutData(gd);
+        configureArquillianButton.setText("Configure Arquillian when importing Maven projects");
+        IPreferenceStore prefs = ArquillianCoreActivator.getDefault().getPreferenceStore();
+		boolean configureArquillian = prefs.getBoolean(ArquillianConstants.CONFIGURE_ARQUILLIAN);
+        configureArquillianButton.setSelection(configureArquillian);
+		
+		Font font = parent.getFont();
 
 		Group argumentsGroup = new Group(composite, SWT.NONE);
 		argumentsGroup.setLayout(new GridLayout(1, false));
@@ -108,7 +120,6 @@ public class ArquillianPreferencePage extends PreferencePage implements
         enableButton = new Button(argumentsGroup, SWT.CHECK);
         enableButton.setLayoutData(new GridData(SWT.FILL, SWT.FILL,true,false));
         enableButton.setText("Enable default VM arguments");
-        IPreferenceStore prefs = ArquillianCoreActivator.getDefault().getPreferenceStore();
         boolean enable = prefs.getBoolean(ArquillianConstants.ENABLE_DEFAULT_VM_ARGUMENTS);
         enableButton.setSelection(enable);
         enableButton.addSelectionListener(new SelectionAdapter() {
@@ -200,6 +211,8 @@ public class ArquillianPreferencePage extends PreferencePage implements
         
         prefs.setValue(ArquillianConstants.ARQUILLIAN_VERSION, ArquillianConstants.ARQUILLIAN_VERSION_DEFAULT);
         combo.setText(ArquillianConstants.ARQUILLIAN_VERSION_DEFAULT);
+        prefs.setValue(ArquillianConstants.CONFIGURE_ARQUILLIAN, ArquillianConstants.CONFIGURE_ARQUILLIAN_VALUE);
+        configureArquillianButton.setSelection(ArquillianConstants.CONFIGURE_ARQUILLIAN_VALUE);
         prefs.setValue(ArquillianConstants.SELECTED_ARQUILLIAN_PROFILES, ArquillianConstants.JBOSS_AS_REMOTE_7_X);
 		prefs.setValue(ArquillianConstants.ACTIVATED_ARQUILLIAN_PROFILES, ArquillianConstants.JBOSS_AS_REMOTE_7_X);
 		ArquillianUIUtil.initializeViewer(profilesViewer, containers);
@@ -222,6 +235,7 @@ public class ArquillianPreferencePage extends PreferencePage implements
     public boolean performOk() {
     	IPreferenceStore prefs = ArquillianCoreActivator.getDefault().getPreferenceStore();
         prefs.setValue(ArquillianConstants.ARQUILLIAN_VERSION, combo.getText());
+        prefs.setValue(ArquillianConstants.CONFIGURE_ARQUILLIAN, configureArquillianButton.getSelection());
         prefs.setValue(ArquillianConstants.ENABLE_DEFAULT_VM_ARGUMENTS, enableButton.getSelection());
         prefs.setValue(ArquillianConstants.DEFAULT_VM_ARGUMENTS, argumentsText.getText());
         prefs.setValue(ArquillianConstants.ADD_DEFAULT_VM_ARGUMENTS_TO_JUNIT_TESTNG, addToJUnitTestNGButton.getSelection());
