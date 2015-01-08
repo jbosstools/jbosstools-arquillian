@@ -70,7 +70,7 @@ public class AddMissingTypeWizardPage extends UserInputWizardPage {
 		label.setText("Deployment method:");
 
 		deploymentMethodsCombo = new Combo(composite, SWT.NONE);
-		deploymentMethodsCombo.setItems(refactoring.getDeploymentMethods());
+		deploymentMethodsCombo.setItems(refactoring.getDeploymentMethodsNames());
 		deploymentMethodsCombo.select(0);
 		deploymentMethodsCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		deploymentMethodsCombo.addModifyListener(new ModifyListener() {

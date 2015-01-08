@@ -33,6 +33,7 @@ import org.junit.runners.Suite;
 	ArquillianXmlEditorTest.class,
 	InvalidDeploymentMethodTest.class,
 	ArquillianConfiguratorTest.class,
+	AbstractDeploymentMethodTest.class,
 })
 
 @RunWith(Suite.class)

@@ -19,17 +19,23 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.maven.model.Model;
+import org.apache.maven.project.MavenProject;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IMarker;
+import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.Assert;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.OperationCanceledException;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
+import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.SourceRange;
@@ -37,6 +43,9 @@ import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.ASTVisitor;
+import org.eclipse.jdt.core.dom.AbstractTypeDeclaration;
+import org.eclipse.jdt.core.dom.Annotation;
+import org.eclipse.jdt.core.dom.AnonymousClassDeclaration;
 import org.eclipse.jdt.core.dom.Assignment;
 import org.eclipse.jdt.core.dom.Block;
 import org.eclipse.jdt.core.dom.BodyDeclaration;
@@ -57,7 +66,9 @@ import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.dom.IfStatement;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
+import org.eclipse.jdt.core.dom.Modifier;
 import org.eclipse.jdt.core.dom.Name;
+import org.eclipse.jdt.core.dom.NodeFinder;
 import org.eclipse.jdt.core.dom.PostfixExpression;
 import org.eclipse.jdt.core.dom.PrefixExpression;
 import org.eclipse.jdt.core.dom.ReturnStatement;
@@ -78,6 +89,8 @@ import org.eclipse.jdt.core.dom.rewrite.ImportRewrite;
 import org.eclipse.jdt.core.dom.rewrite.ImportRewrite.ImportRewriteContext;
 import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
 import org.eclipse.jdt.internal.corext.codemanipulation.ContextSensitiveImportRewriteContext;
+import org.eclipse.jdt.internal.corext.dom.ASTNodeFactory;
+import org.eclipse.jdt.internal.corext.dom.ASTNodes;
 import org.eclipse.jdt.internal.corext.dom.Bindings;
 import org.eclipse.jdt.internal.corext.dom.ScopeAnalyzer;
 import org.eclipse.jdt.internal.corext.dom.fragments.ASTFragmentFactory;
@@ -93,10 +106,14 @@ import org.eclipse.ltk.core.refactoring.Change;
 import org.eclipse.ltk.core.refactoring.Refactoring;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 import org.eclipse.ltk.core.refactoring.TextFileChange;
+import org.eclipse.m2e.core.MavenPlugin;
+import org.eclipse.m2e.core.internal.IMavenConstants;
+import org.eclipse.m2e.core.project.IMavenProjectFacade;
 import org.eclipse.text.edits.MultiTextEdit;
 import org.jboss.tools.arquillian.core.ArquillianCoreActivator;
 import org.jboss.tools.arquillian.core.internal.ArquillianConstants;
 import org.jboss.tools.arquillian.core.internal.util.ArquillianSearchEngine;
+import org.jboss.tools.arquillian.core.internal.util.ArquillianUtility;
 import org.jboss.tools.arquillian.ui.ArquillianUIActivator;
 import org.jboss.tools.arquillian.ui.internal.markers.RefactoringUtil;
 
@@ -108,8 +125,9 @@ import org.jboss.tools.arquillian.ui.internal.markers.RefactoringUtil;
  */
 public class AddMissingTypeRefactoring extends Refactoring {
 
+	private static final String ARCHIVE_VARIABLE = "archive";
+	private static final String CANNOT_FIND_A_DEPLOYMENT_METHOD = "Cannot find a deployment method";
 	private IMarker marker;
-	private String deploymentMethodName;
 	private String[] deploymentMethods;
 	private List<MethodDeclaration> deploymentMethodDeclarations;
 	private CompilationUnit astRoot;
@@ -124,6 +142,9 @@ public class AddMissingTypeRefactoring extends Refactoring {
 	private String[] excludedVariableNames;
 	private String message;
 	private boolean addAllDependentClasses = false;
+	private List<IMethodBinding> abstractMethodBindings;
+	private String deploymentMethodName;
+	private ListRewrite listRewriter;
 	
 	/**
 	 * @param marker
@@ -154,7 +175,10 @@ public class AddMissingTypeRefactoring extends Refactoring {
 		} else {
 			deploymentMethods = getDeploymentMethods();
 			if (deploymentMethods == null || deploymentMethods.length <= 0) {
-				message = "Cannot find a deployment method";
+				abstractMethodBindings = getAbstractDeploymentMethodBindings();
+				if (abstractMethodBindings == null) {
+					message = CANNOT_FIND_A_DEPLOYMENT_METHOD;
+				}
 			} else {
 				deploymentMethodName = deploymentMethods[0];
 			}
@@ -164,6 +188,42 @@ public class AddMissingTypeRefactoring extends Refactoring {
 			return RefactoringStatus.create(status);
 		}
 		return RefactoringStatus.create(Status.OK_STATUS);
+	}
+
+	public String[] getAbstractDeploymentMethods() {
+		
+		if (cUnit != null) {
+			List<IMethodBinding> methods;
+			try {
+				methods = ArquillianSearchEngine.getDeploymentMethods(cUnit.findPrimaryType());
+			} catch (JavaModelException e) {
+				return new String[0];
+			}
+			String[] names = new String[methods.size()];
+			int i = 0;
+			for (IMethodBinding method:methods) {
+				names[i++] = method.getName();
+			}
+			return names;
+		}
+		return new String[0];
+	}
+	
+	private List<IMethodBinding> getAbstractDeploymentMethodBindings() {
+		if (cUnit != null) {
+			List<IMethodBinding> methods;
+			try {
+				methods = ArquillianSearchEngine.getDeploymentMethods(cUnit.findPrimaryType());
+			} catch (JavaModelException e) {
+				return null;
+			}
+			if (methods.size() > 0) {
+				IMethodBinding methodBinding = methods.get(0);
+				deploymentMethodName = methodBinding.getName();
+				return methods;
+			}
+		}
+		return null;
 	}
 
 	/* (non-Javadoc)
@@ -186,45 +246,153 @@ public class AddMissingTypeRefactoring extends Refactoring {
 	public Change createChange(IProgressMonitor pm) throws CoreException,
 			OperationCanceledException {
 		message = null;
-		if (astRoot == null || deploymentMethodName == null) {
-			message = "Cannot find a deployment method";
+		if (astRoot == null || 
+				(abstractMethodBindings == null && deploymentMethodName == null)) {
+			message = CANNOT_FIND_A_DEPLOYMENT_METHOD;
 			return null;
 		}
 		MethodDeclaration deploymentMethod = null;
-		for (MethodDeclaration md:deploymentMethodDeclarations) {
-			if (deploymentMethodName.equals(md.getName().getIdentifier())) {
-				deploymentMethod = md;
-				break;
+		TextFileChange result = new TextFileChange( file.getName(), file );
+	    MultiTextEdit rootEdit = new MultiTextEdit();
+	    importRewrite = CodeStyleConfiguration.createImportRewrite(astRoot, true);
+		if (astRoot.getAST().hasResolvedBindings()) {
+			importRewrite.setUseContextToFilterImplicitImports(true);
+		}
+		rewrite= ASTRewrite.create(astRoot.getAST());
+		IType fType = cUnit.findPrimaryType();
+		if (fType.isAnonymous()) {
+			final ClassInstanceCreation creation= (ClassInstanceCreation) ASTNodes.getParent(NodeFinder.perform(astRoot, fType.getNameRange()), ClassInstanceCreation.class);
+			if (creation != null) {
+				final AnonymousClassDeclaration declaration= creation.getAnonymousClassDeclaration();
+				if (declaration != null)
+					listRewriter= rewrite.getListRewrite(declaration, AnonymousClassDeclaration.BODY_DECLARATIONS_PROPERTY);
 			}
+		} else {
+			final AbstractTypeDeclaration declaration= (AbstractTypeDeclaration) ASTNodes.getParent(NodeFinder.perform(astRoot, fType.getNameRange()), AbstractTypeDeclaration.class);
+			if (declaration != null)
+				listRewriter= rewrite.getListRewrite(declaration, declaration.getBodyDeclarationsProperty());
+		}
+		if (listRewriter == null) {
+			throw new CoreException(new Status(IStatus.ERROR, ArquillianUIActivator.PLUGIN_ID, IStatus.ERROR, "Could not find the type element", null));
+		}
+		ast = astRoot.getAST();
+		ReturnStatement returnStatement;
+		if (abstractMethodBindings != null) {
+			IMethodBinding abstractMethodBinding = null;
+			for (IMethodBinding binding:abstractMethodBindings) {
+				if (binding.getName().equals(deploymentMethodName)) {
+					abstractMethodBinding = binding;
+					break;
+				}
+			}
+			if (abstractMethodBinding == null) {
+				message = CANNOT_FIND_A_DEPLOYMENT_METHOD;
+				return null;
+			}
+			deploymentMethod = ast.newMethodDeclaration();
+			deploymentMethod.setName(ast.newSimpleName(deploymentMethodName));
+			
+			IJavaProject javaProject = abstractMethodBinding.getJavaElement().getJavaProject();
+			String archiveTypeName = ArquillianUtility.ORG_JBOSS_SHRINKWRAP_API_SPEC_JAVA_ARCHIVE;
+			if (javaProject != null && javaProject.isOpen()) {
+				IProject project = javaProject.getProject();
+				IFile pomFile = project.getFile(IMavenConstants.POM_FILE_NAME);
+				if (pomFile != null && pomFile.exists()) {
+					try {
+						IMavenProjectFacade facade = MavenPlugin.getMavenProjectRegistry().create(project, new NullProgressMonitor());
+						MavenProject mavenProject = facade.getMavenProject(new NullProgressMonitor());
+						Model model = mavenProject.getModel();
+						String packaging = model.getPackaging();
+						if (ArquillianConstants.WAR.equals(packaging)) {
+							archiveTypeName = ArquillianUtility.ORG_JBOSS_SHRINKWRAP_API_SPEC_WEB_ARCHIVE;
+						}
+						if (ArquillianConstants.EAR.equals(packaging)) {
+							archiveTypeName = ArquillianUtility.ORG_JBOSS_SHRINKWRAP_API_SPEC_ENTERPRISE_ARCHIVE;
+						}
+						if (ArquillianConstants.RAR.equals(packaging)) {
+							archiveTypeName = ArquillianUtility.ORG_JBOSS_SHRINKWRAP_API_SPEC_RESOURCEADAPTER_ARCHIVE;
+						}
+					} catch (CoreException e) {
+						ArquillianUIActivator.log(e);
+					}
+				}
+			}
+			int index = archiveTypeName.lastIndexOf("."); //$NON-NLS-1$
+			String simpleArchiveName;
+			if (index >= 0) {
+				simpleArchiveName = archiveTypeName.substring(index + 1);
+			} else {
+				simpleArchiveName = archiveTypeName;
+			}
+			SimpleName type2 = ast.newSimpleName(simpleArchiveName);
+			importRewrite.addImport(archiveTypeName);
+			deploymentMethod.setReturnType2(ast.newSimpleType(type2));
+			deploymentMethod.setConstructor(false);
+			deploymentMethod.modifiers().addAll(ASTNodeFactory.newModifiers(ast, Modifier.PUBLIC|Modifier.STATIC));
+
+			Annotation marker= rewrite.getAST().newMarkerAnnotation();
+			importRewrite.addImport(ArquillianUtility.ORG_JBOSS_ARQUILLIAN_CONTAINER_TEST_API_DEPLOYMENT);
+			marker.setTypeName(rewrite.getAST().newSimpleName("Deployment")); //$NON-NLS-1$
+			rewrite.getListRewrite(deploymentMethod, MethodDeclaration.MODIFIERS2_PROPERTY).insertFirst(marker, null);
+			
+			Block body= ast.newBlock();
+			deploymentMethod.setBody(body);
+			
+			// XXXArchive archive = (XXXArchive) AbstractTest.createDeployment();
+			String declaringClassQualifiedName = abstractMethodBinding.getDeclaringClass().getQualifiedName();
+			importRewrite.addImport(declaringClassQualifiedName);
+			String declaringClassName = abstractMethodBinding.getDeclaringClass().getName();
+			MethodInvocation deploymentInvocation = ast.newMethodInvocation();
+			deploymentInvocation.setExpression(ast.newName(declaringClassName));
+			deploymentInvocation.setName(ast.newSimpleName(deploymentMethodName));
+			VariableDeclarationFragment archiveDeclFragment= ast.newVariableDeclarationFragment();
+			archiveDeclFragment.setName(ast.newSimpleName(ARCHIVE_VARIABLE));
+			ITypeBinding returnType = abstractMethodBinding.getReturnType();
+			if (!archiveTypeName.equals(
+					returnType.getQualifiedName())) {
+				CastExpression cast = ast.newCastExpression();
+				cast.setType(ast.newSimpleType(ast.newName(simpleArchiveName)));
+				cast.setExpression(deploymentInvocation);
+				archiveDeclFragment.setInitializer(cast);
+			} else {
+				archiveDeclFragment.setInitializer(deploymentInvocation);
+			}
+			VariableDeclarationStatement vStatement= ast.newVariableDeclarationStatement(archiveDeclFragment);
+			vStatement.setType(ast.newSimpleType(ast.newName(simpleArchiveName)));
+			body.statements().add(vStatement);
+			
+			//return archive;
+			returnStatement= ast.newReturnStatement();
+			returnStatement.setExpression(ast.newSimpleName(ARCHIVE_VARIABLE));
+			//body.statements().add(returnStatement);
+		} else {
+			for (MethodDeclaration md : deploymentMethodDeclarations) {
+				if (deploymentMethodName.equals(md.getName().getIdentifier())) {
+					deploymentMethod = md;
+					break;
+				}
+			}
+			if (deploymentMethod == null) {
+				message = CANNOT_FIND_A_DEPLOYMENT_METHOD;
+				return null;
+			}
+			returnStatement = getReturnStatement(deploymentMethod);
+			ast = deploymentMethod.getAST();
+			rewrite = ASTRewrite.create(ast);
 		}
 		
-		if (deploymentMethod == null) {
-			message = "Cannot find a deployment method";
-			return null;
-		}
-		
-		ReturnStatement returnStatement = getReturnStatement(deploymentMethod);
 		if (returnStatement == null) {
 			message = "Cannot find a return statement";
 			return null;
 		}
 		
-		TextFileChange result = new TextFileChange( file.getName(), file );
-	    MultiTextEdit rootEdit = new MultiTextEdit();
 	    Expression expression = returnStatement.getExpression();
-	    ast = deploymentMethod.getAST();
-	    rewrite = ASTRewrite.create(ast);
-	    
-	    importRewrite = CodeStyleConfiguration.createImportRewrite(astRoot, true);
-		if (astRoot.getAST().hasResolvedBindings()) {
-			importRewrite.setUseContextToFilterImplicitImports(true);
-		}
 		
 		if (expression instanceof MethodInvocation) {
 			int start = expression.getStartPosition();
 			int length = expression.getLength();
 			selectedExpression = getSelectedExpression(new SourceRange(start, length));
-			tempName = "archive"; //$NON-NLS-1$
+			tempName = ARCHIVE_VARIABLE;
 			int i = 0;
 			while (!checkTempName(tempName).isOK()) {
 				tempName = tempName + i++;
@@ -261,6 +429,10 @@ public class AddMissingTypeRefactoring extends Refactoring {
 			for (String c:classNames) {
 				createStatement(variableName, c, deploymentMethod, returnStatement, rootEdit, pm);
 			}
+		}
+		if (abstractMethodBindings != null) {
+			deploymentMethod.getBody().statements().add(returnStatement);
+			listRewriter.insertLast(deploymentMethod, null);
 		}
 		rootEdit.addChild(rewrite.rewriteAST());
 		rootEdit.addChild(importRewrite.rewriteImports(pm));
@@ -442,8 +614,8 @@ public class AddMissingTypeRefactoring extends Refactoring {
 			parent= parent.getParent();
 			locationInParent= target.getLocationInParent();
 		}
-		ListRewrite listRewrite= rewrite.getListRewrite(parent, (ChildListPropertyDescriptor)locationInParent);
-		listRewrite.insertBefore(declaration, target, null);
+		ListRewrite lw = rewrite.getListRewrite(parent, (ChildListPropertyDescriptor) locationInParent);
+		lw.insertBefore(declaration, target, null);
 	}
 	private VariableDeclarationStatement createTempDeclaration(Expression initializer) throws CoreException {
 		VariableDeclarationFragment vdf= ast.newVariableDeclarationFragment();
@@ -531,9 +703,12 @@ public class AddMissingTypeRefactoring extends Refactoring {
 		typeLiteral.setType(type);
 		mi.arguments().add(typeLiteral);
 		Statement newStatement = ast.newExpressionStatement(mi);
-		Block block = deploymentMethod.getBody();
-		ListRewrite listRewrite = rewrite.getListRewrite(block, Block.STATEMENTS_PROPERTY);
-		listRewrite.insertBefore(newStatement, returnStatement, null);
+		if (abstractMethodBindings != null) {
+			deploymentMethod.getBody().statements().add(newStatement);
+		} else {
+			ListRewrite lw = rewrite.getListRewrite(deploymentMethod.getBody(), Block.STATEMENTS_PROPERTY);
+			lw.insertBefore(newStatement, returnStatement, null);
+		}
 	}
 
 	private ReturnStatement getReturnStatement(MethodDeclaration deploymentMethod) {
@@ -640,6 +815,14 @@ public class AddMissingTypeRefactoring extends Refactoring {
 
 	public void setAddAllDependentClasses(boolean addAllDependentClasses) {
 		this.addAllDependentClasses = addAllDependentClasses;
+	}
+
+	public String[] getDeploymentMethodsNames() {
+		String[] names = getDeploymentMethods();
+		if (names.length > 0) {
+			return names;
+		}
+		return getAbstractDeploymentMethods();
 	}
 	
 }
