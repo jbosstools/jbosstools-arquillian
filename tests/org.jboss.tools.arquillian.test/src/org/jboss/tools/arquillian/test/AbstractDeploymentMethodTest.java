@@ -46,7 +46,7 @@ public class AbstractDeploymentMethodTest extends AbstractArquillianTest {
 	
 	@BeforeClass
 	public static void init() throws Exception {
-		importMavenProject("projects/AbstractDeploymentMethod.zip", TEST_PROJECT_NAME);
+		importMavenProject("projects/abstractDeploymentMethod.zip", TEST_PROJECT_NAME);
 		JobUtils.waitForIdle(1000);
 		IProject project = getProject(TEST_PROJECT_NAME);
 		addArquillianSupport(project);
