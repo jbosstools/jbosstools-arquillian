@@ -17,7 +17,9 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 import org.apache.maven.model.Model;
 import org.apache.maven.project.MavenProject;
@@ -414,9 +416,9 @@ public class AddMissingTypeRefactoring extends Refactoring {
 			ReturnStatement returnStatement, MultiTextEdit rootEdit, 
 			IProgressMonitor pm)
 			throws JavaModelException, CoreException {
-		createStatement(variableName, cName, deploymentMethod, returnStatement, rootEdit, pm);
+		Set<String> classNames = new HashSet<String>();
+		classNames.add(cName);
 		if (addAllDependentClasses) {
-			Set<String> classNames = new HashSet<String>();
 			IMarker[] markers = file.findMarkers(ArquillianConstants.MARKER_CLASS_ID, true, IResource.DEPTH_INFINITE);
 			for (IMarker marker:markers) {
 				if (RefactoringUtil.isMissingClassMarker(marker)) {
@@ -426,10 +428,37 @@ public class AddMissingTypeRefactoring extends Refactoring {
 					}
 				}
 			}
-			for (String c:classNames) {
-				createStatement(variableName, c, deploymentMethod, returnStatement, rootEdit, pm);
-			}
 		}
+		Map<String, Set<String>> classNamesMap = new TreeMap<String, Set<String>>();
+		for (String className:classNames) {
+			String packageName = ""; //$NON-NLS-1$
+			int index = className.lastIndexOf("."); //$NON-NLS-1$
+			if (index >= 0) {
+				packageName = className.substring(0, index);
+			}
+			Set<String> classes = classNamesMap.get(packageName);
+			if (classes == null) {
+				classes = new HashSet<String>();
+				classNamesMap.put(packageName, classes);
+			}
+			classes.add(className);
+		}
+		createStatement(variableName, classNamesMap, deploymentMethod, returnStatement, rootEdit, pm);
+//		if (addAllDependentClasses) {
+//			Set<String> classNames = new HashSet<String>();
+//			IMarker[] markers = file.findMarkers(ArquillianConstants.MARKER_CLASS_ID, true, IResource.DEPTH_INFINITE);
+//			for (IMarker marker:markers) {
+//				if (RefactoringUtil.isMissingClassMarker(marker)) {
+//					String clazzName = RefactoringUtil.getMissingClassName(marker);
+//					if (clazzName != null && !clazzName.equals(className) && !classNames.contains(clazzName)) {
+//						classNames.add(clazzName);
+//					}
+//				}
+//			}
+//			for (String c:classNames) {
+//				createStatement(variableName, c, deploymentMethod, returnStatement, rootEdit, pm);
+//			}
+//		}
 		if (abstractMethodBindings != null) {
 			deploymentMethod.getBody().statements().add(returnStatement);
 			listRewriter.insertLast(deploymentMethod, null);
@@ -681,33 +710,49 @@ public class AddMissingTypeRefactoring extends Refactoring {
 
 		return selectedExpression;
 	}
-	private void createStatement(String variableName, String cName,
+	
+	private void createStatement(String variableName, Map<String, Set<String>> classNamesMap,
 			MethodDeclaration deploymentMethod,
 			ReturnStatement returnStatement, MultiTextEdit rootEdit,
 			IProgressMonitor pm) throws JavaModelException, CoreException {
-		
-		importRewrite.addImport(cName);
-		MethodInvocation mi = ast.newMethodInvocation();
-		mi.setExpression(ast.newSimpleName(variableName));
-		mi.setName(ast.newSimpleName("addClass")); //$NON-NLS-1$
-		int index = cName.lastIndexOf("."); //$NON-NLS-1$
-		String simpleClassName;
-		if (index >= 0) {
-			simpleClassName = cName.substring(index + 1);
-		} else {
-			simpleClassName = cName;
-		}
-		Name typeName = ast.newName(simpleClassName);
-		org.eclipse.jdt.core.dom.Type type = ast.newSimpleType(typeName);
-		TypeLiteral typeLiteral = ast.newTypeLiteral();
-		typeLiteral.setType(type);
-		mi.arguments().add(typeLiteral);
-		Statement newStatement = ast.newExpressionStatement(mi);
-		if (abstractMethodBindings != null) {
-			deploymentMethod.getBody().statements().add(newStatement);
-		} else {
-			ListRewrite lw = rewrite.getListRewrite(deploymentMethod.getBody(), Block.STATEMENTS_PROPERTY);
-			lw.insertBefore(newStatement, returnStatement, null);
+		for (Map.Entry<String, Set<String>> entry : classNamesMap.entrySet()) {
+			Set<String> values = entry.getValue();
+			if (values == null || values.size() == 0) {
+				continue;
+			}
+			for (String value:values) {
+				importRewrite.addImport(value);
+			}
+			MethodInvocation mi = ast.newMethodInvocation();
+			mi.setExpression(ast.newSimpleName(variableName));
+			if (values.size() == 1) {
+				mi.setName(ast.newSimpleName("addClass")); //$NON-NLS-1$
+			} else {
+				mi.setName(ast.newSimpleName("addClasses")); //$NON-NLS-1$
+			}
+			for (String value : values) {
+				int index = value.lastIndexOf("."); //$NON-NLS-1$
+				String simpleClassName;
+				if (index >= 0) {
+					simpleClassName = value.substring(index + 1);
+				} else {
+					simpleClassName = value;
+				}
+				Name typeName = ast.newName(simpleClassName);
+				org.eclipse.jdt.core.dom.Type type = ast
+						.newSimpleType(typeName);
+				TypeLiteral typeLiteral = ast.newTypeLiteral();
+				typeLiteral.setType(type);
+				mi.arguments().add(typeLiteral);
+			}
+			Statement newStatement = ast.newExpressionStatement(mi);
+			if (abstractMethodBindings != null) {
+				deploymentMethod.getBody().statements().add(newStatement);
+			} else {
+				ListRewrite lw = rewrite.getListRewrite(
+						deploymentMethod.getBody(), Block.STATEMENTS_PROPERTY);
+				lw.insertBefore(newStatement, returnStatement, null);
+			}
 		}
 	}
 

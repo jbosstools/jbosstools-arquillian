@@ -34,6 +34,7 @@ import org.junit.runners.Suite;
 	InvalidDeploymentMethodTest.class,
 	ArquillianConfiguratorTest.class,
 	AbstractDeploymentMethodTest.class,
+	DependentClasses2Test.class,
 })
 
 @RunWith(Suite.class)
