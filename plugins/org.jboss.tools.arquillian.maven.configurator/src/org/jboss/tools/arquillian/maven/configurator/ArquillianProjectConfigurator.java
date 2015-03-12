@@ -14,16 +14,12 @@ import org.apache.maven.project.MavenProject;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
-import org.eclipse.core.runtime.preferences.DefaultScope;
-import org.eclipse.core.runtime.preferences.IEclipsePreferences;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.m2e.core.project.IMavenProjectFacade;
 import org.eclipse.m2e.core.project.MavenProjectChangedEvent;
 import org.eclipse.m2e.core.project.configurator.AbstractProjectConfigurator;
 import org.eclipse.m2e.core.project.configurator.ProjectConfigurationRequest;
-import org.jboss.tools.arquillian.core.ArquillianCoreActivator;
-import org.jboss.tools.arquillian.core.internal.ArquillianConstants;
 import org.jboss.tools.arquillian.core.internal.natures.ArquillianNature;
 import org.jboss.tools.arquillian.core.internal.util.ArquillianUtility;
 
@@ -58,8 +54,8 @@ public class ArquillianProjectConfigurator extends AbstractProjectConfigurator {
 		
 		boolean configureArquillian; 
 		if (arquillianActivation == null) {
-			IPreferenceStore prefs = ArquillianCoreActivator.getDefault().getPreferenceStore();
-			configureArquillian = prefs.getBoolean(ArquillianConstants.CONFIGURE_ARQUILLIAN);
+			IPreferenceStore prefs = org.jboss.tools.maven.ui.Activator.getDefault().getPreferenceStore();
+			configureArquillian = prefs.getBoolean(org.jboss.tools.maven.ui.Activator.CONFIGURE_ARQUILLIAN);
 		} else {
 		  configureArquillian = Boolean.valueOf(arquillianActivation);
 		}

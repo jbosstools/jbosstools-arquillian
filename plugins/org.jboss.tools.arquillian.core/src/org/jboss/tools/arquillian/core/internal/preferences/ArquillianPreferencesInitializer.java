@@ -45,7 +45,6 @@ public class ArquillianPreferencesInitializer extends
 		preferences.putBoolean(ArquillianConstants.ADD_DEFAULT_VM_ARGUMENTS_TO_JUNIT_TESTNG, ArquillianConstants.ADD_DEFAULT_VM_ARGUMENTS_TO_JUNIT_TESTNG_VALUE);
 		preferences.putBoolean(ArquillianConstants.ALLOW_OS_COMMAND, ArquillianConstants.ALLOW_OS_COMMAND_VALUE);
 		preferences.putBoolean(ArquillianConstants.ALLOW_SP_COMMAND, ArquillianConstants.ALLOW_SP_COMMAND_VALUE);
-		preferences.putBoolean(ArquillianConstants.CONFIGURE_ARQUILLIAN, ArquillianConstants.CONFIGURE_ARQUILLIAN_VALUE);
 	}
 
 }

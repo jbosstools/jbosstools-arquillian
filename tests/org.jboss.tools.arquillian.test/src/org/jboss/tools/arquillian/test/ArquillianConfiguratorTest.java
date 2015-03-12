@@ -1,5 +1,5 @@
 /*************************************************************************************
- * Copyright (c) 2013-2014 Red Hat, Inc. and others.
+ * Copyright (c) 2013-2015 Red Hat, Inc. and others.
  * All rights reserved. This program and the accompanying materials 
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -24,6 +24,7 @@ import org.jboss.tools.arquillian.core.ArquillianCoreActivator;
 import org.jboss.tools.arquillian.core.internal.ArquillianConstants;
 import org.jboss.tools.arquillian.core.internal.natures.ArquillianNature;
 import org.jboss.tools.arquillian.core.internal.util.ArquillianUtility;
+import org.jboss.tools.maven.ui.Activator;
 import org.jboss.tools.test.util.JobUtils;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -41,9 +42,9 @@ public class ArquillianConfiguratorTest extends AbstractArquillianTest {
 	
 	@BeforeClass
 	public static void init() throws Exception {
-		IPreferenceStore prefs = ArquillianCoreActivator.getDefault().getPreferenceStore();
-		oldValue = prefs.getBoolean(ArquillianConstants.CONFIGURE_ARQUILLIAN);
-		prefs.setValue(ArquillianConstants.CONFIGURE_ARQUILLIAN, false);
+		IPreferenceStore prefs = Activator.getDefault().getPreferenceStore();
+		oldValue = prefs.getBoolean(Activator.CONFIGURE_ARQUILLIAN);
+		prefs.setValue(Activator.CONFIGURE_ARQUILLIAN, false);
 		importMavenProject("projects/dependentClasses.zip", TEST_PROJECT_NAME);
 		updateProject();
 	}
@@ -62,17 +63,17 @@ public class ArquillianConfiguratorTest extends AbstractArquillianTest {
 	@Test
 	public void testConfigurator() throws CoreException, IOException {
 		IProject project = getProject(TEST_PROJECT_NAME);
-		IPreferenceStore prefs = ArquillianCoreActivator.getDefault().getPreferenceStore();
+		IPreferenceStore prefs = Activator.getDefault().getPreferenceStore();
 		assertFalse(project.getName() +" should not have the Arquillian nature", project.hasNature(ArquillianNature.ARQUILLIAN_NATURE_ID));
-		prefs.setValue(ArquillianConstants.CONFIGURE_ARQUILLIAN, true);
+		prefs.setValue(Activator.CONFIGURE_ARQUILLIAN, true);
 		updateProject();
 		assertTrue(project.getName() +" should have the Arquillian nature", project.hasNature(ArquillianNature.ARQUILLIAN_NATURE_ID));
 	}
 
 	@AfterClass
 	public static void dispose() throws Exception {
-		IPreferenceStore prefs = ArquillianCoreActivator.getDefault().getPreferenceStore();
-		prefs.setValue(ArquillianConstants.CONFIGURE_ARQUILLIAN, oldValue);
+		IPreferenceStore prefs = Activator.getDefault().getPreferenceStore();
+		prefs.setValue(Activator.CONFIGURE_ARQUILLIAN, oldValue);
 		JobUtils.waitForIdle();
 		getProject(TEST_PROJECT_NAME).delete(true, true, null);
 	}
