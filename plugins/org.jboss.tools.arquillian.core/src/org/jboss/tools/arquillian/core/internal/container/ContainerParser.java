@@ -30,6 +30,7 @@ import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.Platform;
+import org.eclipse.core.runtime.jobs.Job;
 import org.jboss.forge.arquillian.container.Container;
 import org.jboss.tools.arquillian.core.ArquillianCoreActivator;
 import org.jboss.tools.foundation.core.ecf.URLTransportUtility;
@@ -65,20 +66,48 @@ public class ContainerParser {
 			return containers;
 		}
 		ObjectMapper objectMapper = new ObjectMapper();
-		URL url = getUrl();
-		if (url != null) {
-			try {
-				containers = objectMapper.readValue(url,
-						new TypeReference<List<Container>>() {
-						});
-			} catch (Exception e) {
-				ArquillianCoreActivator.log(e);
+		// a workaround for JBIDE-19324 - Arquillian core freezes Eclipse startup
+		boolean suspended = Job.getJobManager().isSuspended();
+		if (!suspended) {
+			URL url = getUrl();
+			if (url != null) {
+				try {
+					containers = objectMapper.readValue(url, new TypeReference<List<Container>>() {
+					});
+				} catch (Exception e) {
+					ArquillianCoreActivator.log(e);
+				}
 			}
+		} else {
+			// we can't use Eclipse job framework because JobManager is suspended in this moment
+			Thread refreshingThread = new Thread("Refreshing containers ...") {
+
+				@Override
+				public void run() {
+					while (Job.getJobManager().isSuspended()) {
+						try {
+							sleep(1000);
+						} catch (InterruptedException e) {
+							// ignore
+						}
+					}
+					refresh();
+					getContainers();
+				}
+
+			};
+			refreshingThread.start();
 		}
 		if (containers == null || containers.size() == 0) {
 			try {
-				containers = objectMapper.readValue(getUrlFromBundle(),
-						new TypeReference<List<Container>>() {
+				File f =  getFile(new URL(CONTAINERS_JSON));
+				URL url;
+				if (f != null && f.isFile() && f.length() > 0) {
+					url = f.toURI().toURL();
+				} else {
+					url = getUrlFromBundle();
+				}
+				containers = objectMapper.readValue(url, new TypeReference<List<Container>>() {
 						});
 				return containers;
 			} catch (Exception e) {
