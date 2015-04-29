@@ -43,6 +43,7 @@ import org.eclipse.m2e.core.project.ProjectImportConfiguration;
 import org.eclipse.m2e.core.ui.internal.UpdateMavenProjectJob;
 import org.jboss.tools.maven.ui.Activator;
 import org.jboss.tools.project.examples.internal.ProjectExamplesActivator;
+import org.jboss.tools.project.examples.internal.UnArchiver;
 import org.jboss.tools.project.examples.model.ProjectExample;
 import org.jboss.tools.project.examples.model.ProjectExampleWorkingCopy;
 
@@ -71,7 +72,7 @@ public class ImportMavenProject {
 		IProgressMonitor monitor = new NullProgressMonitor();
 		destination = destination.getParentFile();
 		if (file.isFile()) {
-			ok = ProjectExamplesActivator.extractZipFile(file, destination, monitor);
+			ok = UnArchiver.create(file, destination).extract(monitor);
 		}
 		else if (file.isDirectory()) {
 			destination.mkdirs();
