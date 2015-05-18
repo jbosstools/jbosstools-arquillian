@@ -14,11 +14,12 @@ import org.eclipse.sapphire.Element;
 import org.eclipse.sapphire.ElementList;
 import org.eclipse.sapphire.ElementType;
 import org.eclipse.sapphire.ImpliedElementProperty;
+import org.eclipse.sapphire.Length;
 import org.eclipse.sapphire.ListProperty;
+import org.eclipse.sapphire.Type;
 import org.eclipse.sapphire.Unique;
 import org.eclipse.sapphire.Value;
 import org.eclipse.sapphire.ValueProperty;
-import org.eclipse.sapphire.modeling.annotations.CountConstraint;
 import org.eclipse.sapphire.modeling.annotations.DefaultValue;
 import org.eclipse.sapphire.modeling.annotations.Fact;
 import org.eclipse.sapphire.modeling.annotations.Facts;
@@ -26,7 +27,6 @@ import org.eclipse.sapphire.modeling.annotations.Label;
 import org.eclipse.sapphire.modeling.annotations.Required;
 import org.eclipse.sapphire.modeling.annotations.Service;
 import org.eclipse.sapphire.modeling.annotations.Services;
-import org.eclipse.sapphire.modeling.annotations.Type;
 import org.eclipse.sapphire.modeling.xml.annotations.XmlBinding;
 import org.eclipse.sapphire.modeling.xml.annotations.XmlListBinding;
 import org.jboss.tools.arquillian.editor.internal.services.ContainerProfilesService;
@@ -79,7 +79,7 @@ public interface Container extends Element {
 
 	@Type(base = Configuration.class)
 	@Label(standard = "Configuration")
-	@CountConstraint (max=1)
+	@Length (max=1)
 	@XmlBinding( path = "configuration" )
 	ImpliedElementProperty PROP_CONFIGURATION = 
 		new ImpliedElementProperty( TYPE, "Configuration" ); //$NON-NLS-1$ 

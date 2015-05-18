@@ -19,15 +19,15 @@
    </license>
 
    <requires>
-      <import feature="org.eclipse.sapphire" version="8.0.0" match="greaterOrEqual"/>
-      <import feature="org.eclipse.sapphire.java" version="8.0.0" match="greaterOrEqual"/>
-      <import feature="org.eclipse.sapphire.java.jdt" version="8.0.0" match="greaterOrEqual"/>
-      <import feature="org.eclipse.sapphire.modeling.xml" version="8.0.0" match="greaterOrEqual"/>
-      <import feature="org.eclipse.sapphire.osgi" version="8.0.0" match="greaterOrEqual"/>
-      <import feature="org.eclipse.sapphire.platform" version="8.0.0" match="greaterOrEqual"/>
-      <import feature="org.eclipse.sapphire.ui.swt.xml.editor" version="8.0.0" match="greaterOrEqual"/>
-      <import feature="org.eclipse.sapphire.ui" version="8.0.0" match="greaterOrEqual"/>
-      <import feature="org.eclipse.sapphire.ui.swt.gef" version="8.0.0" match="greaterOrEqual"/>
+      <import feature="org.eclipse.sapphire" version="9.0.0.201505051659" match="greaterOrEqual"/>
+      <import feature="org.eclipse.sapphire.java" version="9.0.0.201505051659" match="greaterOrEqual"/>
+      <import feature="org.eclipse.sapphire.java.jdt" version="9.0.0.201505051659" match="greaterOrEqual"/>
+      <import feature="org.eclipse.sapphire.modeling.xml" version="9.0.0.201505051659" match="greaterOrEqual"/>
+      <import feature="org.eclipse.sapphire.osgi" version="9.0.0.201505051659" match="greaterOrEqual"/>
+      <import feature="org.eclipse.sapphire.platform" version="9.0.0.201505051659" match="greaterOrEqual"/>
+      <import feature="org.eclipse.sapphire.ui.swt.xml.editor" version="9.0.0.201505051659" match="greaterOrEqual"/>
+      <import feature="org.eclipse.sapphire.ui" version="9.0.0.201505051659" match="greaterOrEqual"/>
+      <import feature="org.eclipse.sapphire.ui.swt.gef" version="9.0.0.201505051659" match="greaterOrEqual"/>
    </requires>
 
    <plugin

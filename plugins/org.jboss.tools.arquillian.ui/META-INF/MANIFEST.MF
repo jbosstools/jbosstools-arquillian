@@ -30,19 +30,19 @@ Require-Bundle: org.eclipse.ui;bundle-version="3.103.0",
  org.eclipse.jdt.core.manipulation;bundle-version="1.5.0",
  org.eclipse.m2e.core.ui,
  org.eclipse.compare.core,
- org.eclipse.sapphire.platform;bundle-version="0.7.1",
- org.eclipse.sapphire.modeling;bundle-version="0.7.1",
- org.eclipse.sapphire.modeling.xml;bundle-version="0.7.1",
- org.eclipse.sapphire.java;bundle-version="0.7.1",
- org.eclipse.sapphire.ui;bundle-version="0.7.1",
- org.eclipse.sapphire.ui.swt.xml.editor;bundle-version="0.7.1",
+ org.eclipse.sapphire.platform;bundle-version="9.0.0.201505051659",
+ org.eclipse.sapphire.modeling;bundle-version="9.0.0.201505051659",
+ org.eclipse.sapphire.modeling.xml;bundle-version="9.0.0.201505051659",
+ org.eclipse.sapphire.java;bundle-version="9.0.0.201505051659",
+ org.eclipse.sapphire.ui;bundle-version="9.0.0.201505051659",
+ org.eclipse.sapphire.ui.swt.xml.editor;bundle-version="9.0.0.201505051659",
  org.eclipse.wst.sse.ui;bundle-version="1.3.200",
  org.eclipse.wst.xml.ui;bundle-version="1.1.401",
  org.eclipse.m2e.profiles.ui;bundle-version="1.5.0",
  org.eclipse.ui.workbench,
  org.eclipse.ui.browser;bundle-version="3.4.200"
 Bundle-ActivationPolicy: lazy
-Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-Vendor: %Bundle-Vendor
 Bundle-Localization: plugin
 Export-Package: org.jboss.tools.arquillian.editor.internal.actions,

@@ -14,11 +14,11 @@ import org.eclipse.sapphire.Element;
 import org.eclipse.sapphire.ElementList;
 import org.eclipse.sapphire.ElementType;
 import org.eclipse.sapphire.ImpliedElementProperty;
+import org.eclipse.sapphire.Length;
 import org.eclipse.sapphire.ListProperty;
-import org.eclipse.sapphire.modeling.annotations.CountConstraint;
+import org.eclipse.sapphire.Type;
 import org.eclipse.sapphire.modeling.annotations.Label;
 import org.eclipse.sapphire.modeling.annotations.Service;
-import org.eclipse.sapphire.modeling.annotations.Type;
 import org.eclipse.sapphire.modeling.xml.annotations.XmlBinding;
 import org.eclipse.sapphire.modeling.xml.annotations.XmlListBinding;
 import org.eclipse.sapphire.modeling.xml.annotations.XmlNamespace;
@@ -44,7 +44,7 @@ public interface Arquillian extends Element {
 	@Type( base = Protocol.class )
     @Label( standard = "Default Protocol" )
     @XmlBinding( path = "defaultProtocol" )
-	@CountConstraint (max=1)
+	@Length (max=1)
     ImpliedElementProperty PROP_DEFAULT_PROTOCOL = 
     	new ImpliedElementProperty( TYPE, "DefaultProtocol" ); //$NON-NLS-1$ 
 
@@ -53,7 +53,7 @@ public interface Arquillian extends Element {
 	@Type( base = Engine.class )
     @Label( standard = "Engine" )
     @XmlBinding( path = "engine" )
-	@CountConstraint (max=1)
+	@Length (max=1)
     ImpliedElementProperty PROP_ENGINE = 
     	new ImpliedElementProperty( TYPE, "Engine" ); //$NON-NLS-1$ 
 
