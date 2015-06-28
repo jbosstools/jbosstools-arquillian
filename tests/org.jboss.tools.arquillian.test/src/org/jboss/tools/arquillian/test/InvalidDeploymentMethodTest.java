@@ -77,9 +77,43 @@ public class InvalidDeploymentMethodTest extends AbstractArquillianTest {
 	}
 	
 	@Test
-	public void testFileLocation() throws CoreException, IOException {
+	public void testEar() throws CoreException, IOException {
+		internalTest("/src/test/java/org/jboss/tools/arquillian/test/EarArchiveFileLocationTest.java");
+	}
+	
+	@Test
+	public void testBeansXml() throws CoreException, IOException {
+		internalTest("/src/test/java/org/jboss/tools/arquillian/test/BeansXmlFileLocationTest.java");
+	}
+
+	@Test
+	public void testBeansXml1() throws CoreException, IOException {
+		internalTest("/src/test/java/org/jboss/tools/arquillian/test/BeansXml1FileLocationTest.java");
+	}
+
+	@Test
+	public void testBeansXml2() throws CoreException, IOException {
+		internalTest("/src/test/java/org/jboss/tools/arquillian/test/BeansXml2FileLocationTest.java");
+	}
+	
+	@Test
+	public void testWebXml() throws CoreException, IOException {
+		internalTest("/src/test/java/org/jboss/tools/arquillian/test/WebXmlFileLocationTest.java");
+	}
+	
+	@Test
+	public void testWebXml1() throws CoreException, IOException {
+		internalTest("/src/test/java/org/jboss/tools/arquillian/test/WebXml1FileLocationTest.java");
+	}
+	
+	@Test
+	public void testWebXml2() throws CoreException, IOException {
+		internalTest("/src/test/java/org/jboss/tools/arquillian/test/WebXml2FileLocationTest.java");
+	}
+	
+	private void internalTest(String resourceName) throws CoreException {
 		IProject project = getProject(TEST_PROJECT_NAME);
-		IResource resource = project.findMember("/src/test/java/org/jboss/tools/arquillian/test/ArchiveFileLocationTest.java");
+		IResource resource = project.findMember(resourceName);
 		assertNotNull(resource);
 		assertTrue(resource instanceof IFile);
 		

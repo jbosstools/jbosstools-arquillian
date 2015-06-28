@@ -655,9 +655,11 @@ public class ArquillianBuilder extends IncrementalProjectBuilder {
 				@Override
 				public boolean visit(MethodInvocation node) {
 					boolean isAddAsManifestMethod = false;
-					StringLiteral manifestFileName = null;
+					boolean isAddAsApplicationMethod = false;
+					boolean isAddAsWebResource = false;
+					boolean isAddAsResource = false;
+					StringLiteral artifactFileName = null;
 					boolean isAddAsWebInfMethod = false;
-					StringLiteral webInfFileName = null;
 					if (node.getName() != null && ArquillianConstants.ADD_AS_MANIFEST_RESOURCE.equals(node.getName().getIdentifier()) ) { //$NON-NLS-1$
 						List arguments = node.arguments();
 						if (arguments.size() == 2) {
@@ -665,12 +667,50 @@ public class ArquillianBuilder extends IncrementalProjectBuilder {
 							if (o instanceof StringLiteral) {
 								StringLiteral literal = (StringLiteral) o;
 								if (fileNames.contains(literal.getLiteralValue())) {
-									manifestFileName = literal;
+									artifactFileName = literal;
 									isAddAsManifestMethod = true;
 								}
 							}
 						}
-						
+					}
+					if (node.getName() != null && ArquillianConstants.ADD_AS_WEB_RESOURCE.equals(node.getName().getIdentifier()) ) { //$NON-NLS-1$
+						List arguments = node.arguments();
+						if (arguments.size() == 2) {
+							Object o = arguments.get(1);
+							if (o instanceof StringLiteral) {
+								StringLiteral literal = (StringLiteral) o;
+								if (fileNames.contains(literal.getLiteralValue())) {
+									artifactFileName = literal;
+									isAddAsManifestMethod = true;
+								}
+							}
+						}
+					}
+					if (node.getName() != null && ArquillianConstants.ADD_AS_RESOURCE.equals(node.getName().getIdentifier()) ) { //$NON-NLS-1$
+						List arguments = node.arguments();
+						if (arguments.size() == 2) {
+							Object o = arguments.get(1);
+							if (o instanceof StringLiteral) {
+								StringLiteral literal = (StringLiteral) o;
+								if (fileNames.contains(literal.getLiteralValue())) {
+									artifactFileName = literal;
+									isAddAsResource = true;
+								}
+							}
+						}
+					}
+					if (node.getName() != null && ArquillianConstants.ADD_AS_APPLICATION_RESOURCE.equals(node.getName().getIdentifier()) ) { //$NON-NLS-1$
+						List arguments = node.arguments();
+						if (arguments.size() == 2) {
+							Object o = arguments.get(1);
+							if (o instanceof StringLiteral) {
+								StringLiteral literal = (StringLiteral) o;
+								if (fileNames.contains(literal.getLiteralValue())) {
+									artifactFileName = literal;
+									isAddAsApplicationMethod = true;
+								}
+							}
+						}
 					}
 					if (node.getName() != null && ArquillianConstants.ADD_AS_WEB_INF_RESOURCE.equals(node.getName().getIdentifier()) ) { //$NON-NLS-1$
 						List arguments = node.arguments();
@@ -679,16 +719,17 @@ public class ArquillianBuilder extends IncrementalProjectBuilder {
 							if (o instanceof StringLiteral) {
 								StringLiteral literal = (StringLiteral) o;
 								if (fileNames.contains(literal.getLiteralValue())) {
-									webInfFileName = literal;
+									artifactFileName = literal;
 									isAddAsWebInfMethod = true;
 								}
 							}
 						}
 						
 					}
-					if ( (isAddAsManifestMethod && manifestFileName != null) || (isAddAsWebInfMethod && webInfFileName != null)) {
+					if ( (isAddAsManifestMethod || isAddAsWebInfMethod || isAddAsResource || isAddAsWebResource) && (artifactFileName != null)) {
 						IMethodBinding binding = node.resolveMethodBinding();
 						ITypeBinding archiveType = binding.getReturnType();
+						String fileName = artifactFileName.getLiteralValue();
 						if (archiveType != null) {
 							if (ArquillianUtility.ORG_JBOSS_SHRINKWRAP_API_SPEC_WEB_ARCHIVE.equals(archiveType.getBinaryName())) {
 								// web.xml -> /WEB-INF/
@@ -696,40 +737,32 @@ public class ArquillianBuilder extends IncrementalProjectBuilder {
 								// beans.xml -> /WEB-INF/
 								// persistence.xml -> /WEB-INF/classes/META-INF/
 								// ejb-jar.xml -> /WEB-INF/classes/META-INF/
-								if (manifestFileName != null) {
-									String fileName = manifestFileName.getLiteralValue();
-									if (ArquillianConstants.WEB_XML.equals(fileName)
-											|| ArquillianConstants.BEANS_XML.equals(fileName)) {
-										try {
-											IMarker marker = storeProblem(unit, fileName + " should be placed in the WEB-INF directory.",
-													severity,
-													ArquillianConstants.MARKER_INVALID_ARCHIVE_FILE_LOCATION_ID);
-											if (marker != null) {
-												configureMarker(marker, node, root);
-												marker.setAttribute(ArquillianConstants.NEW_METHOD_NAME, ArquillianConstants.ADD_AS_WEB_INF_RESOURCE);
-												marker.setAttribute(ArquillianConstants.OLD_METHOD_NAME, ArquillianConstants.ADD_AS_MANIFEST_RESOURCE);
-											}
-										} catch (CoreException e) {
-											ArquillianCoreActivator.log(e);
+								if (!isAddAsWebInfMethod && (ArquillianConstants.WEB_XML.equals(fileName)
+											|| ArquillianConstants.BEANS_XML.equals(fileName)) ) {
+									try {
+										IMarker marker = storeProblem(unit, fileName + " should be placed in the WEB-INF directory.",
+												severity, ArquillianConstants.MARKER_INVALID_ARCHIVE_FILE_LOCATION_ID);
+										if (marker != null) {
+											configureMarker(marker, node, root);
+											marker.setAttribute(ArquillianConstants.NEW_METHOD_NAME, ArquillianConstants.ADD_AS_WEB_INF_RESOURCE);
+											marker.setAttribute(ArquillianConstants.OLD_METHOD_NAME, node.getName().getIdentifier());
 										}
+									} catch (CoreException e) {
+										ArquillianCoreActivator.log(e);
 									}
 								}
-								if (webInfFileName != null) {
-									String fileName = webInfFileName.getLiteralValue();
-									if (ArquillianConstants.PERSISTENCE_XML.equals(fileName)
-											|| ArquillianConstants.EJB_JAR_XML.equals(fileName)) {
-										try {
-											IMarker marker = storeProblem(unit, fileName + " should be placed in the META-INF directory.",
-													severity,
-													ArquillianConstants.MARKER_INVALID_ARCHIVE_FILE_LOCATION_ID);
-											if (marker != null) {
-												configureMarker(marker, node, root);
-												marker.setAttribute(ArquillianConstants.NEW_METHOD_NAME, ArquillianConstants.ADD_AS_MANIFEST_RESOURCE);
-												marker.setAttribute(ArquillianConstants.OLD_METHOD_NAME, ArquillianConstants.ADD_AS_WEB_INF_RESOURCE);
-											}
-										} catch (CoreException e) {
-											ArquillianCoreActivator.log(e);
+								if (!isAddAsManifestMethod && (ArquillianConstants.PERSISTENCE_XML.equals(fileName)
+											|| ArquillianConstants.EJB_JAR_XML.equals(fileName)) ) {
+									try {
+										IMarker marker = storeProblem(unit, fileName + " should be placed in the META-INF directory.",
+												severity, ArquillianConstants.MARKER_INVALID_ARCHIVE_FILE_LOCATION_ID);
+										if (marker != null) {
+											configureMarker(marker, node, root);
+											marker.setAttribute(ArquillianConstants.NEW_METHOD_NAME, ArquillianConstants.ADD_AS_MANIFEST_RESOURCE);
+											marker.setAttribute(ArquillianConstants.OLD_METHOD_NAME, node.getName().getIdentifier());
 										}
+									} catch (CoreException e) {
+										ArquillianCoreActivator.log(e);
 									}
 								}
 							}
@@ -739,24 +772,20 @@ public class ArquillianBuilder extends IncrementalProjectBuilder {
 								// beans.xml -> /META-INF/
 								// persistence.xml -> /META-INF/
 								// ejb-jar.xml -> /META-INF/
-								if (webInfFileName != null) {
-									String fileName = webInfFileName.getLiteralValue();
-									if (ArquillianConstants.PERSISTENCE_XML.equals(fileName)
+								if (!isAddAsManifestMethod && (ArquillianConstants.PERSISTENCE_XML.equals(fileName)
 											|| ArquillianConstants.EJB_JAR_XML.equals(fileName)
 											|| ArquillianConstants.WEB_FRAGMENT_XML.equals(fileName)
-											|| ArquillianConstants.BEANS_XML.equals(fileName)) {
-										try {
-											IMarker marker = storeProblem(unit, fileName + " should be placed in the META-INF directory.",
-													severity,
-													ArquillianConstants.MARKER_INVALID_ARCHIVE_FILE_LOCATION_ID);
-											if (marker != null) {
-												configureMarker(marker, node, root);
-												marker.setAttribute(ArquillianConstants.NEW_METHOD_NAME, ArquillianConstants.ADD_AS_MANIFEST_RESOURCE);
-												marker.setAttribute(ArquillianConstants.OLD_METHOD_NAME, ArquillianConstants.ADD_AS_WEB_INF_RESOURCE);
-											}
-										} catch (CoreException e) {
-											ArquillianCoreActivator.log(e);
+											|| ArquillianConstants.BEANS_XML.equals(fileName)) ) {
+									try {
+										IMarker marker = storeProblem(unit, fileName + " should be placed in the META-INF directory.",
+												severity, ArquillianConstants.MARKER_INVALID_ARCHIVE_FILE_LOCATION_ID);
+										if (marker != null) {
+											configureMarker(marker, node, root);
+											marker.setAttribute(ArquillianConstants.NEW_METHOD_NAME, ArquillianConstants.ADD_AS_MANIFEST_RESOURCE);
+											marker.setAttribute(ArquillianConstants.OLD_METHOD_NAME, node.getName().getIdentifier());
 										}
+									} catch (CoreException e) {
+										ArquillianCoreActivator.log(e);
 									}
 								}
 							}
@@ -765,21 +794,18 @@ public class ArquillianBuilder extends IncrementalProjectBuilder {
 								// persistence.xml -> Not supported
 								// ejb-jar.xml -> Not supported
 								// application.xml -> /META-INF/
-								if (webInfFileName != null) {
-									String fileName = webInfFileName.getLiteralValue();
-									if (ArquillianConstants.APPLICATION_XML.equals(fileName)) {
-										try {
-											IMarker marker = storeProblem(unit, fileName + " should be placed in the META-INF directory.",
-													severity,
-													ArquillianConstants.MARKER_INVALID_ARCHIVE_FILE_LOCATION_ID);
-											if (marker != null) {
-												configureMarker(marker, node, root);
-												marker.setAttribute(ArquillianConstants.NEW_METHOD_NAME, ArquillianConstants.ADD_AS_MANIFEST_RESOURCE);
-												marker.setAttribute(ArquillianConstants.OLD_METHOD_NAME, ArquillianConstants.ADD_AS_WEB_INF_RESOURCE);
-											}
-										} catch (CoreException e) {
-											ArquillianCoreActivator.log(e);
+								if ( !(isAddAsManifestMethod || isAddAsApplicationMethod) && 
+										ArquillianConstants.APPLICATION_XML.equals(fileName) ) {
+									try {
+										IMarker marker = storeProblem(unit, fileName + " should be placed in the META-INF directory.",
+												severity, ArquillianConstants.MARKER_INVALID_ARCHIVE_FILE_LOCATION_ID);
+										if (marker != null) {
+											configureMarker(marker, node, root);
+											marker.setAttribute(ArquillianConstants.NEW_METHOD_NAME, ArquillianConstants.ADD_AS_MANIFEST_RESOURCE);
+											marker.setAttribute(ArquillianConstants.OLD_METHOD_NAME, node.getName().getIdentifier());
 										}
+									} catch (CoreException e) {
+										ArquillianCoreActivator.log(e);
 									}
 								}
 							}
