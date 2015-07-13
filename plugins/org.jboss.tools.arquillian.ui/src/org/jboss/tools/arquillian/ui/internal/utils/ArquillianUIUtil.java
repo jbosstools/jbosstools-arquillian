@@ -105,6 +105,7 @@ import org.eclipse.ui.IWorkbenchWindow;
 import org.jboss.forge.arquillian.container.Container;
 import org.jboss.tools.arquillian.core.ArquillianCoreActivator;
 import org.jboss.tools.arquillian.core.internal.ArquillianConstants;
+import org.jboss.tools.arquillian.core.internal.archives.Archive;
 import org.jboss.tools.arquillian.core.internal.archives.IEntry;
 import org.jboss.tools.arquillian.core.internal.util.ArquillianSearchEngine;
 import org.jboss.tools.arquillian.core.internal.util.ArquillianUtility;
@@ -1084,7 +1085,16 @@ public class ArquillianUIUtil {
 				}
 			} 
 			if (object instanceof IEntry) {
-				return ((IEntry)object).getJavaProject().getProject();
+				if ( ((IEntry)object).getJavaProject() != null) {
+					return ((IEntry)object).getJavaProject().getProject();
+				} else {
+					if (object instanceof Archive) {
+						Archive archive = (Archive) object;
+						if (archive.getLocation() != null && archive.getLocation().getProjectName() != null) {
+							return ResourcesPlugin.getWorkspace().getRoot().getProject(archive.getLocation().getProjectName());
+						}
+					}
+				}
 			}
 		}
 		if (selection instanceof ITextSelection) {
