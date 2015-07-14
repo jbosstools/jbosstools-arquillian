@@ -681,7 +681,7 @@ public class ArquillianBuilder extends IncrementalProjectBuilder {
 								StringLiteral literal = (StringLiteral) o;
 								if (fileNames.contains(literal.getLiteralValue())) {
 									artifactFileName = literal;
-									isAddAsManifestMethod = true;
+									isAddAsWebResource = true;
 								}
 							}
 						}

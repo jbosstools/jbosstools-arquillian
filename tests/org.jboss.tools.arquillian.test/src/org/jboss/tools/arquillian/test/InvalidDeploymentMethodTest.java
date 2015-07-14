@@ -111,6 +111,11 @@ public class InvalidDeploymentMethodTest extends AbstractArquillianTest {
 		internalTest("/src/test/java/org/jboss/tools/arquillian/test/WebXml2FileLocationTest.java");
 	}
 	
+	@Test
+	public void testWebPersistenceXml() throws CoreException, IOException {
+		internalTest("/src/test/java/org/jboss/tools/arquillian/test/PersistenceXmlFileLocationTest.java");
+	}
+	
 	private void internalTest(String resourceName) throws CoreException {
 		IProject project = getProject(TEST_PROJECT_NAME);
 		IResource resource = project.findMember(resourceName);
