@@ -403,6 +403,12 @@
             id="org.jboss.tools.arquillian.ui.filters.activeProjectFilter"
             name="Arquillian Active Project Filter">
       </commonFilter>
+      <commonFilter
+            activeByDefault="false"
+            class="org.jboss.tools.arquillian.ui.internal.filters.WorkingSetFilter"
+            id="org.jboss.tools.arquillian.ui.filters.workingSetFilter"
+            name="Arquillian Working Set Filter">
+      </commonFilter>
    </extension>
    
    <extension
