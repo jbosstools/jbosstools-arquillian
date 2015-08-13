@@ -16,6 +16,12 @@
 		point="org.eclipse.ui.commands">
 		
 		<command
+			id="org.jboss.tools.arquillian.ui.action.expandAll"
+			name="%expandAll"
+			categoryId="org.jboss.tools.arquillian.category"
+			defaultHandler="org.jboss.tools.arquillian.ui.internal.commands.ExpandAllCommandHandler"/>
+		
+		<command
 			id="org.jboss.tools.arquillian.ui.action.addArquillianSupport"
 			name="%addArquillianSupport"
 			categoryId="org.jboss.tools.arquillian.category"
@@ -531,5 +537,18 @@
          </describer>
       </content-type>
   </extension>
-   
+  
+  <extension
+		point="org.eclipse.ui.menus">
+		<menuContribution
+			locationURI="toolbar:org.jboss.tools.arquillian.ui.views.arquillianView?before=FRAME_ACTION_GROUP_ID">
+				<command
+					commandId="org.jboss.tools.arquillian.ui.action.expandAll"
+					icon="icons/expandall.png"
+					id="org.jboss.tools.arquillian.ui.action.expandAll"
+					style="push"
+					mnemonic="N">
+				</command>
+		</menuContribution>
+	</extension> 
 </plugin>
