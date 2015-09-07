@@ -136,6 +136,7 @@ public class NewArquillianJUnitTestCaseDeploymentPage extends WizardPage impleme
 	private IType classUnderTest;
 	private Button removeButton;
 	private Button removeAllButton;
+	private Button addDependentClassesButton;
 	
 	public NewArquillianJUnitTestCaseDeploymentPage() {
 		this(null);
@@ -513,27 +514,30 @@ public class NewArquillianJUnitTestCaseDeploymentPage extends WizardPage impleme
 		});
 		LayoutUtil.setButtonDimensionHint(removeAllButton);
 		
-		if (isType && (javaElement instanceof ICompilationUnit) && getType((ICompilationUnit)javaElement) != null) {
-			final Button addDependentClassesButton = new Button(buttonContainer, SWT.PUSH);
+		
+		if (isType) {
+			addDependentClassesButton = new Button(buttonContainer, SWT.PUSH);
 			addDependentClassesButton.setText("Add Dependent Classes");
 			gd= new GridData(GridData.FILL_HORIZONTAL | GridData.VERTICAL_ALIGN_BEGINNING);
 			addDependentClassesButton.setLayoutData(gd);
 			addDependentClassesButton.addSelectionListener(new SelectionAdapter() {
 				@Override
 				public void widgetSelected(SelectionEvent e) {
-					if ((javaElement instanceof ICompilationUnit) && getType((ICompilationUnit)javaElement) != null) {
-					Set<DependencyType> dependentTypes = DependencyCache.getDependentTypes((ICompilationUnit)javaElement);
-					for (DependencyType dependentType:dependentTypes) {
-						try {
-							IType t = javaElement.getJavaProject().findType(dependentType.getName());
-							if (!types.contains(t)) {
-								types.add(t);
+					final IJavaElement element = getTestJavaElement();
+					if ((element instanceof ICompilationUnit) && getType((ICompilationUnit) element) != null) {
+						Set<DependencyType> dependentTypes = DependencyCache
+								.getDependentTypes((ICompilationUnit) element);
+						for (DependencyType dependentType : dependentTypes) {
+							try {
+								IType t = element.getJavaProject().findType(dependentType.getName());
+								if (!types.contains(t)) {
+									types.add(t);
+								}
+							} catch (JavaModelException e1) {
+								ArquillianUIActivator.log(e1);
 							}
-						} catch (JavaModelException e1) {
-							ArquillianUIActivator.log(e1);
 						}
-					}
-					refreshViewer(viewer, elements);
+						refreshViewer(viewer, elements);
 					}
 				}
 			});
@@ -615,6 +619,9 @@ public class NewArquillianJUnitTestCaseDeploymentPage extends WizardPage impleme
 	protected void updateButtons(TableViewer viewer, List<?> elements) {
 		removeAllButton.setEnabled(elements.size() > 0);
 		removeButton.setEnabled(!viewer.getSelection().isEmpty());
+		if (addDependentClassesButton != null) {
+			addDependentClassesButton.setEnabled(getTestJavaElement() != null);
+		}
 	}
 
 	protected IJavaProject getJavaProject() {
@@ -870,9 +877,22 @@ public class NewArquillianJUnitTestCaseDeploymentPage extends WizardPage impleme
 	}
 
 	private void refreshViewer(final TableViewer viewer, final List<?> elements) {
+		if (viewer == null) {
+			return;
+		}
 		viewer.setInput(elements.toArray(new IType[0]));
 		viewer.refresh();
 		updateButtons(viewer, elements);
+	}
+
+	private IJavaElement getTestJavaElement() {
+		final IJavaElement element;
+		if (javaElement == null && classUnderTest != null) {
+			element = classUnderTest.getCompilationUnit();
+		} else {
+			element = javaElement;
+		}
+		return element;
 	}
 
 }

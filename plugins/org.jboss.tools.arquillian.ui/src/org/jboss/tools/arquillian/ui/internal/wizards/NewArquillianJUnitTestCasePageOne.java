@@ -546,6 +546,8 @@ public class NewArquillianJUnitTestCasePageOne extends NewTypeWizardPage {
 
 
 		fClassUnderTest= null;
+		fPage2.setClassUnderTest(null);
+		fPage3.setClassUnderTest(null);
 
 		IPackageFragmentRoot root= getPackageFragmentRoot();
 		if (root == null) {
