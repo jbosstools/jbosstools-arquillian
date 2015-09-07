@@ -1,5 +1,5 @@
 /*************************************************************************************
- * Copyright (c) 2008-2012 Red Hat, Inc. and others.
+ * Copyright (c) 2008-2015 Red Hat, Inc. and others.
  * All rights reserved. This program and the accompanying materials 
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -134,8 +134,10 @@ public class NewArquillianJUnitTestCaseDeploymentPage extends WizardPage impleme
 	private ITypeBinding typeBinding;
 	private CompilationUnit compilationUnit;
 	private IType classUnderTest;
-	private Button removeButton;
-	private Button removeAllButton;
+	private Button removeTypeButton;
+	private Button removeTypeAllButton;
+	private Button removeResourceButton;
+	private Button removeResourceAllButton;
 	private Button addDependentClassesButton;
 	
 	public NewArquillianJUnitTestCaseDeploymentPage() {
@@ -472,7 +474,7 @@ public class NewArquillianJUnitTestCaseDeploymentPage extends WizardPage impleme
 
 	}
 
-	private void createButtons(Group group, final TableViewer viewer, final List<?> elements, boolean isType) {
+	private void createButtons(Group group, final TableViewer viewer, final List<?> elements, final boolean isType) {
 		GridData gd;
 		Composite buttonContainer= new Composite(group, SWT.NONE);
 		gd= new GridData(GridData.FILL_VERTICAL);
@@ -488,16 +490,28 @@ public class NewArquillianJUnitTestCaseDeploymentPage extends WizardPage impleme
 		addButton.setLayoutData(gd);
 		LayoutUtil.setButtonDimensionHint(addButton);
 
+		Button removeButton;
+		Button removeAllButton;
+
 		removeButton = new Button(buttonContainer, SWT.PUSH);
 		removeButton.setText("Remove");
 		gd= new GridData(GridData.FILL_HORIZONTAL | GridData.VERTICAL_ALIGN_BEGINNING);
 		removeButton.setLayoutData(gd);
 		LayoutUtil.setButtonDimensionHint(removeButton);
-		
+
 		removeAllButton = new Button(buttonContainer, SWT.PUSH);
 		removeAllButton.setText("Remove All");
 		gd= new GridData(GridData.FILL_HORIZONTAL | GridData.VERTICAL_ALIGN_BEGINNING);
 		removeAllButton.setLayoutData(gd);
+
+		if (isType) {
+			removeTypeButton = removeButton;
+			removeTypeAllButton = removeAllButton;
+		} else {
+			removeResourceButton = removeButton;
+			removeResourceAllButton = removeAllButton;
+		}
+
 		removeAllButton.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
@@ -509,7 +523,7 @@ public class NewArquillianJUnitTestCaseDeploymentPage extends WizardPage impleme
 					viewer.setInput(elements.toArray(new ProjectResource[0]));
 				}
 				viewer.refresh();
-				updateButtons(viewer, elements);
+				updateButtons(viewer, elements, isType);
 			}
 		});
 		LayoutUtil.setButtonDimensionHint(removeAllButton);
@@ -537,7 +551,7 @@ public class NewArquillianJUnitTestCaseDeploymentPage extends WizardPage impleme
 								ArquillianUIActivator.log(e1);
 							}
 						}
-						refreshViewer(viewer, elements);
+						refreshViewer(viewer, elements, isType);
 					}
 				}
 			});
@@ -548,10 +562,10 @@ public class NewArquillianJUnitTestCaseDeploymentPage extends WizardPage impleme
 			
 			@Override
 			public void selectionChanged(SelectionChangedEvent event) {
-				updateButtons(viewer, elements);
+				updateButtons(viewer, elements, isType);
 			}
 		});
-		updateButtons(viewer, elements);
+		updateButtons(viewer, elements, isType);
 		removeButton.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
@@ -570,7 +584,7 @@ public class NewArquillianJUnitTestCaseDeploymentPage extends WizardPage impleme
 					viewer.setInput(elements.toArray(new ProjectResource[0]));
 				}
 				viewer.refresh();
-				updateButtons(viewer, elements);
+				updateButtons(viewer, elements, isType);
 			}
 		});
 		addButton.addSelectionListener(new SelectionAdapter() {
@@ -588,7 +602,7 @@ public class NewArquillianJUnitTestCaseDeploymentPage extends WizardPage impleme
 								}
 							}
 						}
-						refreshViewer(viewer, elements);
+						refreshViewer(viewer, elements, isType);
 					}
 				}
 				
@@ -608,7 +622,7 @@ public class NewArquillianJUnitTestCaseDeploymentPage extends WizardPage impleme
 								}
 							}
 						}
-						refreshViewer(viewer, resources);
+						refreshViewer(viewer, resources, isType);
 					}
 				}
 			}
@@ -616,7 +630,15 @@ public class NewArquillianJUnitTestCaseDeploymentPage extends WizardPage impleme
 		
 	}
 
-	protected void updateButtons(TableViewer viewer, List<?> elements) {
+	protected void updateButtons(TableViewer viewer, List<?> elements, boolean isType) {
+		Button removeButton, removeAllButton;
+		if (isType) {
+			removeButton = removeTypeButton;
+			removeAllButton = removeTypeAllButton;
+		} else {
+			removeButton = removeResourceButton;
+			removeAllButton = removeResourceAllButton;
+		}
 		removeAllButton.setEnabled(elements.size() > 0);
 		removeButton.setEnabled(!viewer.getSelection().isEmpty());
 		if (addDependentClassesButton != null) {
@@ -864,25 +886,25 @@ public class NewArquillianJUnitTestCaseDeploymentPage extends WizardPage impleme
 			this.classUnderTest = classUnderTest;
 		}
 		if (Display.getCurrent() != null) {
-			refreshViewer(typesViewer, types);
+			refreshViewer(typesViewer, types, true);
 		} else {
 			Display.getDefault().syncExec(new Runnable() {
 				
 				@Override
 				public void run() {
-					refreshViewer(typesViewer, types);
+					refreshViewer(typesViewer, types, true);
 				}
 			});
 		}
 	}
 
-	private void refreshViewer(final TableViewer viewer, final List<?> elements) {
+	private void refreshViewer(final TableViewer viewer, final List<?> elements, boolean isType) {
 		if (viewer == null) {
 			return;
 		}
 		viewer.setInput(elements.toArray(new IType[0]));
 		viewer.refresh();
-		updateButtons(viewer, elements);
+		updateButtons(viewer, elements, isType);
 	}
 
 	private IJavaElement getTestJavaElement() {
