@@ -331,7 +331,7 @@ public class ArquillianUIUtil {
 				} else {
 					first = false;
 				}
-				String typeName = t.getFullyQualifiedName();
+				String typeName = t.getFullyQualifiedName().replaceAll("\\$", ".");
 				int lastPeriod = typeName.lastIndexOf(PERIOD);
 				String className = typeName;
 				if (lastPeriod >= 0 && lastPeriod < typeName.length()) {

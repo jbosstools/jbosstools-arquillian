@@ -59,7 +59,7 @@ public class TypeLabelProvider implements ITableLabelProvider, ILabelProvider {
 	@Override
 	public String getText(Object element) {
 		if (element instanceof IType) {
-			return ((IType) element).getFullyQualifiedName();
+			return ((IType) element).getFullyQualifiedName().replaceAll("\\$", ".");
 		}
 		return null;
 	}
