@@ -36,6 +36,7 @@ import org.junit.runners.Suite;
 	AbstractDeploymentMethodTest.class,
 	DependentClasses2Test.class,
 	ArquillianWorkingSetFilterTest.class,
+	InnerClassesTest.class,
 })
 
 @RunWith(Suite.class)
