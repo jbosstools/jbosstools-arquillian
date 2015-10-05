@@ -1,5 +1,5 @@
 /*************************************************************************************
- * Copyright (c) 2008-2014 Red Hat, Inc. and others.
+ * Copyright (c) 2008-2015 Red Hat, Inc. and others.
  * All rights reserved. This program and the accompanying materials 
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -58,7 +58,11 @@ import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.Signature;
+import org.eclipse.jdt.core.ToolFactory;
 import org.eclipse.jdt.core.compiler.CharOperation;
+import org.eclipse.jdt.core.compiler.IScanner;
+import org.eclipse.jdt.core.compiler.ITerminalSymbols;
+import org.eclipse.jdt.core.compiler.InvalidInputException;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTParser;
@@ -752,8 +756,10 @@ public class ArquillianSearchEngine {
 			String message = getText(e) + "(project=" + javaProject.getProject().getName() + ")"; //$NON-NLS-1$ //$NON-NLS-2$
 			Throwable cause = e.getCause();
 			int i = 0;
+			Throwable prevCause = e;
 			while (cause != null && i++ < 5) {
 				message = getText(cause) + "(project=" + javaProject.getProject().getName() + ")"; //$NON-NLS-1$ //$NON-NLS-2$
+				prevCause = cause;
 				cause = cause.getCause();
 			}
 			ArquillianCoreActivator.logWarning(message);
@@ -762,7 +768,8 @@ public class ArquillianSearchEngine {
 			}
 			try {
 				Integer severity = ArquillianUtility.getSeverity(ArquillianUtility.getPreference(ArquillianConstants.DEPLOYMENT_ARCHIVE_CANNOT_BE_CREATED));
-				createProblem(message, type, deploymentMethod, severity);
+				int line = getLineNumber(prevCause, className);
+				createProblem(message, type, deploymentMethod, severity, line);
 			} catch (CoreException e1) {
 				ArquillianCoreActivator.log(e1);
 			}
@@ -770,6 +777,34 @@ public class ArquillianSearchEngine {
 			Thread.currentThread().setContextClassLoader(oldLoader);
 		}
 		return null;
+	}
+
+	private static int getLineNumber(Throwable t, String className) {
+		try {
+			Class<?>[] noArgs = null;
+			Method getStackTraceMethod = Throwable.class.getMethod("getStackTrace", noArgs); //$NON-NLS-1$
+			Class<?> stackTraceElementClass = Class.forName("java.lang.StackTraceElement"); //$NON-NLS-1$
+			Method getClassNameMethod = stackTraceElementClass.getMethod("getClassName", noArgs); //$NON-NLS-1$
+			Method getLineNumberMethod = stackTraceElementClass.getMethod("getLineNumber", noArgs); //$NON-NLS-1$
+			Object[] elements = (Object[]) getStackTraceMethod.invoke(t, noArgs);
+			for (int i = elements.length - 1; i >= 0; i--) {
+				String thisClass = (String) getClassNameMethod.invoke(elements[i], noArgs);
+				if (className.equals(thisClass)) {
+					return ((Integer) getLineNumberMethod.invoke(elements[i], noArgs)).intValue();
+				}
+			}
+		} catch (IllegalAccessException ex) {
+			// ignore
+		} catch (InvocationTargetException ex) {
+			// ignore
+		} catch (RuntimeException ex) {
+			// ignore
+		} catch (NoSuchMethodException e) {
+			// ignore
+		} catch (ClassNotFoundException e) {
+			// ignore
+		}
+		return -1;
 	}
 
 	private static String getText(Throwable e) {
@@ -783,7 +818,7 @@ public class ArquillianSearchEngine {
 	}
 
 	private static void createProblem(String message, IType type,
-			IMethodBinding deploymentMethod, Integer severity) throws CoreException {
+			IMethodBinding deploymentMethod, Integer severity, int line) throws CoreException {
 		if (severity == null || type == null || type.getJavaProject() == null) {
 			return;
 		}
@@ -808,6 +843,7 @@ public class ArquillianSearchEngine {
 		    	IJavaModelMarker.ID,
 		    	IMarker.CHAR_START,
 		    	IMarker.CHAR_END,
+		    	IMarker.LINE_NUMBER,
 		    	IMarker.SOURCE_ID,
 		    };
 		
@@ -818,35 +854,62 @@ public class ArquillianSearchEngine {
 		allValues[index++] = severity;
         
 		allValues[index++] = ArquillianConstants.ARQUILLIAN_PROBLEM_ID;
-		
-		IJavaElement javaElement = deploymentMethod.getJavaElement();
-		ISourceRange range = null;
-		if (javaElement instanceof IMember) {
-			IMember member = (IMember) javaElement;
-			if (javaElement != null) {
-				try {
-					range = member.getNameRange();
-				} catch (JavaModelException e) {
-					if (e.getJavaModelStatus().getCode() != IJavaModelStatusConstants.ELEMENT_DOES_NOT_EXIST) {
-						throw e;
-					}
-					if (!CharOperation.equals(javaElement.getElementName()
-							.toCharArray(), TypeConstants.PACKAGE_INFO_NAME)) {
-						throw e;
-					}
-
-				}
+		int start = -1;
+		int end = -1;
+		if (line != -1) {
+			IJavaProject project = cu.getJavaProject();
+			String sourceLevel= project.getOption(JavaCore.COMPILER_SOURCE, true);
+			String complianceLevel= project.getOption(JavaCore.COMPILER_COMPLIANCE, true);
+			IScanner scanner = ToolFactory.createScanner(false, false, true, sourceLevel, complianceLevel);
+			scanner.setSource(cu.getBuffer().getCharacters());
+			if (scan(scanner)) {
+				start = scanner.getLineStart(line);
+				end = scanner.getLineEnd(line);
 			}
 		}
-		int start = range == null ? 0 : range.getOffset();
-		int end = range == null ? 1 : start + range.getLength();
+		if (start == -1 || end == -1) {
+			IJavaElement javaElement = deploymentMethod.getJavaElement();
+			ISourceRange range = null;
+			if (javaElement instanceof IMember) {
+				IMember member = (IMember) javaElement;
+				if (javaElement != null) {
+					try {
+						range = member.getNameRange();
+					} catch (JavaModelException e) {
+						if (e.getJavaModelStatus().getCode() != IJavaModelStatusConstants.ELEMENT_DOES_NOT_EXIST) {
+							throw e;
+						}
+						if (!CharOperation.equals(javaElement.getElementName().toCharArray(),
+								TypeConstants.PACKAGE_INFO_NAME)) {
+							throw e;
+						}
+
+					}
+				}
+			}
+			start = range == null ? 0 : range.getOffset();
+			end = range == null ? 1 : start + range.getLength();
+		}
 		
 		allValues[index++] = new Integer(start); // start
 		allValues[index++] = new Integer(end > 0 ? end + 1 : end); // end
-
+		allValues[index++] = new Integer(line); // line number
+		
 		allValues[index++] = ArquillianConstants.SOURCE_ID;
 		
 		marker.setAttributes(allNames, allValues);
+	}
+
+	private static boolean scan(IScanner scanner) {
+		try {
+			int token= scanner.getNextToken();
+			while (token != ITerminalSymbols.TokenNameEOF) {
+				token = scanner.getNextToken();
+			}
+		} catch (InvalidInputException e) {
+			return false;
+		}
+		return true;
 	}
 
 	public static List<IMethodBinding> getDeploymentMethods(IType type) throws JavaModelException {

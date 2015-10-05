@@ -37,6 +37,7 @@ import org.junit.runners.Suite;
 	DependentClasses2Test.class,
 	ArquillianWorkingSetFilterTest.class,
 	InnerClassesTest.class,
+	CanonicalFormTest.class,
 })
 
 @RunWith(Suite.class)
