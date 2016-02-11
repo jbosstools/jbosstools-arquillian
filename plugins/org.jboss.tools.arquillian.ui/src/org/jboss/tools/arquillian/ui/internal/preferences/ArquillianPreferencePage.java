@@ -151,7 +151,7 @@ public class ArquillianPreferencePage extends PreferencePage implements
 
         allowSPCommandButton = new Button(securityGroup, SWT.CHECK);
         allowSPCommandButton.setLayoutData(new GridData(SWT.FILL, SWT.FILL,true,false));
-        allowSPCommandButton.setText("Allow setting a system propery when analyzing a deployment method");
+        allowSPCommandButton.setText("Allow setting a system property when analyzing a deployment method");
         
         allowSPCommandButton.setSelection(prefs.getBoolean(ArquillianConstants.ALLOW_SP_COMMAND));
 
