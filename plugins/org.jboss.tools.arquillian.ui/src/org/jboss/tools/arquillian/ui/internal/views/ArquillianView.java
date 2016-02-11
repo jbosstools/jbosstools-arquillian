@@ -23,6 +23,8 @@ import org.eclipse.core.resources.IResourceDeltaVisitor;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IPath;
+import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
@@ -240,55 +242,63 @@ public class ArquillianView extends CommonNavigator {
 		Object object = structured.getFirstElement();
 		if (object instanceof Entry) {
 			Entry element = (Entry) object;
-			if (element.getFullyQualifiedName() == null) {
+			if ("EmptyAsset".equals(element.getType()) //$NON-NLS-1$
+					|| "Archive".equals(element.getType()) //$NON-NLS-1$
+					|| "Directory".equals(element.getType()) //$NON-NLS-1$
+					|| element.getPath() == null || element.getPath().isEmpty()) {
 				return false;
 			}
 			IJavaProject project = element.getJavaProject();
-			try {
-				IType type = project.findType(element.getFullyQualifiedName());
-				IResource resource  = type.getUnderlyingResource();
-				if (resource != null) {
-					openFile(resource);
+			if (element.getFullyQualifiedName() != null) {
+				try {
+					IType type = project.findType(element.getFullyQualifiedName());
+					IResource resource = type.getUnderlyingResource();
+					if (resource != null && resource.exists()) {
+						openFile(resource);
+						return true;
+					}
+				} catch (PartInitException e) {
+					ArquillianUIActivator.log(e);
+				} catch (JavaModelException e) {
+					ArquillianUIActivator.log(e);
 				}
-			} catch (PartInitException e) {
-				ArquillianUIActivator.log(e);
+			}
+			try {
+				IClasspathEntry[] entries = project.getRawClasspath();
+				for (IClasspathEntry entry : entries) {
+					if (entry.getEntryKind() == IClasspathEntry.CPE_SOURCE) {
+						IPath entryPath = entry.getPath();
+						String name = element.getPath();
+						if (openFile(entryPath, name)) {
+							return true;
+						} else {
+							if (name.startsWith("/WEB-INF")) { //$NON-NLS-1$
+								if (openFile(entryPath, name.substring(8))) {
+									return true;
+								} else if (name.startsWith("/META-INF")) { //$NON-NLS-1$
+									if (openFile(entryPath, name.substring(9))) {
+										return true;
+									}
+								}
+							}
+						}
+					}
+				}
 			} catch (JavaModelException e) {
 				ArquillianUIActivator.log(e);
+			} catch (PartInitException e) {
+				ArquillianUIActivator.log(e);
 			}
-//			try {
-//				IClasspathEntry[] entries = project.getRawClasspath();
-//				for (IClasspathEntry entry:entries) {
-//					if (entry.getEntryKind() == IClasspathEntry.CPE_SOURCE) {
-//						IPath entryPath = entry.getPath();
-//						IPath path = entryPath.append(name);
-//						IResource resource = ResourcesPlugin.getWorkspace().getRoot().findMember(path);
-//						if (resource instanceof IFile && resource.exists()) {
-//							openFile(resource);
-//							return true;
-//						} else {
-//							String n = name.replace(WEB_INF,""); //$NON-NLS-1$
-//							path = entryPath.append(n);
-//							resource = ResourcesPlugin.getWorkspace().getRoot().findMember(path);
-//							if (resource instanceof IFile && resource.exists()) {
-//								openFile(resource);
-//								return true;
-//							} else {
-//								n = name.replace(META_INF,""); //$NON-NLS-1$
-//								path = entryPath.append(n);
-//								resource = ResourcesPlugin.getWorkspace().getRoot().findMember(path);
-//								if (resource instanceof IFile && resource.exists()) {
-//									openFile(resource);
-//									return true;
-//								}
-//							}
-//						}
-//					}
-//				}
-//			} catch (JavaModelException e) {
-//				ArquillianUIActivator.log(e);
-//			} catch (PartInitException e) {
-//				ArquillianUIActivator.log(e);
-//			}
+		}
+		return false;
+	}
+
+	private boolean openFile(IPath root, String name) throws PartInitException {
+		IPath path = root.append(name);
+		IResource resource = ResourcesPlugin.getWorkspace().getRoot().findMember(path);
+		if (resource instanceof IFile && resource.exists()) {
+			openFile(resource);
+			return true;
 		}
 		return false;
 	}
