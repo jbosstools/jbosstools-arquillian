@@ -55,6 +55,7 @@ import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.ISourceRange;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.ITypeHierarchy;
+import org.eclipse.jdt.core.ITypeRoot;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.Signature;
 import org.eclipse.jdt.core.dom.rewrite.ImportRewrite;
@@ -67,6 +68,7 @@ import org.eclipse.jdt.internal.junit.util.JUnitStubUtility;
 import org.eclipse.jdt.internal.junit.util.JUnitStubUtility.GenStubSettings;
 import org.eclipse.jdt.internal.ui.actions.SelectionConverter;
 import org.eclipse.jdt.internal.ui.javaeditor.CompilationUnitEditor;
+import org.eclipse.jdt.internal.ui.javaeditor.EditorUtility;
 import org.eclipse.jdt.launching.IJavaLaunchConfigurationConstants;
 import org.eclipse.jdt.ui.CodeGeneration;
 import org.eclipse.jdt.ui.wizards.NewTypeWizardPage.ImportsManager;
@@ -175,15 +177,18 @@ public class ArquillianUIUtil {
 			if (editorInput == null) {
 				return null;
 			}
-			IJavaElement javaElement = (IJavaElement)editorInput.getAdapter(IJavaElement.class);
+			IJavaElement javaElement = (IJavaElement) editorInput.getAdapter(IJavaElement.class);
 			if (javaElement != null && !javaElement.exists())
 				return null;
 			try {
-				IJavaElement element = SelectionConverter.getElementAtOffset(cue);
-				if (element == null) {
-					return null;
+				ITypeRoot rootType = EditorUtility.getEditorInputJavaElement(editor, true);
+				if (rootType != null && rootType.isConsistent()) {
+					IJavaElement element = SelectionConverter.getElementAtOffset(cue);
+					if (element == null) {
+						return null;
+					}
+					return SelectionConverter.getTypeAtOffset(cue);
 				}
-				return SelectionConverter.getTypeAtOffset(cue);
 			} catch (JavaModelException e) {
 				ArquillianUIActivator.log(e);
 			}
