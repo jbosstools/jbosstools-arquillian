@@ -103,7 +103,7 @@ public class ContainerParser {
 				File f =  getFile(new URL(CONTAINERS_JSON));
 				URL url;
 				if (f != null && f.isFile() && f.length() > 0) {
-					url = f.toURI().toURL();
+					url = f.toURL();
 				} else {
 					url = getUrlFromBundle();
 				}
@@ -126,7 +126,7 @@ public class ContainerParser {
 			if (f == null || !f.exists()) {
 				return getUrlFromBundle();
 			} else {
-				return f.toURI().toURL();
+				return f.toURL();
 			}
 		} catch (Exception e) {
 			ArquillianCoreActivator.log(e);
