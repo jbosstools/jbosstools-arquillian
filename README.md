@@ -1,3 +1,5 @@
+TEST TEST TEST
+
 The arquillian-eclipse project contains Eclipse plugins that make using Arquillian easier(http://arquillian.org).
 
 The following are implemented features:
