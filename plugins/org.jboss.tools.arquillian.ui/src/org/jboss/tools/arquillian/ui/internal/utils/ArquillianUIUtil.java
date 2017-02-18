@@ -1,5 +1,5 @@
 /*************************************************************************************
- * Copyright (c) 2008-2014 Red Hat, Inc. and others.
+ * Copyright (c) 2008-2017 Red Hat, Inc. and others.
  * All rights reserved. This program and the accompanying materials 
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -39,10 +39,12 @@ import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IAdaptable;
 import org.eclipse.core.runtime.IPath;
+import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.Status;
+import org.eclipse.core.runtime.SubProgressMonitor;
 import org.eclipse.core.variables.VariablesPlugin;
 import org.eclipse.debug.core.ILaunchConfiguration;
 import org.eclipse.jdt.core.IBuffer;
@@ -61,9 +63,10 @@ import org.eclipse.jdt.core.Signature;
 import org.eclipse.jdt.core.dom.rewrite.ImportRewrite;
 import org.eclipse.jdt.core.formatter.CodeFormatter;
 import org.eclipse.jdt.internal.compiler.parser.ScannerHelper;
+import org.eclipse.jdt.internal.corext.ValidateEditException;
 import org.eclipse.jdt.internal.corext.codemanipulation.StubUtility;
 import org.eclipse.jdt.internal.corext.util.CodeFormatterUtil;
-import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
+import org.eclipse.jdt.internal.corext.util.Resources;
 import org.eclipse.jdt.internal.junit.util.JUnitStubUtility;
 import org.eclipse.jdt.internal.junit.util.JUnitStubUtility.GenStubSettings;
 import org.eclipse.jdt.internal.ui.actions.SelectionConverter;
@@ -390,12 +393,9 @@ public class ArquillianUIUtil {
 			type.createMethod(content, sibling, force, null);
 		} else {
 			TextEdit edit = importsRewrite.rewriteImports(null);
-			JavaModelUtil.applyEdit(importsRewrite.getCompilationUnit(), edit,
-					false, null);
-			IMethod createdMethod = type
-					.createMethod(content, sibling, force, null);
+			applyEdit(importsRewrite.getCompilationUnit(), edit, false, null);
+			IMethod createdMethod = type.createMethod(content, sibling, force, null);
 			ISourceRange range = createdMethod.getSourceRange();
-
 			IBuffer buf = icu.getBuffer();
 			String originalContent = buf.getText(range.getOffset(),
 					range.getLength());
@@ -414,14 +414,32 @@ public class ArquillianUIUtil {
 				}
 			}
 			buf.replace(range.getOffset(), range.getLength(), formattedContent);
-
 			icu.reconcile(ICompilationUnit.NO_AST, false, null, null);
-
 			icu.commitWorkingCopy(false, null);
-
 		}
 	}
 
+	private static void applyEdit(ICompilationUnit cu, TextEdit edit, boolean save, IProgressMonitor monitor) throws CoreException, ValidateEditException {
+		IFile file= (IFile) cu.getResource();
+		if (!save || !file.exists()) {
+			cu.applyTextEdit(edit, monitor);
+		} else {
+			if (monitor == null) {
+				monitor= new NullProgressMonitor();
+			}
+			monitor.beginTask("Applying changes", 2);
+			try {
+				IStatus status= Resources.makeCommittable(file, null);
+				if (!status.isOK()) {
+					throw new ValidateEditException(status);
+				}
+				cu.applyTextEdit(edit, new SubProgressMonitor(monitor, 1));
+				cu.save(new SubProgressMonitor(monitor, 1), true);
+			} finally {
+				monitor.done();
+			}
+		}
+	}
 	private static String addImport(ImportsManager imports,
 			ImportRewrite importsRewrite, String qtn) {
 		if (imports != null) {
