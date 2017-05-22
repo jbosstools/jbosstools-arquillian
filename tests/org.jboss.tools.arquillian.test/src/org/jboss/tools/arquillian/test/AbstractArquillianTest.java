@@ -31,6 +31,7 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Platform;
+import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.ltk.core.refactoring.Change;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 import org.jboss.tools.arquillian.core.internal.ArquillianConstants;
@@ -65,6 +66,7 @@ public class AbstractArquillianTest {
 		projectExample.setIncludedProjects(includedProjects);
 		
 		new ImportMavenProject().importProject(projectExample, zipFile, new HashMap<String, Object>(), location);
+		JavaCore.initializeAfterLoad(null);
 	}
 
 	public static File createFile(String entryName, String projectName) throws IOException,
