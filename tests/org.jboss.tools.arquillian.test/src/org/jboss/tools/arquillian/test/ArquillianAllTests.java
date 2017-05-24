@@ -20,7 +20,7 @@ import org.junit.runners.Suite;
 	CheckArquillianModificationsTest.class,
 	CreateDeploymentMethodTest.class,
 	GenerateDeploymentMethodTest.class,
-	DeployableContainerTest.class,
+	// DeployableContainerTest.class,
 	ArquillianClassloaderTest.class,
 	GenerateDeploymenMethodMarkerResolutionTest.class,
 	ArquillianFilterTest.class,
