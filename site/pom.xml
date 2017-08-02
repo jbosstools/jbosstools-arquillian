@@ -9,7 +9,9 @@
 	</parent>
 	<groupId>org.jboss.tools.arquillian</groupId>
 	<artifactId>arquillian.site</artifactId>
-	<name>arquillian.site</name>
 	
 	<packaging>eclipse-repository</packaging>
+	<properties>
+		<skipDeployToJBossOrg>false</skipDeployToJBossOrg>
+	</properties>
 </project>
