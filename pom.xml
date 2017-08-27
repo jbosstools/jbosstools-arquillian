@@ -8,7 +8,7 @@
 	</parent>
 	<groupId>org.jboss.tools</groupId>
 	<artifactId>arquillian</artifactId>
-	<version>1.2.500-SNAPSHOT</version>
+	<version>1.2.600-SNAPSHOT</version>
 	<name>jbosstools-arquillian</name>
 	<packaging>pom</packaging>
 	<properties>
