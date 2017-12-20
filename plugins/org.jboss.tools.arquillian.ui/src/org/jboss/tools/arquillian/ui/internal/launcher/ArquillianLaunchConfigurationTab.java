@@ -894,7 +894,7 @@ public class ArquillianLaunchConfigurationTab extends AbstractLaunchConfiguratio
 			setErrorMessage(JUnitMessages.JUnitLaunchConfigurationTab_error_testcasenotonpath);
 			return;
 		}
-		if (!CoreTestSearchEngine.hasTestAnnotation(javaProject)) {
+		if (!CoreTestSearchEngine.hasJUnit4TestAnnotation(javaProject)) {
 			setErrorMessage(JUnitMessages.JUnitLaunchConfigurationTab_error_testannotationnotonpath);
 			return;
 		}
