@@ -1,5 +1,7 @@
 The arquillian-eclipse project contains Eclipse plugins that make using Arquillian easier(http://arquillian.org).
 
+NOTE: This project is deprecated, and has been removed from JBoss Tools as of 4.5.3.
+
 The following are implemented features:
 
 1) add/remove the Arquillian support (right-click the project, select Configure>Add/Remove Arquillian support)
